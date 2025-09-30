@@ -1,0 +1,66 @@
+# --- Go (backend) ---
+backend/bin/
+backend/build/
+
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+
+# Test binary (go test -c)
+*.test
+
+# Coverage
+*.coverprofile
+coverage.out
+
+# Output of go coverage tool (LiteIDE)
+*.out
+
+# Go workspace files
+go.work
+go.work.sum
+
+# Log/lock files
+*.log
+*.lock
+
+# Android Studio / IntelliJ IDEA
+frontend/.idea/
+*.iml
+*.ipr
+*.iws
+
+# Captures
+frontend/captures/
+
+# Keystore files
+*.jks
+*.keystore
+
+# NDK
+frontend/.cxx/
+
+# --- Docs ---
+*.tmp
+*.bak
+
+# --- Docker ---
+*.pid
+*.seed
+*.tar
+*.img
+
+# --- System / IDE ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# --- Env files ---
+*.env
