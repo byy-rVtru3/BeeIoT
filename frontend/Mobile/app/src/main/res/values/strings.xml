@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Mobile</string>
+    <string name="email">email</string>
+    <string name="name">Имя</string>
+    <string name="password">Пароль</string>
+    <string name="repeat_password">Повторите пароль</string>
+    <string name="registration_button">Зарегистрироваться</string>
 </resources>
