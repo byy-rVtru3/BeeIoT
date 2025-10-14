@@ -1,4 +1,4 @@
-package com.app.mobile.data.repository
+package com.app.mobile.domain.repository
 
 import com.app.mobile.data.api.models.authorization.AuthorizationResponseModel
 import com.app.mobile.domain.models.registration.RegistrationResponseModel

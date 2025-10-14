@@ -1,0 +1,116 @@
+package com.app.mobile.presentation.ui.screens.registration
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.app.mobile.R
+import com.app.mobile.presentation.models.RegistrationModelUi
+import com.app.mobile.presentation.ui.components.CustomTextField
+import com.app.mobile.presentation.ui.screens.registration.models.RegistrationActions
+
+@Composable
+fun RegistrationScreen() {
+
+}
+
+
+@Composable
+fun RegistrationContent(registrationModelUi: RegistrationModelUi, actions: RegistrationActions) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center
+    ) {
+        RegistrationNameTextField(registrationModelUi.name, actions.onNameChange)
+
+        RegistrationEmailTextField(registrationModelUi.email, actions.onEmailChange)
+
+        RegistrationPasswordTextField(registrationModelUi.password, actions.onPasswordChange)
+
+        RegistrationRepeatPasswordTextField(
+            registrationModelUi.repeatPassword,
+            actions.onRepeatPasswordChange
+        )
+
+        RegistrationButton(actions.onRegisterClick)
+    }
+}
+
+@Composable
+fun RegistrationEmailTextField(email: String, onEmailChange: (String) -> Unit) {
+    CustomTextField(
+        email, onEmailChange,
+        stringResource(R.string.email)
+    )
+}
+
+@Composable
+fun RegistrationNameTextField(
+    name: String,
+    onNameChange: (String) -> Unit
+) {
+    CustomTextField(
+        name, onNameChange,
+        stringResource(R.string.name)
+    )
+}
+
+@Composable
+fun RegistrationPasswordTextField(password: String, onPasswordChange: (String) -> Unit) {
+    CustomTextField(
+        password, onPasswordChange,
+        stringResource(R.string.password)
+    )
+}
+
+@Composable
+fun RegistrationRepeatPasswordTextField(
+    repeatPassword: String,
+    onRepeatPasswordChange: (String) -> Unit
+) {
+    CustomTextField(
+        repeatPassword, onRepeatPasswordChange,
+        stringResource(R.string.repeat_password)
+    )
+}
+
+@Composable
+fun RegistrationButton(onRegisterClick: () -> Unit) {
+    Button(
+        onClick = onRegisterClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(24.dp)
+    ) {
+        Text(text = stringResource(R.string.registration_button))
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun RegistrationContentPreview() {
+    val registrationModelUi = RegistrationModelUi(
+        name = "",
+        email = "john.doe@example.com",
+        password = "password123",
+        repeatPassword = "password123"
+    )
+    val actions = RegistrationActions(
+        onEmailChange = {},
+        onNameChange = {},
+        onPasswordChange = {},
+        onRepeatPasswordChange = {},
+        onRegisterClick = {}
+    )
+    RegistrationContent(registrationModelUi, actions)
+}

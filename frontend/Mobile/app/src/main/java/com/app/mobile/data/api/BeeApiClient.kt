@@ -5,7 +5,7 @@ import com.app.mobile.data.api.models.registration.RegistrationResponseApiModel
 import retrofit2.http.Body
 import retrofit2.http.POST
 
-fun interface BeeIoTApi {
+fun interface BeeApiClient {
     @POST("register")
     suspend fun registrationAccount(@Body request: RegistrationRequestApiModel): RegistrationResponseApiModel
 }
