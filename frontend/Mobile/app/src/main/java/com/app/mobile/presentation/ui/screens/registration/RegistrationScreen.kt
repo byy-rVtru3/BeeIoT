@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -15,13 +17,36 @@ import androidx.compose.ui.unit.dp
 import com.app.mobile.R
 import com.app.mobile.presentation.models.RegistrationModelUi
 import com.app.mobile.presentation.ui.components.CustomTextField
+import com.app.mobile.presentation.ui.components.ErrorMessage
+import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.screens.registration.models.RegistrationActions
+import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationUiState
+import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationViewModel
 
 @Composable
-fun RegistrationScreen() {
+fun RegistrationScreen(registrationViewModel: RegistrationViewModel) {
+    val registrationUiState by registrationViewModel.registrationUiState.observeAsState(
+        RegistrationUiState.Loading
+    )
 
+    when (val state = registrationUiState) {
+        is RegistrationUiState.Loading -> FullScreenProgressIndicator()
+        is RegistrationUiState.Error -> ErrorMessage(message = state.message, onRetry = {})
+        is RegistrationUiState.Content -> {
+            val registrationModelUi = state.registrationModelUi
+
+            val actions = RegistrationActions(
+                onEmailChange = registrationViewModel::onEmailChange,
+                onNameChange = registrationViewModel::onNameChange,
+                onPasswordChange = registrationViewModel::onPasswordChange,
+                onRepeatPasswordChange = registrationViewModel::onRepeatPasswordChange,
+                onRegisterClick = registrationViewModel::onRegisterClick
+            )
+
+            RegistrationContent(registrationModelUi, actions)
+        }
+    }
 }
-
 
 @Composable
 fun RegistrationContent(registrationModelUi: RegistrationModelUi, actions: RegistrationActions) {

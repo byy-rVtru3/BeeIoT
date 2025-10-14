@@ -5,4 +5,9 @@
     <string name="password">Пароль</string>
     <string name="repeat_password">Повторите пароль</string>
     <string name="registration_button">Зарегистрироваться</string>
+
+    <!-- Ошибки -->
+    <string name="error_unknown">Неизвестная ошибка</string>
+    <string name="error_dialog_title">Произошла ошибка</string>
+    <string name="error_retry_button">Попробуйте еще раз</string>
 </resources>
