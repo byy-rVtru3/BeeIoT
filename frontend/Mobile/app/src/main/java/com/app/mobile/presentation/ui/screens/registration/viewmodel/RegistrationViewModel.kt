@@ -5,14 +5,17 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.mobile.domain.usecase.CreateUserAccountUseCase
 import com.app.mobile.domain.usecase.RegistrationAccountUseCase
 import com.app.mobile.presentation.mappers.toDomain
+import com.app.mobile.presentation.mappers.toUiModel
 import com.app.mobile.presentation.models.RegistrationModelUi
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 
 class RegistrationViewModel(
-    private val registrationAccountUseCase: RegistrationAccountUseCase
+    private val registrationAccountUseCase: RegistrationAccountUseCase,
+    private val createUserAccountUseCase: CreateUserAccountUseCase
 ) : ViewModel() {
 
     private val _registrationUiState = MutableLiveData<RegistrationUiState>()
@@ -66,6 +69,13 @@ class RegistrationViewModel(
 
     fun onRegisterClick() {
         TODO("Not yet implemented")
+    }
+
+    fun createUserAccount() {
+        viewModelScope.launch(handler) {
+            val user = createUserAccountUseCase().toUiModel()
+            _registrationUiState.value = RegistrationUiState.Content(user)
+        }
     }
 }
 

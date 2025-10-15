@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
@@ -24,7 +25,14 @@ import com.app.mobile.presentation.ui.screens.registration.viewmodel.Registratio
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationViewModel
 
 @Composable
-fun RegistrationScreen(registrationViewModel: RegistrationViewModel) {
+fun RegistrationScreen(
+    registrationViewModel: RegistrationViewModel,
+    modifier: Modifier = Modifier,
+) {
+    LaunchedEffect(key1 = Unit) {
+        registrationViewModel.createUserAccount()
+    }
+
     val registrationUiState by registrationViewModel.registrationUiState.observeAsState(
         RegistrationUiState.Loading
     )
