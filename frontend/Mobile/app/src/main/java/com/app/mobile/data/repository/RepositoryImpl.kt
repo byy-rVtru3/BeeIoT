@@ -8,24 +8,28 @@ import com.app.mobile.domain.models.registration.RegistrationRequestResult
 import com.app.mobile.domain.repository.Repository
 
 class RepositoryImpl(
-        private val beeApiClient: BeeApiClient,
-        private val registrationResponseConverter: RegistrationResponseConverter
+    private val beeApiClient: BeeApiClient,
+    private val registrationResponseConverter: RegistrationResponseConverter
 ) : Repository {
     override suspend fun registrationAccount(
-            registrationRequestApiModel: RegistrationRequestApiModel
+        registrationRequestApiModel: RegistrationRequestApiModel
     ): RegistrationRequestResult {
         val response = beeApiClient.registrationAccount(registrationRequestApiModel)
         return registrationResponseConverter.convert(response)
     }
 
     override suspend fun authorizationAccount(
-            email: String,
-            password: String
+        email: String,
+        password: String
     ): AuthorizationResponseModel {
         TODO("Not yet implemented")
     }
 
-    override suspend fun confirmationUser(userId: String, code: String): Boolean {
+    override suspend fun confirmationUser(email: String, code: String, type: String): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun resendConfirmationCode(email: String, type: String) {
         TODO("Not yet implemented")
     }
 }

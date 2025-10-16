@@ -1,4 +1,4 @@
-package com.app.mobile.presentation.ui.screens.registration.confirmation.viewmodel
+package com.app.mobile.presentation.ui.screens.confirmation.viewmodel
 
 import com.app.mobile.presentation.models.ConfirmationModelUi
 

@@ -6,9 +6,11 @@ import com.app.mobile.domain.models.registration.RegistrationRequestResult
 
 interface Repository {
     suspend fun registrationAccount(
-            registrationRequestApiModel: RegistrationRequestApiModel): RegistrationRequestResult
+        registrationRequestApiModel: RegistrationRequestApiModel): RegistrationRequestResult
 
     suspend fun authorizationAccount(email: String, password: String): AuthorizationResponseModel
 
-    suspend fun confirmationUser(userId: String, code: String): Boolean
+    suspend fun confirmationUser(email: String, code: String, type: String): Boolean
+
+    suspend fun resendConfirmationCode(email: String, type: String)
 }
