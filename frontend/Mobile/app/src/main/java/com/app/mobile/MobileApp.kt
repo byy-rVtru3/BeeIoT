@@ -1,6 +1,7 @@
 package com.app.mobile
 
 import android.app.Application
+import com.app.mobile.di.confirmationModule
 import com.app.mobile.di.networkModule
 import com.app.mobile.di.registrationModule
 import com.app.mobile.di.repositoryModule
@@ -16,7 +17,7 @@ class MobileApp : Application() {
             androidLogger()
             androidContext(this@MobileApp)
 
-            modules(registrationModule, repositoryModule, networkModule)
+            modules(registrationModule, repositoryModule, networkModule, confirmationModule)
         }
     }
 }
