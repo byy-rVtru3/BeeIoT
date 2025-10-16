@@ -10,4 +10,6 @@
     <string name="error_unknown">Неизвестная ошибка</string>
     <string name="error_dialog_title">Произошла ошибка</string>
     <string name="error_retry_button">Попробуйте еще раз</string>
+    <string name="enter_code">Код подверждения</string>
+    <string name="confirm">Подтвердить</string>
 </resources>
