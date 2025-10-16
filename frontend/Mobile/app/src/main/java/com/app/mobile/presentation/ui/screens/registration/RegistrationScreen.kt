@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.app.mobile.R
 import com.app.mobile.presentation.models.RegistrationModelUi
+import com.app.mobile.presentation.navigation.RegistrationNavigationEvent
 import com.app.mobile.presentation.ui.components.CustomTextField
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
@@ -26,10 +27,25 @@ import com.app.mobile.presentation.ui.screens.registration.viewmodel.Registratio
 @Composable
 fun RegistrationScreen(
     registrationViewModel: RegistrationViewModel,
-    modifier: Modifier = Modifier,
+    onRegisterClick: (String, String) -> Unit,
+    modifier: Modifier = Modifier
+
 ) {
     LaunchedEffect(key1 = Unit) {
         registrationViewModel.createUserAccount()
+    }
+
+    val navigationEvent by registrationViewModel.navigationEvent.observeAsState()
+
+    LaunchedEffect(navigationEvent) {
+        navigationEvent?.let { event ->
+            when (event) {
+                is RegistrationNavigationEvent.NavigateToConfirmation -> {
+                    onRegisterClick(event.email, event.type)
+                    registrationViewModel.onNavigationHandled()
+                }
+            }
+        }
     }
 
     val registrationUiState by registrationViewModel.registrationUiState.observeAsState(

@@ -10,8 +10,11 @@ import com.app.mobile.domain.usecase.CreateUserAccountUseCase
 import com.app.mobile.domain.usecase.RegistrationAccountUseCase
 import com.app.mobile.presentation.mappers.toDomain
 import com.app.mobile.presentation.models.RegistrationResultUi
+import com.app.mobile.presentation.navigation.RegistrationNavigationEvent
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
+
+const val TYPE_CONFIRMATION = "registration"
 
 class RegistrationViewModel(
     private val registrationAccountUseCase: RegistrationAccountUseCase,
@@ -20,6 +23,9 @@ class RegistrationViewModel(
 
     private val _registrationUiState = MutableLiveData<RegistrationUiState>()
     val registrationUiState: LiveData<RegistrationUiState> = _registrationUiState
+
+    private val _navigationEvent = MutableLiveData<RegistrationNavigationEvent?>()
+    val navigationEvent: LiveData<RegistrationNavigationEvent?> = _navigationEvent
 
     private val handler = CoroutineExceptionHandler { _, exception ->
         _registrationUiState.value = RegistrationUiState.Error(exception.message ?: "Unknown error")
@@ -69,11 +75,10 @@ class RegistrationViewModel(
                 ).toUiModel()
                 when (response) {
                     is RegistrationResultUi.Success -> {
-                        _registrationUiState.value =
-                            RegistrationUiState.Content(
-                                currentState.registrationModelUi
-                            )
-                        TODO("Navigate to next screen")
+                        _navigationEvent.value = RegistrationNavigationEvent.NavigateToConfirmation(
+                            email = currentState.registrationModelUi.email,
+                            type = TYPE_CONFIRMATION
+                        )
                     }
 
                     is RegistrationResultUi.Error -> {
@@ -89,6 +94,10 @@ class RegistrationViewModel(
             val user = createUserAccountUseCase().toUiModel()
             _registrationUiState.value = RegistrationUiState.Content(user)
         }
+    }
+
+    fun onNavigationHandled() {
+        _navigationEvent.value = null
     }
 }
 
