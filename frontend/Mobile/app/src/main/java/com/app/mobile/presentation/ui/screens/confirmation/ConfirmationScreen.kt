@@ -1,5 +1,6 @@
 package com.app.mobile.presentation.ui.screens.confirmation
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -54,7 +55,8 @@ ConfirmationActions) {
 
     Column(modifier = Modifier
         .fillMaxSize()
-        .padding(16.dp)) {
+        .padding(16.dp),
+        verticalArrangement = Arrangement.Center) {
 
         CodeTextField(code = confirmationModelUi.code, onCodeChange = actions.onCodeChange)
 
