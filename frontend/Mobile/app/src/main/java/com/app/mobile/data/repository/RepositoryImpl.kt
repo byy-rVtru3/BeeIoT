@@ -4,6 +4,8 @@ import com.app.mobile.data.api.BeeApiClient
 import com.app.mobile.data.api.models.authorization.AuthorizationResponseModel
 import com.app.mobile.data.api.models.registration.RegistrationRequestApiModel
 import com.app.mobile.data.converter.RegistrationResponseConverter
+import com.app.mobile.data.mocks.mockResponseToConfirmationUserSuccess
+import com.app.mobile.data.mocks.mockResponseToRegistrationSuccess
 import com.app.mobile.domain.models.registration.RegistrationRequestResult
 import com.app.mobile.domain.repository.Repository
 
@@ -14,8 +16,11 @@ class RepositoryImpl(
     override suspend fun registrationAccount(
         registrationRequestApiModel: RegistrationRequestApiModel
     ): RegistrationRequestResult {
-        val response = beeApiClient.registrationAccount(registrationRequestApiModel)
-        return registrationResponseConverter.convert(response)
+//        val response = beeApiClient.registrationAccount(registrationRequestApiModel)
+//        return registrationResponseConverter.convert(response)
+
+        val mockResponse = mockResponseToRegistrationSuccess
+        return registrationResponseConverter.convert(mockResponse)
     }
 
     override suspend fun authorizationAccount(
@@ -26,10 +31,10 @@ class RepositoryImpl(
     }
 
     override suspend fun confirmationUser(email: String, code: String, type: String): Boolean {
-        TODO("Not yet implemented")
+        return mockResponseToConfirmationUserSuccess(code)
     }
 
     override suspend fun resendConfirmationCode(email: String, type: String) {
-        TODO("Not yet implemented")
+//        Not yet implemented
     }
 }

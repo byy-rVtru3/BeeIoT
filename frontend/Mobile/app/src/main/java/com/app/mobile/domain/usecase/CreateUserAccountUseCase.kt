@@ -7,6 +7,6 @@ import kotlinx.coroutines.withContext
 class CreateUserAccountUseCase(private val dispatcher: CoroutineDispatcher) {
 
     suspend operator fun invoke() = withContext(dispatcher) {
-        RegistrationModel("", "", "", "")
+        RegistrationModel("", "", "")
     }
 }

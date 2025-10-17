@@ -73,6 +73,7 @@ class RegistrationViewModel(
                     currentState.registrationModelUi
                         .toDomain()
                 ).toUiModel()
+
                 when (response) {
                     is RegistrationResultUi.Success -> {
                         _navigationEvent.value = RegistrationNavigationEvent.NavigateToConfirmation(

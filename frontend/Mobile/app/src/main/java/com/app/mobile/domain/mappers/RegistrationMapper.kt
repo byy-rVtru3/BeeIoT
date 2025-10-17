@@ -13,7 +13,6 @@ fun RegistrationModel.toApiModel() =
     )
 
 fun RegistrationModel.toUiModel(repeatPassword: String = "") = RegistrationModelUi(
-    userId = userId,
     email = email,
     name = name,
     password = password,
