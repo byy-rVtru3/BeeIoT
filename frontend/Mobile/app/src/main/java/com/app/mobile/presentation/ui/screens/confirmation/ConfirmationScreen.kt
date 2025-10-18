@@ -1,15 +1,13 @@
 package com.app.mobile.presentation.ui.screens.confirmation
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -18,6 +16,8 @@ import com.app.mobile.presentation.models.ConfirmationModelUi
 import com.app.mobile.presentation.ui.components.CustomTextField
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.PrimaryButton
+import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.screens.confirmation.models.ConfirmationActions
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationUiState
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationViewModel
@@ -55,10 +55,18 @@ ConfirmationActions) {
 
     Column(modifier = Modifier
         .fillMaxSize()
-        .padding(16.dp),
-        verticalArrangement = Arrangement.Center) {
+        .padding(36.dp, 56.dp),
+        horizontalAlignment = Alignment.CenterHorizontally) {
+        Title(
+            text = stringResource(R.string.confirm_registration_title),
+            style = androidx.compose.material3.MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
 
         CodeTextField(code = confirmationModelUi.code, onCodeChange = actions.onCodeChange)
+
+        Spacer(modifier = Modifier.weight(2f))
 
         CodeConfirmButton(onClick = actions.onConfirmClick)
     }
@@ -71,12 +79,9 @@ private fun CodeTextField(code: String, onCodeChange: (String) -> Unit) {
 
 @Composable
 private fun CodeConfirmButton(onClick: () -> Unit) {
-    Button(
+    PrimaryButton(
+        text = stringResource(R.string.confirm),
         onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(24.dp)
-    ) {
-        Text(text = stringResource(R.string.confirm))
-    }
+        modifier = Modifier.padding(20.dp)
+    )
 }
