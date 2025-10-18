@@ -1,16 +1,18 @@
 package com.app.mobile.presentation.ui.screens.registration
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -18,8 +20,10 @@ import com.app.mobile.R
 import com.app.mobile.presentation.models.RegistrationModelUi
 import com.app.mobile.presentation.navigation.RegistrationNavigationEvent
 import com.app.mobile.presentation.ui.components.CustomTextField
+import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.screens.registration.models.RegistrationActions
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationUiState
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationViewModel
@@ -27,9 +31,7 @@ import com.app.mobile.presentation.ui.screens.registration.viewmodel.Registratio
 @Composable
 fun RegistrationScreen(
     registrationViewModel: RegistrationViewModel,
-    onRegisterClick: (String, String) -> Unit,
-    modifier: Modifier = Modifier
-
+    onRegisterClick: (String, String) -> Unit
 ) {
     LaunchedEffect(key1 = Unit) {
         registrationViewModel.createUserAccount()
@@ -73,24 +75,54 @@ fun RegistrationScreen(
 
 @Composable
 fun RegistrationContent(registrationModelUi: RegistrationModelUi, actions: RegistrationActions) {
+    var passwordVisible by remember { mutableStateOf(false) }
+    var repeatPasswordVisible by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center
+            .padding(36.dp, 56.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        RegistrationNameTextField(registrationModelUi.name, actions.onNameChange)
-
-        RegistrationEmailTextField(registrationModelUi.email, actions.onEmailChange)
-
-        RegistrationPasswordTextField(registrationModelUi.password, actions.onPasswordChange)
-
-        RegistrationRepeatPasswordTextField(
-            registrationModelUi.repeatPassword,
-            actions.onRepeatPasswordChange
+        Title(
+            text = stringResource(R.string.registration_title)
         )
 
-        RegistrationButton(actions.onRegisterClick)
+        Spacer(modifier = Modifier.weight(1f))
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            RegistrationNameTextField(registrationModelUi.name, actions.onNameChange)
+
+            Spacer(modifier = Modifier.padding(12.dp))
+
+            RegistrationEmailTextField(registrationModelUi.email, actions.onEmailChange)
+
+            Spacer(modifier = Modifier.padding(12.dp))
+
+            RegistrationPasswordTextField(
+                password = registrationModelUi.password,
+                onPasswordChange = actions.onPasswordChange,
+                passwordVisible = passwordVisible,
+                onPasswordVisibilityToggle = { passwordVisible = !passwordVisible }
+            )
+
+            Spacer(modifier = Modifier.padding(12.dp))
+
+            RegistrationRepeatPasswordTextField(
+                repeatPassword = registrationModelUi.repeatPassword,
+                onRepeatPasswordChange = actions.onRepeatPasswordChange,
+                passwordVisible = repeatPasswordVisible,
+                onPasswordVisibilityToggle = { repeatPasswordVisible = !repeatPasswordVisible }
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(2f))
+
+        RegistrationButton(onClick = actions.onRegisterClick)
+
     }
 }
 
@@ -114,32 +146,44 @@ fun RegistrationNameTextField(
 }
 
 @Composable
-fun RegistrationPasswordTextField(password: String, onPasswordChange: (String) -> Unit) {
+fun RegistrationPasswordTextField(
+    password: String,
+    onPasswordChange: (String) -> Unit,
+    passwordVisible: Boolean,
+    onPasswordVisibilityToggle: () -> Unit
+) {
     CustomTextField(
-        password, onPasswordChange,
-        stringResource(R.string.password)
+        value = password,
+        onValueChange = onPasswordChange,
+        placeholder = stringResource(R.string.password),
+        isPassword = true,
+        passwordVisible = passwordVisible,
+        onPasswordVisibilityToggle = onPasswordVisibilityToggle
     )
 }
 
 @Composable
 fun RegistrationRepeatPasswordTextField(
     repeatPassword: String,
-    onRepeatPasswordChange: (String) -> Unit
+    onRepeatPasswordChange: (String) -> Unit,
+    passwordVisible: Boolean,
+    onPasswordVisibilityToggle: () -> Unit
 ) {
     CustomTextField(
-        repeatPassword, onRepeatPasswordChange,
-        stringResource(R.string.repeat_password)
+        value = repeatPassword,
+        onValueChange = onRepeatPasswordChange,
+        placeholder = stringResource(R.string.repeat_password),
+        isPassword = true,
+        passwordVisible = passwordVisible,
+        onPasswordVisibilityToggle = onPasswordVisibilityToggle
     )
 }
 
 @Composable
-fun RegistrationButton(onRegisterClick: () -> Unit) {
-    Button(
-        onClick = onRegisterClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(24.dp)
-    ) {
-        Text(text = stringResource(R.string.registration_button))
-    }
+fun RegistrationButton(onClick: () -> Unit) {
+    PrimaryButton(
+        text = stringResource(R.string.registration_button),
+        onClick = onClick,
+        modifier = Modifier.padding(20.dp)
+    )
 }
