@@ -1,7 +1,6 @@
 package com.app.mobile.presentation.ui.screens.registration
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -9,9 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -75,9 +71,6 @@ fun RegistrationScreen(
 
 @Composable
 fun RegistrationContent(registrationModelUi: RegistrationModelUi, actions: RegistrationActions) {
-    var passwordVisible by remember { mutableStateOf(false) }
-    var repeatPasswordVisible by remember { mutableStateOf(false) }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -85,41 +78,23 @@ fun RegistrationContent(registrationModelUi: RegistrationModelUi, actions: Regis
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Title(
-            text = stringResource(R.string.registration_title)
+            text = stringResource(R.string.registration_title),
+            modifier = Modifier.padding(bottom = 132.dp)
         )
 
-        Spacer(modifier = Modifier.weight(1f))
 
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 160.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             RegistrationNameTextField(registrationModelUi.name, actions.onNameChange)
 
-            Spacer(modifier = Modifier.padding(12.dp))
-
             RegistrationEmailTextField(registrationModelUi.email, actions.onEmailChange)
 
-            Spacer(modifier = Modifier.padding(12.dp))
+            RegistrationPasswordTextField(registrationModelUi.password, actions.onPasswordChange)
 
-            RegistrationPasswordTextField(
-                password = registrationModelUi.password,
-                onPasswordChange = actions.onPasswordChange,
-                passwordVisible = passwordVisible,
-                onPasswordVisibilityToggle = { passwordVisible = !passwordVisible }
-            )
-
-            Spacer(modifier = Modifier.padding(12.dp))
-
-            RegistrationRepeatPasswordTextField(
-                repeatPassword = registrationModelUi.repeatPassword,
-                onRepeatPasswordChange = actions.onRepeatPasswordChange,
-                passwordVisible = repeatPasswordVisible,
-                onPasswordVisibilityToggle = { repeatPasswordVisible = !repeatPasswordVisible }
-            )
+            RegistrationRepeatPasswordTextField(registrationModelUi.repeatPassword, actions.onRepeatPasswordChange)
         }
-
-        Spacer(modifier = Modifier.weight(2f))
 
         RegistrationButton(onClick = actions.onRegisterClick)
 
@@ -129,8 +104,10 @@ fun RegistrationContent(registrationModelUi: RegistrationModelUi, actions: Regis
 @Composable
 fun RegistrationEmailTextField(email: String, onEmailChange: (String) -> Unit) {
     CustomTextField(
-        email, onEmailChange,
-        stringResource(R.string.email)
+        value = email,
+        onValueChange = onEmailChange,
+        placeholder = stringResource(R.string.email),
+        modifier = Modifier.padding(bottom = 12.dp),
     )
 }
 
@@ -140,8 +117,10 @@ fun RegistrationNameTextField(
     onNameChange: (String) -> Unit
 ) {
     CustomTextField(
-        name, onNameChange,
-        stringResource(R.string.name)
+        value = name,
+        onValueChange = onNameChange,
+        modifier = Modifier.padding(bottom = 12.dp),
+        placeholder = stringResource(R.string.name)
     )
 }
 
@@ -149,33 +128,26 @@ fun RegistrationNameTextField(
 fun RegistrationPasswordTextField(
     password: String,
     onPasswordChange: (String) -> Unit,
-    passwordVisible: Boolean,
-    onPasswordVisibilityToggle: () -> Unit
 ) {
     CustomTextField(
         value = password,
         onValueChange = onPasswordChange,
         placeholder = stringResource(R.string.password),
         isPassword = true,
-        passwordVisible = passwordVisible,
-        onPasswordVisibilityToggle = onPasswordVisibilityToggle
+        modifier = Modifier.padding(bottom = 12.dp)
     )
 }
 
 @Composable
 fun RegistrationRepeatPasswordTextField(
     repeatPassword: String,
-    onRepeatPasswordChange: (String) -> Unit,
-    passwordVisible: Boolean,
-    onPasswordVisibilityToggle: () -> Unit
+    onRepeatPasswordChange: (String) -> Unit
 ) {
     CustomTextField(
         value = repeatPassword,
         onValueChange = onRepeatPasswordChange,
         placeholder = stringResource(R.string.repeat_password),
         isPassword = true,
-        passwordVisible = passwordVisible,
-        onPasswordVisibilityToggle = onPasswordVisibilityToggle
     )
 }
 
