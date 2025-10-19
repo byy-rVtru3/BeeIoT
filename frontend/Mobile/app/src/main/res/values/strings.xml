@@ -7,13 +7,15 @@
     <string name="registration_title">Регистрация</string>
     <string name="registration_button">Зарегистрироваться</string>
     <string name="confirm_registration_title">Подтверждение регистрации</string>
-
+    <string name="hide_password">Скрыть пароль</string>
+    <string name="show_password">Показать пароль</string>
+    <string name="resend_code">Отправить код повторно</string>
 
 
     <!-- Ошибки -->
     <string name="error_unknown">Неизвестная ошибка</string>
     <string name="error_dialog_title">Произошла ошибка</string>
     <string name="error_retry_button">Попробуйте еще раз</string>
-    <string name="enter_code">Код подверждения</string>
+        <string name="enter_code">Код подтверждения</string>
     <string name="confirm">Подтвердить</string>
 </resources>

@@ -1,8 +1,9 @@
 package com.app.mobile.presentation.ui.screens.confirmation
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -16,6 +17,7 @@ import com.app.mobile.presentation.models.ConfirmationModelUi
 import com.app.mobile.presentation.ui.components.CustomTextField
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.LabelButton
 import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.screens.confirmation.models.ConfirmationActions
@@ -59,14 +61,18 @@ ConfirmationActions) {
         horizontalAlignment = Alignment.CenterHorizontally) {
         Title(
             text = stringResource(R.string.confirm_registration_title),
-            style = androidx.compose.material3.MaterialTheme.typography.titleMedium
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 206.dp)
         )
 
-        Spacer(modifier = Modifier.weight(1f))
 
-        CodeTextField(code = confirmationModelUi.code, onCodeChange = actions.onCodeChange)
+        Column(
+            horizontalAlignment = Alignment.End,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 184.dp),) {
+            CodeTextField(code = confirmationModelUi.code, onCodeChange = actions.onCodeChange)
+            CodeResendButton(onClick = actions.onResendCodeClick)
+        }
 
-        Spacer(modifier = Modifier.weight(2f))
 
         CodeConfirmButton(onClick = actions.onConfirmClick)
     }
@@ -83,5 +89,15 @@ private fun CodeConfirmButton(onClick: () -> Unit) {
         text = stringResource(R.string.confirm),
         onClick = onClick,
         modifier = Modifier.padding(20.dp)
+    )
+}
+
+
+@Composable
+private fun CodeResendButton(onClick: () -> Unit) {
+    LabelButton(
+        text = stringResource(R.string.resend_code),
+        onClick = onClick,
+        modifier = Modifier.padding(4.dp,16.dp)
     )
 }

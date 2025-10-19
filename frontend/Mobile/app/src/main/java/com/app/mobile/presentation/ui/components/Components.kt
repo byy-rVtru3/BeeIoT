@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,9 +18,12 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -31,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.app.mobile.R
 
@@ -72,10 +77,9 @@ fun CustomTextField(
     placeholder: String,
     modifier: Modifier = Modifier,
     isError: Boolean = false,
-    isPassword: Boolean = false,
-    passwordVisible: Boolean = false,
-    onPasswordVisibilityToggle: (() -> Unit)? = null
+    isPassword: Boolean = false
 ) {
+    var passwordVisible by remember { mutableStateOf(false) }
     val borderColor = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline
 
     BasicTextField(
@@ -104,38 +108,74 @@ fun CustomTextField(
             VisualTransformation.None
         },
         decorationBox = { innerTextField ->
-            androidx.compose.foundation.layout.Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.Bottom
-            ) {
-                Box(modifier = Modifier.weight(1f)) {
-                    if (value.isEmpty()) {
-                        Text(
-                            text = placeholder,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                        )
-                    }
-                    innerTextField()
-                }
-
-                if (isPassword && onPasswordVisibilityToggle != null) {
-                    Icon(
-                        painter = painterResource(
-                            id = if (passwordVisible) R.drawable.ic_eye_open else R.drawable.ic_eye_closed
-                        ),
-                        contentDescription = if (passwordVisible) "Скрыть пароль" else "Показать пароль",
-                        modifier = Modifier
-                            .padding(start = 8.dp, bottom = 2.dp)
-                            .clickable { onPasswordVisibilityToggle() },
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-            }
+            TextFieldDecorationBox(
+                innerTextField = innerTextField,
+                value = value,
+                placeholder = placeholder,
+                isPassword = isPassword,
+                passwordVisible = passwordVisible,
+                onPasswordVisibilityToggle = { passwordVisible = !passwordVisible }
+            )
         }
     )
+}
+
+@Composable
+private fun TextFieldDecorationBox(
+    innerTextField: @Composable () -> Unit,
+    value: String,
+    placeholder: String,
+    isPassword: Boolean,
+    passwordVisible: Boolean,
+    onPasswordVisibilityToggle: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.Bottom
+    ) {
+        Box(modifier = Modifier.weight(1f)) {
+            if (value.isEmpty()) {
+                Text(
+                    text = placeholder,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
+            }
+            innerTextField()
+        }
+
+        PasswordVisibilityToggle(
+            isPassword = isPassword,
+            passwordVisible = passwordVisible,
+            onToggle = onPasswordVisibilityToggle
+        )
+    }
+}
+
+@Composable
+private fun PasswordVisibilityToggle(
+    isPassword: Boolean,
+    passwordVisible: Boolean,
+    onToggle: () -> Unit
+) {
+    if (isPassword) {
+        Icon(
+            painter = painterResource(
+                id = if (passwordVisible) R.drawable.ic_eye_open else R.drawable.ic_eye_closed
+            ),
+            contentDescription = if (passwordVisible) {
+                stringResource(R.string.hide_password)
+            } else {
+                stringResource(R.string.show_password)
+            },
+            modifier = Modifier
+                .padding(start = 8.dp, bottom = 2.dp)
+                .clickable { onToggle() },
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        )
+    }
 }
 
 @Composable
@@ -164,7 +204,7 @@ fun PrimaryButton(
         modifier = modifier
             .fillMaxWidth()
             .scale(scale),
-        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+        colors = buttonColors(
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ),
@@ -179,12 +219,47 @@ fun PrimaryButton(
     }
 }
 
+@Composable
+fun LabelButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.92f else 1f,
+        animationSpec = tween(durationMillis = 100),
+        label = "label_button_scale"
+    )
+
+    val alpha by animateFloatAsState(
+        targetValue = if (isPressed) 0.6f else 1f,
+        animationSpec = tween(durationMillis = 100),
+        label = "label_button_alpha"
+    )
+
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = alpha),
+        modifier = modifier
+            .scale(scale)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
+    )
+}
+
 
 @Composable
 fun Title(
     text: String,
     modifier: Modifier = Modifier,
-    style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.titleLarge
+    style: TextStyle = MaterialTheme.typography.titleLarge
 ) {
     Text(
         text = text,
