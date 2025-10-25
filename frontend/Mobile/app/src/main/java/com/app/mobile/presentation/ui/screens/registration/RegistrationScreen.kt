@@ -1,5 +1,6 @@
 package com.app.mobile.presentation.ui.screens.registration
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +20,7 @@ import com.app.mobile.presentation.ui.components.CustomTextField
 import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.PasswordTextField
 import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.screens.registration.models.RegistrationActions
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationUiState
@@ -75,17 +77,19 @@ fun RegistrationContent(registrationModelUi: RegistrationModelUi, actions: Regis
         modifier = Modifier
             .fillMaxSize()
             .padding(36.dp, 56.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween,
     ) {
         Title(
             text = stringResource(R.string.registration_title),
-            modifier = Modifier.padding(bottom = 132.dp)
+            modifier = Modifier.padding(top = 52.dp)
         )
 
 
         Column(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 160.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             RegistrationNameTextField(registrationModelUi.name, actions.onNameChange)
 
@@ -107,7 +111,6 @@ fun RegistrationEmailTextField(email: String, onEmailChange: (String) -> Unit) {
         value = email,
         onValueChange = onEmailChange,
         placeholder = stringResource(R.string.email),
-        modifier = Modifier.padding(bottom = 12.dp),
     )
 }
 
@@ -119,7 +122,6 @@ fun RegistrationNameTextField(
     CustomTextField(
         value = name,
         onValueChange = onNameChange,
-        modifier = Modifier.padding(bottom = 12.dp),
         placeholder = stringResource(R.string.name)
     )
 }
@@ -129,12 +131,10 @@ fun RegistrationPasswordTextField(
     password: String,
     onPasswordChange: (String) -> Unit,
 ) {
-    CustomTextField(
+    PasswordTextField(
         value = password,
         onValueChange = onPasswordChange,
         placeholder = stringResource(R.string.password),
-        isPassword = true,
-        modifier = Modifier.padding(bottom = 12.dp)
     )
 }
 
@@ -143,11 +143,10 @@ fun RegistrationRepeatPasswordTextField(
     repeatPassword: String,
     onRepeatPasswordChange: (String) -> Unit
 ) {
-    CustomTextField(
+    PasswordTextField(
         value = repeatPassword,
         onValueChange = onRepeatPasswordChange,
         placeholder = stringResource(R.string.repeat_password),
-        isPassword = true,
     )
 }
 
