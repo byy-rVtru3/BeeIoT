@@ -1,5 +1,6 @@
 package com.app.mobile.presentation.ui.screens.confirmation
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -58,17 +59,19 @@ ConfirmationActions) {
     Column(modifier = Modifier
         .fillMaxSize()
         .padding(36.dp, 56.dp),
-        horizontalAlignment = Alignment.CenterHorizontally) {
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween,) {
         Title(
             text = stringResource(R.string.confirm_registration_title),
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 206.dp)
+            modifier = Modifier.padding(top = 52.dp)
         )
 
 
         Column(
             horizontalAlignment = Alignment.End,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 184.dp),) {
+            modifier = Modifier.fillMaxWidth(),
+            ) {
             CodeTextField(code = confirmationModelUi.code, onCodeChange = actions.onCodeChange)
             CodeResendButton(onClick = actions.onResendCodeClick)
         }
