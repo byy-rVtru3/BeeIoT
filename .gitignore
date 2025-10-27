@@ -1,6 +1,5 @@
 # --- Go (backend) ---
 backend/bin/
-backend/build/
 
 # Binaries
 *.exe
