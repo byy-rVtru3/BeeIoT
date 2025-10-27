@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"BeeIoT/backend/internal/domain/types/http"
+	"BeeIOT/internal/domain/types/http"
 	"context"
 )
 
