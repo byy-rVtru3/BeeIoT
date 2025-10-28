@@ -15,7 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.app.mobile.R
 import com.app.mobile.presentation.models.ConfirmationModelUi
-import com.app.mobile.presentation.ui.components.CustomTextField
+import com.app.mobile.presentation.ui.components.ValidatedTextField
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.LabelButton
@@ -24,6 +24,7 @@ import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.screens.confirmation.models.ConfirmationActions
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationUiState
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationViewModel
+import com.app.mobile.presentation.validators.ValidationError
 
 @Composable
 fun ConfirmationScreen(confirmationViewModel: ConfirmationViewModel, email: String, type: String) {
@@ -72,7 +73,11 @@ ConfirmationActions) {
             horizontalAlignment = Alignment.End,
             modifier = Modifier.fillMaxWidth(),
             ) {
-            CodeTextField(code = confirmationModelUi.code, onCodeChange = actions.onCodeChange)
+            CodeTextField(
+                code = confirmationModelUi.code,
+                codeError = confirmationModelUi.codeError,
+                onCodeChange = actions.onCodeChange
+            )
             CodeResendButton(onClick = actions.onResendCodeClick)
         }
 
@@ -82,8 +87,17 @@ ConfirmationActions) {
 }
 
 @Composable
-private fun CodeTextField(code: String, onCodeChange: (String) -> Unit) {
-    CustomTextField(code, onValueChange = onCodeChange, stringResource(R.string.enter_code))
+private fun CodeTextField(
+    code: String,
+    codeError: ValidationError?,
+    onCodeChange: (String) -> Unit
+) {
+    ValidatedTextField(
+        value = code,
+        onValueChange = onCodeChange,
+        placeholder = stringResource(R.string.enter_code),
+        error = codeError
+    )
 }
 
 @Composable
