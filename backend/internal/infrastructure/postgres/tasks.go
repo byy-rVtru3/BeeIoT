@@ -1,12 +1,12 @@
 package postgres
 
 import (
-	"BeeIOT/internal/domain/types/http"
+	"BeeIOT/internal/domain/types/httpType"
 	"context"
 	"time"
 )
 
-func (db *Postgres) NewTask(ctx context.Context, task http.Task) error {
+func (db *Postgres) NewTask(ctx context.Context, task httpType.Task) error {
 	text := `INSERT INTO tasks (user_id, hive_id, tasks_id, time) 
 			 VALUES (
 				(SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2),
@@ -18,7 +18,7 @@ func (db *Postgres) NewTask(ctx context.Context, task http.Task) error {
 	return err
 }
 
-func (db *Postgres) DeleteTask(ctx context.Context, task http.Task) error {
+func (db *Postgres) DeleteTask(ctx context.Context, task httpType.Task) error {
 	text := `DELETE FROM tasks
 			 WHERE task_id = (
 				 SELECT t.task_id FROM tasks t
@@ -32,7 +32,7 @@ func (db *Postgres) DeleteTask(ctx context.Context, task http.Task) error {
 	return err
 }
 
-func (db *Postgres) GetTasksByUserID(ctx context.Context, task http.Task) ([]http.Task, error) {
+func (db *Postgres) GetTasksByUserID(ctx context.Context, task httpType.Task) ([]httpType.Task, error) {
 	text := `SELECT t.task_id, nt.name, t.time, u.email, h.name
 			 FROM tasks t
 			 JOIN hive h ON t.hive_id = h.hive_id
@@ -45,9 +45,9 @@ func (db *Postgres) GetTasksByUserID(ctx context.Context, task http.Task) ([]htt
 	}
 	defer rows.Close()
 
-	var tasks []http.Task
+	var tasks []httpType.Task
 	for rows.Next() {
-		var taskResult http.Task
+		var taskResult httpType.Task
 		var taskID int
 		var taskTime int64
 		err := rows.Scan(&taskID, &taskResult.Name, &taskTime, &taskResult.Email, &taskResult.Hive)
@@ -62,7 +62,7 @@ func (db *Postgres) GetTasksByUserID(ctx context.Context, task http.Task) ([]htt
 	return tasks, nil
 }
 
-func (db *Postgres) GetTasksByHiveID(ctx context.Context, task http.Task) ([]http.Task, error) {
+func (db *Postgres) GetTasksByHiveID(ctx context.Context, task httpType.Task) ([]httpType.Task, error) {
 	text := `SELECT t.task_id, nt.name, t.time, u.email, h.name
 			 FROM tasks t
 			 JOIN hive h ON t.hive_id = h.hive_id
@@ -75,9 +75,9 @@ func (db *Postgres) GetTasksByHiveID(ctx context.Context, task http.Task) ([]htt
 	}
 	defer rows.Close()
 
-	var tasks []http.Task
+	var tasks []httpType.Task
 	for rows.Next() {
-		var taskResult http.Task
+		var taskResult httpType.Task
 		var taskID int
 		var taskTime int64
 		err := rows.Scan(&taskID, &taskResult.Name, &taskTime, &taskResult.Email, &taskResult.Hive)
@@ -92,7 +92,7 @@ func (db *Postgres) GetTasksByHiveID(ctx context.Context, task http.Task) ([]htt
 	return tasks, nil
 }
 
-func (db *Postgres) getTasksSinceTime(ctx context.Context, task http.Task, sinceTime time.Time) ([]http.Task, error) {
+func (db *Postgres) getTasksSinceTime(ctx context.Context, task httpType.Task, sinceTime time.Time) ([]httpType.Task, error) {
 	text := `SELECT t.task_id, nt.name, t.time, u.email, h.name
 			 FROM tasks t
 			 JOIN hive h ON t.hive_id = h.hive_id
@@ -109,9 +109,9 @@ func (db *Postgres) getTasksSinceTime(ctx context.Context, task http.Task, since
 	}
 	defer rows.Close()
 
-	var tasks []http.Task
+	var tasks []httpType.Task
 	for rows.Next() {
-		var taskResult http.Task
+		var taskResult httpType.Task
 		var taskID int
 		var taskTime int64
 		err := rows.Scan(&taskID, &taskResult.Name, &taskTime, &taskResult.Email, &taskResult.Hive)
@@ -126,17 +126,17 @@ func (db *Postgres) getTasksSinceTime(ctx context.Context, task http.Task, since
 	return tasks, nil
 }
 
-func (db *Postgres) GetTaskForDay(ctx context.Context, task http.Task) ([]http.Task, error) {
+func (db *Postgres) GetTaskForDay(ctx context.Context, task httpType.Task) ([]httpType.Task, error) {
 	dayAgo := time.Now().Add(-24 * time.Hour)
 	return db.getTasksSinceTime(ctx, task, dayAgo)
 }
 
-func (db *Postgres) GetTaskForWeek(ctx context.Context, task http.Task) ([]http.Task, error) {
+func (db *Postgres) GetTaskForWeek(ctx context.Context, task httpType.Task) ([]httpType.Task, error) {
 	weekAgo := time.Now().Add(-7 * 24 * time.Hour)
 	return db.getTasksSinceTime(ctx, task, weekAgo)
 }
 
-func (db *Postgres) GetTaskForMonth(ctx context.Context, task http.Task) ([]http.Task, error) {
+func (db *Postgres) GetTaskForMonth(ctx context.Context, task httpType.Task) ([]httpType.Task, error) {
 	monthAgo := time.Now().Add(-30 * 24 * time.Hour)
 	return db.getTasksSinceTime(ctx, task, monthAgo)
 }
