@@ -2,6 +2,7 @@ package com.app.mobile.presentation.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -26,6 +27,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.app.mobile.R
+import com.app.mobile.presentation.validators.ValidationError
+import com.app.mobile.presentation.validators.toErrorMessage
 
 @Composable
 fun CustomTextField(
@@ -94,21 +97,52 @@ fun CustomTextField(
 }
 
 @Composable
+fun ValidatedTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    error: ValidationError? = null,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    trailingIcon: @Composable (() -> Unit)? = null
+) {
+    Column(modifier = modifier) {
+        CustomTextField(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = placeholder,
+            isError = error != null,
+            visualTransformation = visualTransformation,
+            trailingIcon = trailingIcon
+        )
+
+        error?.let { validationError ->
+            Text(
+                text = validationError.toErrorMessage(),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+            )
+        }
+    }
+}
+
+@Composable
 fun PasswordTextField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
-    isError: Boolean = false
+    error: ValidationError? = null
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
 
-    CustomTextField(
+    ValidatedTextField(
         value = value,
         onValueChange = onValueChange,
         placeholder = placeholder,
         modifier = modifier,
-        isError = isError,
+        error = error,
         visualTransformation = if (passwordVisible) {
             VisualTransformation.None
         } else {
@@ -132,4 +166,3 @@ fun PasswordTextField(
         }
     )
 }
-

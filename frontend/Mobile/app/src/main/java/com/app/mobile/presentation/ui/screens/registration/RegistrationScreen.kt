@@ -16,15 +16,16 @@ import androidx.compose.ui.unit.dp
 import com.app.mobile.R
 import com.app.mobile.presentation.models.RegistrationModelUi
 import com.app.mobile.presentation.navigation.RegistrationNavigationEvent
-import com.app.mobile.presentation.ui.components.CustomTextField
+import com.app.mobile.presentation.ui.components.PasswordTextField
+import com.app.mobile.presentation.ui.components.ValidatedTextField
 import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
-import com.app.mobile.presentation.ui.components.PasswordTextField
 import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.screens.registration.models.RegistrationActions
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationUiState
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationViewModel
+import com.app.mobile.presentation.validators.ValidationError
 
 @Composable
 fun RegistrationScreen(
@@ -85,68 +86,93 @@ fun RegistrationContent(registrationModelUi: RegistrationModelUi, actions: Regis
             modifier = Modifier.padding(top = 52.dp)
         )
 
-
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            RegistrationNameTextField(registrationModelUi.name, actions.onNameChange)
+            RegistrationNameTextField(
+                name = registrationModelUi.name,
+                nameError = registrationModelUi.nameError,
+                onNameChange = actions.onNameChange
+            )
 
-            RegistrationEmailTextField(registrationModelUi.email, actions.onEmailChange)
+            RegistrationEmailTextField(
+                email = registrationModelUi.email,
+                emailError = registrationModelUi.emailError,
+                onEmailChange = actions.onEmailChange
+            )
 
-            RegistrationPasswordTextField(registrationModelUi.password, actions.onPasswordChange)
+            RegistrationPasswordTextField(
+                password = registrationModelUi.password,
+                passwordError = registrationModelUi.passwordError,
+                onPasswordChange = actions.onPasswordChange
+            )
 
-            RegistrationRepeatPasswordTextField(registrationModelUi.repeatPassword, actions.onRepeatPasswordChange)
+            RegistrationRepeatPasswordTextField(
+                repeatPassword = registrationModelUi.repeatPassword,
+                repeatPasswordError = registrationModelUi.repeatPasswordError,
+                onRepeatPasswordChange = actions.onRepeatPasswordChange
+            )
         }
 
         RegistrationButton(onClick = actions.onRegisterClick)
-
     }
-}
-
-@Composable
-fun RegistrationEmailTextField(email: String, onEmailChange: (String) -> Unit) {
-    CustomTextField(
-        value = email,
-        onValueChange = onEmailChange,
-        placeholder = stringResource(R.string.email),
-    )
 }
 
 @Composable
 fun RegistrationNameTextField(
     name: String,
+    nameError: ValidationError?,
     onNameChange: (String) -> Unit
 ) {
-    CustomTextField(
+    ValidatedTextField(
         value = name,
         onValueChange = onNameChange,
-        placeholder = stringResource(R.string.name)
+        placeholder = stringResource(R.string.name),
+        error = nameError
+    )
+}
+
+@Composable
+fun RegistrationEmailTextField(
+    email: String,
+    emailError: ValidationError?,
+    onEmailChange: (String) -> Unit
+) {
+    ValidatedTextField(
+        value = email,
+        onValueChange = onEmailChange,
+        placeholder = stringResource(R.string.email),
+        error = emailError
     )
 }
 
 @Composable
 fun RegistrationPasswordTextField(
     password: String,
-    onPasswordChange: (String) -> Unit,
+    passwordError: ValidationError?,
+    onPasswordChange: (String) -> Unit
 ) {
     PasswordTextField(
         value = password,
         onValueChange = onPasswordChange,
         placeholder = stringResource(R.string.password),
+        error = passwordError
     )
 }
 
 @Composable
 fun RegistrationRepeatPasswordTextField(
     repeatPassword: String,
+    repeatPasswordError: ValidationError?,
     onRepeatPasswordChange: (String) -> Unit
 ) {
     PasswordTextField(
         value = repeatPassword,
         onValueChange = onRepeatPasswordChange,
         placeholder = stringResource(R.string.repeat_password),
+        error = repeatPasswordError
     )
 }
 
