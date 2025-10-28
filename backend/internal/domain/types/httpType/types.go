@@ -1,4 +1,4 @@
-package http
+package httpType
 
 type Hive struct {
 	NameHive string `json:"name"`
@@ -22,6 +22,11 @@ type Registration struct {
 type Login struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type Confirm struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
 }
 
 type ChangePassword struct {

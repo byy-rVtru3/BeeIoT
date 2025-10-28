@@ -1,12 +1,12 @@
 package postgres
 
 import (
-	"BeeIOT/internal/domain/types/http"
+	"BeeIOT/internal/domain/types/httpType"
 	"context"
 	"time"
 )
 
-func (db *Postgres) NewNoiseLevel(ctx context.Context, noise http.NoiseLevel) error {
+func (db *Postgres) NewNoiseLevel(ctx context.Context, noise httpType.NoiseLevel) error {
 	text := `INSERT INTO noise_hive (user_id, hive_id, level, time) 
 			 VALUES (
 				(SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2),
@@ -17,7 +17,7 @@ func (db *Postgres) NewNoiseLevel(ctx context.Context, noise http.NoiseLevel) er
 	return err
 }
 
-func (db *Postgres) DeleteNoiseLevel(ctx context.Context, noise http.NoiseLevel) error {
+func (db *Postgres) DeleteNoiseLevel(ctx context.Context, noise httpType.NoiseLevel) error {
 	text := `DELETE FROM noise_hive 
 			 WHERE user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2)
 			 AND hive_id = (SELECT id FROM hives WHERE name = $3 AND user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2))
@@ -26,7 +26,7 @@ func (db *Postgres) DeleteNoiseLevel(ctx context.Context, noise http.NoiseLevel)
 	return err
 }
 
-func (db *Postgres) getNoiseLevelsSinceTime(ctx context.Context, hive http.Hive, time time.Time) ([]http.NoiseLevel, error) {
+func (db *Postgres) getNoiseLevelsSinceTime(ctx context.Context, hive httpType.Hive, time time.Time) ([]httpType.NoiseLevel, error) {
 	text := `SELECT level, time FROM noise_hive 
 			 WHERE user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2)
 			 AND hive_id = (SELECT id FROM hives WHERE name = $3 AND user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2))
@@ -36,9 +36,9 @@ func (db *Postgres) getNoiseLevelsSinceTime(ctx context.Context, hive http.Hive,
 		return nil, err
 	}
 	defer rows.Close()
-	var noiseLevels []http.NoiseLevel
+	var noiseLevels []httpType.NoiseLevel
 	for rows.Next() {
-		var noise http.NoiseLevel
+		var noise httpType.NoiseLevel
 		err := rows.Scan(&noise.Level, &noise.Time)
 		if err != nil {
 			return nil, err
@@ -48,17 +48,17 @@ func (db *Postgres) getNoiseLevelsSinceTime(ctx context.Context, hive http.Hive,
 	return noiseLevels, nil
 }
 
-func (db *Postgres) GetNoiseLevelForDay(ctx context.Context, hive http.Hive) ([]http.NoiseLevel, error) {
+func (db *Postgres) GetNoiseLevelForDay(ctx context.Context, hive httpType.Hive) ([]httpType.NoiseLevel, error) {
 	dayAgo := time.Now().Add(-24 * time.Hour)
 	return db.getNoiseLevelsSinceTime(ctx, hive, dayAgo)
 }
 
-func (db *Postgres) GetNoiseLevelForWeek(ctx context.Context, hive http.Hive) ([]http.NoiseLevel, error) {
+func (db *Postgres) GetNoiseLevelForWeek(ctx context.Context, hive httpType.Hive) ([]httpType.NoiseLevel, error) {
 	weekAgo := time.Now().Add(-7 * 24 * time.Hour)
 	return db.getNoiseLevelsSinceTime(ctx, hive, weekAgo)
 }
 
-func (db *Postgres) GetNoiseLevelForMonth(ctx context.Context, hive http.Hive) ([]http.NoiseLevel, error) {
+func (db *Postgres) GetNoiseLevelForMonth(ctx context.Context, hive httpType.Hive) ([]httpType.NoiseLevel, error) {
 	monthAgo := time.Now().Add(-30 * 24 * time.Hour)
 	return db.getNoiseLevelsSinceTime(ctx, hive, monthAgo)
 }

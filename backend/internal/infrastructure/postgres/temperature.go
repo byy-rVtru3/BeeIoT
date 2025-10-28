@@ -1,12 +1,12 @@
 package postgres
 
 import (
-	"BeeIOT/internal/domain/types/http"
+	"BeeIOT/internal/domain/types/httpType"
 	"context"
 	"time"
 )
 
-func (db *Postgres) NewTemperature(ctx context.Context, temp http.Temperature) error {
+func (db *Postgres) NewTemperature(ctx context.Context, temp httpType.Temperature) error {
 	text := `INSERT INTO temperature_hive (user_id, hive_id, temperature, time) 
 			 VALUES (
 				(SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2),
@@ -17,7 +17,7 @@ func (db *Postgres) NewTemperature(ctx context.Context, temp http.Temperature) e
 	return err
 }
 
-func (db *Postgres) DeleteTemperature(ctx context.Context, temp http.Temperature) error {
+func (db *Postgres) DeleteTemperature(ctx context.Context, temp httpType.Temperature) error {
 	text := `DELETE FROM temperature_hive 
 			 WHERE user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2)
 			 AND hive_id = (SELECT id FROM hives WHERE name = $3 AND user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2))
@@ -26,7 +26,7 @@ func (db *Postgres) DeleteTemperature(ctx context.Context, temp http.Temperature
 	return err
 }
 
-func (db *Postgres) getTemperaturesSinceTime(ctx context.Context, hive http.Hive, time time.Time) ([]http.Temperature, error) {
+func (db *Postgres) getTemperaturesSinceTime(ctx context.Context, hive httpType.Hive, time time.Time) ([]httpType.Temperature, error) {
 	text := `SELECT temperature, time FROM temperature_hive 
 			 WHERE user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2)
 			 AND hive_id = (SELECT id FROM hives WHERE name = $3 AND user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2))
@@ -36,9 +36,9 @@ func (db *Postgres) getTemperaturesSinceTime(ctx context.Context, hive http.Hive
 		return nil, err
 	}
 	defer rows.Close()
-	var temperatures []http.Temperature
+	var temperatures []httpType.Temperature
 	for rows.Next() {
-		var temp http.Temperature
+		var temp httpType.Temperature
 		err := rows.Scan(&temp.Temperature, &temp.Time)
 		if err != nil {
 			return nil, err
@@ -48,17 +48,17 @@ func (db *Postgres) getTemperaturesSinceTime(ctx context.Context, hive http.Hive
 	return temperatures, nil
 }
 
-func (db *Postgres) GetTemperatureForDay(ctx context.Context, hive http.Hive) ([]http.Temperature, error) {
+func (db *Postgres) GetTemperatureForDay(ctx context.Context, hive httpType.Hive) ([]httpType.Temperature, error) {
 	dayAgo := time.Now().Add(-24 * time.Hour)
 	return db.getTemperaturesSinceTime(ctx, hive, dayAgo)
 }
 
-func (db *Postgres) GetTemperatureForWeek(ctx context.Context, hive http.Hive) ([]http.Temperature, error) {
+func (db *Postgres) GetTemperatureForWeek(ctx context.Context, hive httpType.Hive) ([]httpType.Temperature, error) {
 	weekAgo := time.Now().Add(-7 * 24 * time.Hour)
 	return db.getTemperaturesSinceTime(ctx, hive, weekAgo)
 }
 
-func (db *Postgres) GetTemperatureForMonth(ctx context.Context, hive http.Hive) ([]http.Temperature, error) {
+func (db *Postgres) GetTemperatureForMonth(ctx context.Context, hive httpType.Hive) ([]httpType.Temperature, error) {
 	monthAgo := time.Now().Add(-30 * 24 * time.Hour)
 	return db.getTemperaturesSinceTime(ctx, hive, monthAgo)
 }
