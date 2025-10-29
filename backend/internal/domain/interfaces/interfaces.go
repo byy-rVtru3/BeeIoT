@@ -13,7 +13,7 @@ type ConfirmSender interface {
 type DB interface {
 	Registration(ctx context.Context, registration httpType.Registration) error
 	IsExistUser(ctx context.Context, email string) (bool, error)
-	Login(ctx context.Context, login httpType.Login) (string, bool, error)
+	Login(ctx context.Context, login httpType.Login) (bool, error)
 	ChangePassword(ctx context.Context, user httpType.ChangePassword) error
 	DeleteUser(ctx context.Context, email string) error
 }

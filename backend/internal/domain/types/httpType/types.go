@@ -25,8 +25,9 @@ type Login struct {
 }
 
 type Confirm struct {
-	Email string `json:"email"`
-	Code  string `json:"code"`
+	Email    string `json:"email"`
+	Code     string `json:"code"`
+	Password string `json:"password"`
 }
 
 type ChangePassword struct {
