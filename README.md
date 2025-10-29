@@ -22,6 +22,6 @@
 - 🎯 **Vision** (видение проекта):
   https://docs.google.com/document/d/1E6JWQt-eEOeX0CoDFyc3pHSL-0Htkao_hHzbLtlq5SY/edit?usp=sharing
 - 📊 **Presentation** (презентация):
-  https://docs.google.com/presentation/d/1iWbl4t4Q8R5ihcRA81mtulhpezzcMur1e38t3Apwvfc/edit?usp=sharing
+  https://docs.google.com/presentation/d/1yrYslXZLUU_pNW3oEP3yG8VLHuOIWepEDGlEcQZQyHI/edit?usp=sharing
 
 ---
