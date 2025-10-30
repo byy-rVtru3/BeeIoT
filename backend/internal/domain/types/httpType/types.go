@@ -35,6 +35,9 @@ type ChangePassword struct {
 	Password string `json:"password"`
 }
 
+type NotificationData struct {
+}
+
 // Таблица 1 - уровень шума
 type NoiseLevel struct {
 	Level int    `json:"level"`

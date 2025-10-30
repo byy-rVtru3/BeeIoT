@@ -1,8 +1,11 @@
 package http
 
 import (
+	"BeeIOT/internal/domain/interfaces"
+	"BeeIOT/internal/http/handlers"
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,13 +16,23 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func StartServer() {
+func StartServer(db interfaces.DB, sender interfaces.ConfirmSender) {
 	r := chi.NewRouter()
+	h, err := handlers.NewHandler(db, sender)
+	if err != nil {
+		slog.Error("Failed to create handler", err)
+		return
+	}
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(middleware.Timeout(5 * time.Second))
 
-	// handlers
+	r.Post("/api/auth/registration", h.Registration)
+	r.Post("api/auth/confirm/registration", h.ConfirmRegistration)
+	r.Post("/api/auth/confirm/password", h.ConfirmChangePassword)
+	r.Post("/api/auth/login", h.Login)
+	r.Get("/api/auth/exist", h.ExistUser)
 
 	srv := &http.Server{
 		Addr:    ":8080",

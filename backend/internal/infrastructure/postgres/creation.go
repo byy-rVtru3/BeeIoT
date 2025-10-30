@@ -33,16 +33,17 @@ func (db *Postgres) createConnectPath() (string, error) {
 	return dbURL, nil
 }
 
-func (db *Postgres) NewDB() error {
+func NewDB() (*Postgres, error) {
+	db := &Postgres{}
 	path, err := db.createConnectPath()
 	if err != nil {
-		return err
+		return db, err
 	}
 	db.conn, err = pgx.Connect(context.Background(), path)
 	if err != nil {
-		return err
+		return db, err
 	}
-	return nil
+	return db, nil
 }
 
 func (db *Postgres) CloseDB() error {

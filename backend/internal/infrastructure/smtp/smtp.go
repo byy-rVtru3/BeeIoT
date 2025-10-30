@@ -13,21 +13,22 @@ type SMTP struct {
 	smtpAddress                            string
 }
 
-func (smtp *SMTP) New() error {
+func NewSMTP() (*SMTP, error) {
 	data := make([]string, 4)
 	for i, elem := range []string{"SMTP_USER", "SMTP_PASS", "SMTP_HOST", "SMTP_PORT"} {
 		value, ok := os.LookupEnv(elem)
 		if !ok {
-			return errors.New("environment variable " + elem + " not set")
+			return &SMTP{}, errors.New("environment variable " + elem + " not set")
 		}
 		data[i] = value
 	}
-	smtp.smtpAddress = data[2] + ":" + data[3]
-	smtp.smtpUser = data[0]
-	smtp.smtpPass = data[1]
-	smtp.smtpHost = data[2]
-	smtp.smtpPort = data[3]
-	return nil
+	return &SMTP{
+		smtpUser:    data[0],
+		smtpPass:    data[1],
+		smtpHost:    data[2],
+		smtpPort:    data[3],
+		smtpAddress: data[2] + ":" + data[3],
+	}, nil
 }
 
 func (smtp *SMTP) SendConfirmationCode(toEmail, code string) error {

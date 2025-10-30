@@ -7,7 +7,6 @@ import (
 
 type ConfirmSender interface {
 	SendConfirmationCode(toEmail, code string) error
-	New() error
 }
 
 type DB interface {
@@ -16,4 +15,9 @@ type DB interface {
 	Login(ctx context.Context, login httpType.Login) (bool, error)
 	ChangePassword(ctx context.Context, user httpType.ChangePassword) error
 	DeleteUser(ctx context.Context, email string) error
+}
+
+type NotificationDB interface {
+	Add(ctx context.Context, email string, data httpType.NotificationData) error
+	Get(ctx context.Context, email string) ([]httpType.NotificationData, error)
 }
