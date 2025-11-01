@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "127.0.0.1:5432:5432"
@@ -31,6 +31,23 @@ services:
     ports:
       - "127.0.0.1:8080:8080"
 
+  redis:
+    image: redis:7-alpine
+    restart: always
+    container_name: redis_container
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - "127.0.0.1:6379:6379"
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   go-server:
     build:
       context: ..
@@ -47,8 +64,17 @@ services:
       PGUSER: ${DB_USER}
       PGPASSWORD: ${DB_PASSWORD}
       PGDATABASE: ${DB_NAME}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      JWT_SECRET: ${JWT_SECRET}
+      REDIS_ADDR: ${REDIS_ADDR}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB}
     depends_on:
       - db
+      - redis
     ports:
       - "127.0.0.1:8000:8000"
     networks:

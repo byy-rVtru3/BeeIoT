@@ -16,9 +16,9 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func StartServer(db interfaces.DB, sender interfaces.ConfirmSender) {
+func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb interfaces.InMemoryDB) {
 	r := chi.NewRouter()
-	h, err := handlers.NewHandler(db, sender)
+	h, err := handlers.NewHandler(db, sender, inMemDb)
 	if err != nil {
 		slog.Error("Failed to create handler", err)
 		return
@@ -29,13 +29,13 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender) {
 	r.Use(middleware.Timeout(5 * time.Second))
 
 	r.Post("/api/auth/registration", h.Registration)
-	r.Post("api/auth/confirm/registration", h.ConfirmRegistration)
+	r.Post("/api/auth/confirm/registration", h.ConfirmRegistration)
 	r.Post("/api/auth/confirm/password", h.ConfirmChangePassword)
 	r.Post("/api/auth/login", h.Login)
-	r.Get("/api/auth/exist", h.ExistUser)
+	r.Post("/api/auth/change", h.ChangePassword)
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":8000",
 		Handler: r,
 	}
 

@@ -4,6 +4,7 @@ import (
 	"BeeIOT/internal/domain/confirm"
 	"BeeIOT/internal/domain/interfaces"
 	"BeeIOT/internal/domain/jwtToken"
+	"BeeIOT/internal/domain/passwords"
 	"BeeIOT/internal/domain/types/httpType"
 	"encoding/json"
 	"log/slog"
@@ -14,9 +15,10 @@ type Handler struct {
 	db       interfaces.DB
 	conf     *confirm.Confirm
 	tokenJWT *jwtToken.JWTToken
+	inMemDb  interfaces.InMemoryDB
 }
 
-func NewHandler(db interfaces.DB, codeSender interfaces.ConfirmSender) (*Handler, error) {
+func NewHandler(db interfaces.DB, codeSender interfaces.ConfirmSender, inMem interfaces.InMemoryDB) (*Handler, error) {
 	conf, err := confirm.NewConfirm(codeSender)
 	if err != nil {
 		slog.Error("Failed to create confirm service",
@@ -41,7 +43,7 @@ func NewHandler(db interfaces.DB, codeSender interfaces.ConfirmSender) (*Handler
 		"module", "handlers",
 		"function", "NewHandler")
 
-	return &Handler{db: db, conf: conf, tokenJWT: jw}, nil
+	return &Handler{db: db, conf: conf, tokenJWT: jw, inMemDb: inMem}, nil
 }
 
 type Response struct {
@@ -254,35 +256,75 @@ func (h *Handler) ConfirmChangePassword(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (h *Handler) ExistUser(w http.ResponseWriter, r *http.Request) {
-	email := r.URL.Query().Get("email")
-	if email == "" {
-		slog.Error("Email parameter is required",
+func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	var dataChange httpType.ChangePassword
+	if err := json.NewDecoder(r.Body).Decode(&dataChange); err != nil {
+		slog.Error("Failed to decode JSON request body",
 			"module", "handlers",
-			"function", "ExistUser")
-		http.Error(w, "Параметр email обязателен", http.StatusBadRequest)
+			"function", "ChangePassword",
+			"error", err)
+		http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
 		return
 	}
-	slog.Debug("Checking user existence",
+	slog.Debug("JSON request decoded successfully",
 		"module", "handlers",
-		"function", "ExistUser",
-		"email", email)
-
-	exist, err := h.db.IsExistUser(r.Context(), email)
+		"function", "ChangePassword",
+		"email", dataChange.Email)
+	exist, err := h.db.IsExistUser(r.Context(), dataChange.Email)
 	if err != nil {
 		slog.Error("Failed to check if user exists",
 			"module", "handlers",
-			"function", "ExistUser",
-			"email", email,
+			"function", "ChangePassword",
+			"email", dataChange.Email,
 			"error", err)
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
+	if !exist {
+		slog.Warn("User not found",
+			"module", "handlers",
+			"function", "ChangePassword",
+			"email", dataChange.Email)
+		http.Error(w, "Пользователь с таким email не зарегистрирован", http.StatusNotFound)
+		return
+	}
+	err = h.inMemDb.DeleteAllJwts(r.Context(), dataChange.Email)
+	if err != nil {
+		slog.Error("Failed to delete all JWTs from in-memory database",
+			"module", "handlers",
+			"function", "ChangePassword",
+			"email", dataChange.Email,
+		)
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
+	}
+	confirmCode, err := h.conf.NewCode(dataChange.Email, dataChange.Password)
+	if err != nil {
+		slog.Error("Failed to generate confirmation code",
+			"module", "handlers",
+			"function", "ChangePassword",
+			"email", dataChange.Email,
+			"error", err)
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
+	}
+	slog.Debug("Confirmation code generated",
+		"module", "handlers",
+		"function", "ChangePassword",
+		"email", dataChange.Email)
+
+	if err := h.conf.Sender.SendConfirmationCode(dataChange.Email, confirmCode); err != nil {
+		slog.Warn("Failed to send confirmation code",
+			"module", "handlers",
+			"function", "ChangePassword",
+			"email", dataChange.Email,
+			"error", err)
+	}
 
 	resp := Response{
 		Status:  "ok",
-		Message: "Проверка существования пользователя выполнена",
-		Data:    map[string]bool{"exist": exist},
+		Message: "Код подтверждения отправлен на email",
+		Data:    nil,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -290,7 +332,7 @@ func (h *Handler) ExistUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Warn("Failed to encode JSON response",
 			"module", "handlers",
-			"function", "ExistUser",
+			"function", "ChangePassword",
 			"error", err)
 	}
 }
@@ -309,9 +351,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		"module", "handlers",
 		"function", "Login",
 		"email", loginData.Email)
-
-	exist, err := h.db.Login(r.Context(), loginData)
-	if err != nil {
+	pswdDb, err := h.db.Login(r.Context(), loginData)
+	switch {
+	case err != nil:
 		slog.Error("Failed to authenticate user",
 			"module", "handlers",
 			"function", "Login",
@@ -319,8 +361,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 			"error", err)
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
-	}
-	if !exist {
+
+	case pswdDb == "":
 		slog.Warn("Authentication failed - user not found or invalid password",
 			"module", "handlers",
 			"function", "Login",
@@ -328,11 +370,28 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Пользователь с таким email не "+
 			"зарегистрирован или неверный пароль", http.StatusNotFound)
 		return
+	case !passwords.CheckPasswordHash(loginData.Password, pswdDb):
+		slog.Warn("Authentication failed - hashes passwords do not equals",
+			"module", "handlers",
+			"function", "Login",
+			"email", loginData.Email)
+		http.Error(w, "Пользователь с таким email не "+
+			"зарегистрирован или неверный пароль", http.StatusNotFound)
+		return
 	}
-
 	token, err := h.tokenJWT.GenerateToken(loginData.Email)
 	if err != nil {
 		slog.Error("Failed to generate JWT token",
+			"module", "handlers",
+			"function", "Login",
+			"email", loginData.Email,
+			"error", err)
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
+	}
+	err = h.inMemDb.SetJwt(r.Context(), loginData.Email, token)
+	if err != nil {
+		slog.Error("Failed to store JWT token in in-memory database",
 			"module", "handlers",
 			"function", "Login",
 			"email", loginData.Email,

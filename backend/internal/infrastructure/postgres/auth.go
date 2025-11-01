@@ -60,19 +60,18 @@ func (db *Postgres) IsExistUser(ctx context.Context, email string) (bool, error)
 	return true, nil
 }
 
-func (db *Postgres) Login(ctx context.Context, login httpType.Login) (bool, error) {
-	hashPasswd := login.Password
-	var bitOfPasswd string
-	text := `SELECT password FROM users WHERE email=$1 AND password=$2;`
-	err := db.conn.QueryRow(ctx, text, login.Email, hashPasswd).Scan(&bitOfPasswd)
+func (db *Postgres) Login(ctx context.Context, login httpType.Login) (string, error) {
+	var pswd string
+	text := `SELECT password FROM users WHERE email=$1;`
+	err := db.conn.QueryRow(ctx, text, login.Email).Scan(&pswd)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			slog.Debug("Login failed - user not found or invalid password",
+			slog.Debug("Login failed - user not found",
 				"module", "postgres",
 				"function", "Login",
 				"email", login.Email,
 				"query", text)
-			return false, nil
+			return pswd, nil
 		}
 		slog.Error("Failed to query user login",
 			"module", "postgres",
@@ -80,14 +79,14 @@ func (db *Postgres) Login(ctx context.Context, login httpType.Login) (bool, erro
 			"email", login.Email,
 			"query", text,
 			"error", err)
-		return false, err
+		return pswd, err
 	}
 	slog.Debug("Login successful",
 		"module", "postgres",
 		"function", "Login",
 		"email", login.Email,
 		"query", text)
-	return true, nil
+	return pswd, nil
 }
 
 func (db *Postgres) ChangePassword(ctx context.Context, user httpType.ChangePassword) error {

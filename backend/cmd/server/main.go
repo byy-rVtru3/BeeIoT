@@ -3,6 +3,7 @@ package main
 import (
 	"BeeIOT/internal/http"
 	"BeeIOT/internal/infrastructure/postgres"
+	redis2 "BeeIOT/internal/infrastructure/redis"
 	smtp2 "BeeIOT/internal/infrastructure/smtp"
 	"log/slog"
 	"os"
@@ -35,5 +36,13 @@ func main() {
 			"error", err)
 		return
 	}
-	http.StartServer(db, smtp)
+	redis, err := redis2.NewRedis()
+	if err != nil {
+		slog.Error("Failed to initialize Redis",
+			"module", "server",
+			"function", "main",
+			"error", err)
+		return
+	}
+	http.StartServer(db, smtp, redis)
 }
