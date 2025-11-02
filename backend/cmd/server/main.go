@@ -44,5 +44,6 @@ func main() {
 			"error", err)
 		return
 	}
+	defer redis.Close()
 	http.StartServer(db, smtp, redis)
 }

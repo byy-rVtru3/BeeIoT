@@ -419,3 +419,98 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 			"error", err)
 	}
 }
+
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	email := r.Context().Value("email").(string)
+	if email == "" {
+		slog.Error("Email not found in context",
+			"module", "handlers",
+			"function", "Logout")
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
+	}
+
+	authHeader := r.Header.Get("Authorization")
+	const bearerPrefix = "Bearer "
+	token := authHeader[len(bearerPrefix):]
+
+	err := h.inMemDb.DeleteJwt(r.Context(), email, token)
+	if err != nil {
+		slog.Error("Failed to delete JWT from in-memory database",
+			"module", "handlers",
+			"function", "Logout",
+			"email", email,
+			"error", err)
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
+	}
+	slog.Debug("JWT deleted successfully from in-memory database",
+		"module", "handlers",
+		"function", "Logout",
+		"email", email)
+
+	resp := Response{
+		Status:  "ok",
+		Message: "Вы успешно вышли из системы",
+		Data:    nil,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		slog.Warn("Failed to encode JSON response",
+			"module", "handlers",
+			"function", "Logout",
+			"error", err)
+	}
+}
+
+func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	email := r.Context().Value("email").(string)
+	if email == "" {
+		slog.Error("Email not found in context",
+			"module", "handlers",
+			"function", "DeleteUser")
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
+	}
+	err := h.db.DeleteUser(r.Context(), email)
+	if err != nil {
+		slog.Error("Failed to delete user from database",
+			"module", "handlers",
+			"function", "DeleteUser",
+			"email", email,
+			"error", err)
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
+	}
+	err = h.inMemDb.DeleteAllJwts(r.Context(), email)
+	if err != nil {
+		slog.Error("Failed to delete all JWTs from in-memory database",
+			"module", "handlers",
+			"function", "DeleteUser",
+			"email", email,
+			"error", err)
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
+	}
+	slog.Debug("User deleted successfully",
+		"module", "handlers",
+		"function", "DeleteUser",
+		"email", email)
+
+	resp := Response{
+		Status:  "ok",
+		Message: "Ваш аккаунт успешно удален",
+		Data:    nil,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		slog.Warn("Failed to encode JSON response",
+			"module", "handlers",
+			"function", "DeleteUser",
+			"error", err)
+	}
+}

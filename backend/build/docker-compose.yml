@@ -38,6 +38,8 @@ services:
     command: redis-server --requirepass ${REDIS_PASSWORD}
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
     ports:
       - "127.0.0.1:6379:6379"
     networks:
@@ -83,6 +85,7 @@ services:
 
 volumes:
   db_data:
+  redis_data:
 
 networks:
   app-net:
