@@ -46,7 +46,7 @@ func (j *JWTToken) ParseToken(tokenStr string) (string, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("неожиданный метод подписи")
 		}
-		return j.secret, nil
+		return []byte(j.secret), nil
 	})
 
 	switch {
@@ -55,7 +55,7 @@ func (j *JWTToken) ParseToken(tokenStr string) (string, error) {
 	case err != nil:
 		return "", fmt.Errorf("ошибка разбора токена: %w", err)
 	case !token.Valid:
-		return "", fmt.Errorf("токен недействителен")
+		return "", jwt.ErrTokenExpired
 	default:
 		return claim.Email, nil
 	}
