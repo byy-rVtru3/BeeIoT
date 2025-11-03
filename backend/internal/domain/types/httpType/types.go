@@ -64,3 +64,46 @@ type Temperature struct {
 	Hash        string  `json:"hash"`
 	Hive        string  `json:"hive"`
 }
+
+type QueenRequest struct {
+	StartDate string `json:"start_date"`
+}
+type QueenPhaseCalendar struct {
+	StartDate string `json:"start_date"`
+
+	EggPhase struct {
+		Standing string `json:"standing"`
+		Tilted   string `json:"tilted"`
+		Lying    string `json:"lying"`
+	} `json:"egg_phase"`
+
+	LarvaPhase struct {
+		Start  string `json:"start"`
+		Day1   string `json:"day_1"`
+		Day2   string `json:"day_2"`
+		Day3   string `json:"day_3"`
+		Day4   string `json:"day_4"`
+		Day5   string `json:"day_5"`
+		Sealed string `json:"sealed"`
+	} `json:"larva_phase"`
+
+	PupaPhase struct {
+		Start     string `json:"start"`
+		End       string `json:"end"`
+		Duration  string `json:"duration"`
+		Selection string `json:"selection"`
+	} `json:"pupa_phase"`
+
+	QueenPhase struct {
+		EmergenceStart      string `json:"emergence_start"`
+		EmergenceEnd        string `json:"emergence_end"`
+		MaturationStart     string `json:"maturation_start"`
+		MaturationEnd       string `json:"maturation_end"`
+		MatingFlightStart   string `json:"mating_flight_start"`
+		MatingFlightEnd     string `json:"mating_flight_end"`
+		InseminationStart   string `json:"insemination_start"`
+		InseminationEnd     string `json:"insemination_end"`
+		EggLayingCheckStart string `json:"egg_laying_check_start"`
+		EggLayingCheckEnd   string `json:"egg_laying_check_end"`
+	} `json:"queen_phase"`
+}
