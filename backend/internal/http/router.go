@@ -44,7 +44,10 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.With(m.CheckAuth).Delete("/delete/user", h.DeleteUser)
 			r.With(m.CheckAuth).Delete("/logout", h.Logout)
 		})
-
+		r.Route("/queen", func(r chi.Router) {
+			// POST /api/queen/calc
+			r.Post("/calc", h.QueenCalculator)
+		})
 	})
 
 	srv := &http.Server{
