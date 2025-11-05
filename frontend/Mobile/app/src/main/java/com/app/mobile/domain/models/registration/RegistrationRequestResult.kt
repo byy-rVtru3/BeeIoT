@@ -1,8 +1,9 @@
 package com.app.mobile.domain.models.registration
 
-sealed class RegistrationRequestResult {
-    object Success : RegistrationRequestResult()
-    object UserAlreadyExists : RegistrationRequestResult()
-    object ServerError : RegistrationRequestResult()
-    object UnknownError : RegistrationRequestResult()
+sealed interface RegistrationRequestResult {
+    data object Success : RegistrationRequestResult
+    data object UserAlreadyExistsError : RegistrationRequestResult
+    data object ServerError : RegistrationRequestResult
+    data object UnknownError : RegistrationRequestResult
+    data object BadRequestError : RegistrationRequestResult
 }
