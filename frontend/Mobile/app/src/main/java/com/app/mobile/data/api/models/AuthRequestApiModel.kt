@@ -1,9 +1,9 @@
-package com.app.mobile.data.api.models.registration
+package com.app.mobile.data.api.models
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class RegistrationRequestApiModel(
+data class AuthRequestApiModel(
     val email: String,
     val password: String,
 )

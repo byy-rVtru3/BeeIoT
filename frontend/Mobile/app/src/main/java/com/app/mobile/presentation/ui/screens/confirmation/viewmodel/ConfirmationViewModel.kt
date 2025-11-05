@@ -50,15 +50,9 @@ class ConfirmationViewModel(
 
             viewModelScope.launch {
                 val result = confirmationUserUseCase(
-                    currentState.confirmationModelUi.email,
-                    currentState.confirmationModelUi.code,
-                    currentState.confirmationModelUi.type
+                    
                 )
-                if (result) {
-                    TODO("Navigate to next screen")
-                } else {
-                    TODO("output if not confirmed")
-                }
+
             }
         }
     }
