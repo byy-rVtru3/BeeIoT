@@ -4,16 +4,18 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.mobile.domain.mappers.toDomain
+import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.ConfirmationUserUseCase
-import com.app.mobile.domain.usecase.ResendConfirmationCodeUseCase
 import com.app.mobile.presentation.models.ConfirmationModelUi
+import com.app.mobile.presentation.models.ConfirmationResultUi
+import com.app.mobile.presentation.models.TypeConfirmationUi
 import com.app.mobile.presentation.validators.ConfirmationValidator
 import com.app.mobile.presentation.validators.ValidationResult
 import kotlinx.coroutines.launch
 
 class ConfirmationViewModel(
-    private val confirmationUserUseCase: ConfirmationUserUseCase,
-    private val resendConfirmationCodeUseCase: ResendConfirmationCodeUseCase
+    private val confirmationUserUseCase: ConfirmationUserUseCase
 ) : ViewModel() {
 
     private val _confirmationUiState = MutableLiveData<ConfirmationUiState>()
@@ -40,7 +42,8 @@ class ConfirmationViewModel(
             val model = currentState.confirmationModelUi
 
             val codeResult = validator.validateCode(model.code)
-            val codeError = if (codeResult is ValidationResult.Error) codeResult.errors.firstOrNull() else null
+            val codeError =
+                if (codeResult is ValidationResult.Error) codeResult.errors.firstOrNull() else null
 
             if (codeError != null) {
                 val updatedModel = model.copy(codeError = codeError)
@@ -50,14 +53,24 @@ class ConfirmationViewModel(
 
             viewModelScope.launch {
                 val result = confirmationUserUseCase(
-                    
-                )
+                    model.toDomain()
+                ).toUiModel()
 
+                when (result) {
+                    is ConfirmationResultUi.Success -> {
+                        TODO("Handle success state, e.g., navigate to next screen")
+                    }
+
+                    is ConfirmationResultUi.Error -> {
+                        _confirmationUiState.value = ConfirmationUiState.Error(result.message)
+                        TODO("Handle error state, e.g., show error message")
+                    }
+                }
             }
         }
     }
 
-    fun createConfirmationModelUi(email: String, type: String) {
+    fun createConfirmationModelUi(email: String, type: TypeConfirmationUi) {
         _confirmationUiState.value = ConfirmationUiState.Content(
             confirmationModelUi = ConfirmationModelUi(email = email, code = "", type = type)
         )
@@ -67,9 +80,8 @@ class ConfirmationViewModel(
         val currentState = _confirmationUiState.value
         if (currentState is ConfirmationUiState.Content) {
             viewModelScope.launch {
-                resendConfirmationCodeUseCase(
-                    currentState.confirmationModelUi.email,
-                    currentState.confirmationModelUi.type
+                confirmationUserUseCase(
+                    currentState.confirmationModelUi.toDomain()
                 )
             }
         }

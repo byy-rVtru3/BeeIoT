@@ -17,7 +17,9 @@ class ConfirmationResponseConverter {
         return when (response.code()) {
             400 -> ConfirmationRequestResult.BadRequestError
             401 -> ConfirmationRequestResult.UnauthorizedError
+            404 -> ConfirmationRequestResult.NotFoundError
             500 -> ConfirmationRequestResult.ServerError
+            504 -> ConfirmationRequestResult.TimeoutError
             else -> ConfirmationRequestResult.UnknownError
         }
     }
