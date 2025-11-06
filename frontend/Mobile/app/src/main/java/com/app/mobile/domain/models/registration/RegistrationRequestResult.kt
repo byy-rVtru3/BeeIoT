@@ -6,4 +6,5 @@ sealed interface RegistrationRequestResult {
     data object ServerError : RegistrationRequestResult
     data object UnknownError : RegistrationRequestResult
     data object BadRequestError : RegistrationRequestResult
+    data object TimeoutError : RegistrationRequestResult
 }

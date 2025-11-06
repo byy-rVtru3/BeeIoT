@@ -28,6 +28,10 @@ fun RegistrationRequestResult.toUiModel(): RegistrationResultUi {
             "Неизвестная ошибка"
         )
 
+        is RegistrationRequestResult.TimeoutError -> RegistrationResultUi.Error(
+            "Превышено время ожидания"
+        )
+
         is RegistrationRequestResult.BadRequestError -> RegistrationResultUi.Error(
             "Некорректный запрос"
         )

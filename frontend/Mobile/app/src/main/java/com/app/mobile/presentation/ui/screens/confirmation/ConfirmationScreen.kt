@@ -1,11 +1,11 @@
 package com.app.mobile.presentation.ui.screens.confirmation
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.livedata.observeAsState
@@ -15,26 +15,32 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.app.mobile.R
 import com.app.mobile.presentation.models.ConfirmationModelUi
-import com.app.mobile.presentation.ui.components.ValidatedTextField
+import com.app.mobile.presentation.models.TypeConfirmationUi
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.LabelButton
 import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.components.Title
+import com.app.mobile.presentation.ui.components.ValidatedTextField
 import com.app.mobile.presentation.ui.screens.confirmation.models.ConfirmationActions
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationUiState
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationViewModel
 import com.app.mobile.presentation.validators.ValidationError
 
 @Composable
-fun ConfirmationScreen(confirmationViewModel: ConfirmationViewModel, email: String, type: String) {
+fun ConfirmationScreen(
+    confirmationViewModel: ConfirmationViewModel,
+    email: String,
+    type: TypeConfirmationUi
+) {
 
     LaunchedEffect(key1 = Unit) {
         confirmationViewModel.createConfirmationModelUi(email, type)
     }
 
     val confirmationUiState = confirmationViewModel.confirmationUiState.observeAsState(
-        ConfirmationUiState.Loading)
+        ConfirmationUiState.Loading
+    )
 
     when (val state = confirmationUiState.value) {
         is ConfirmationUiState.Loading -> FullScreenProgressIndicator()
@@ -54,14 +60,18 @@ fun ConfirmationScreen(confirmationViewModel: ConfirmationViewModel, email: Stri
 }
 
 @Composable
-private fun ConfirmationContent(confirmationModelUi: ConfirmationModelUi, actions:
-ConfirmationActions) {
+private fun ConfirmationContent(
+    confirmationModelUi: ConfirmationModelUi, actions:
+    ConfirmationActions
+) {
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(36.dp, 56.dp),
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(36.dp, 56.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween,) {
+        verticalArrangement = Arrangement.SpaceBetween,
+    ) {
         Title(
             text = stringResource(R.string.confirm_registration_title),
             style = MaterialTheme.typography.titleMedium,
@@ -72,7 +82,7 @@ ConfirmationActions) {
         Column(
             horizontalAlignment = Alignment.End,
             modifier = Modifier.fillMaxWidth(),
-            ) {
+        ) {
             CodeTextField(
                 code = confirmationModelUi.code,
                 codeError = confirmationModelUi.codeError,
@@ -115,6 +125,6 @@ private fun CodeResendButton(onClick: () -> Unit) {
     LabelButton(
         text = stringResource(R.string.resend_code),
         onClick = onClick,
-        modifier = Modifier.padding(4.dp,16.dp)
+        modifier = Modifier.padding(4.dp, 16.dp)
     )
 }

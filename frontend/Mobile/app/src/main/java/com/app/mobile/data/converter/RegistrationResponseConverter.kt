@@ -18,6 +18,7 @@ class RegistrationResponseConverter {
             400 -> RegistrationRequestResult.BadRequestError
             409 -> RegistrationRequestResult.UserAlreadyExistsError
             500 -> RegistrationRequestResult.ServerError
+            504 -> RegistrationRequestResult.TimeoutError
             else -> RegistrationRequestResult.UnknownError
         }
     }

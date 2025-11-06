@@ -15,4 +15,8 @@ interface BeeApiClient {
     @POST("auth/confirm/registration")
     suspend fun confirmRegistrationAccount(@Body request: ConfirmationRequestApiModel):
         Response<ResponseApiModel>
+
+    @POST("api/auth/confirm/password")
+    suspend fun confirmResetPassword(@Body request: ConfirmationRequestApiModel):
+        Response<ResponseApiModel>
 }

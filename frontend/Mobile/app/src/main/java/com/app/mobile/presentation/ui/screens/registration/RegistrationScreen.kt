@@ -15,13 +15,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.app.mobile.R
 import com.app.mobile.presentation.models.RegistrationModelUi
+import com.app.mobile.presentation.models.TypeConfirmationUi
 import com.app.mobile.presentation.navigation.RegistrationNavigationEvent
-import com.app.mobile.presentation.ui.components.PasswordTextField
-import com.app.mobile.presentation.ui.components.ValidatedTextField
-import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.PasswordTextField
 import com.app.mobile.presentation.ui.components.PrimaryButton
+import com.app.mobile.presentation.ui.components.Title
+import com.app.mobile.presentation.ui.components.ValidatedTextField
 import com.app.mobile.presentation.ui.screens.registration.models.RegistrationActions
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationUiState
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationViewModel
@@ -30,7 +31,7 @@ import com.app.mobile.presentation.validators.ValidationError
 @Composable
 fun RegistrationScreen(
     registrationViewModel: RegistrationViewModel,
-    onRegisterClick: (String, String) -> Unit
+    onRegisterClick: (String, TypeConfirmationUi) -> Unit
 ) {
     LaunchedEffect(key1 = Unit) {
         registrationViewModel.createUserAccount()

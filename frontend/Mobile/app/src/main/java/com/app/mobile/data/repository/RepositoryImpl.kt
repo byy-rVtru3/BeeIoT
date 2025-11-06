@@ -5,7 +5,6 @@ import com.app.mobile.data.api.BeeApiClient
 import com.app.mobile.data.api.mappers.toApiModel
 import com.app.mobile.data.converter.ConfirmationResponseConverter
 import com.app.mobile.data.converter.RegistrationResponseConverter
-import com.app.mobile.data.mocks.mockResponseToConfirmationUserSuccess
 import com.app.mobile.domain.models.confirmation.ConfirmationModel
 import com.app.mobile.domain.models.confirmation.ConfirmationRequestResult
 import com.app.mobile.domain.models.registration.RegistrationModel
@@ -32,7 +31,7 @@ class RepositoryImpl(
 
     }
 
-    override suspend fun confirmationUser(confirmationModel: ConfirmationModel): ConfirmationRequestResult {
+    override suspend fun confirmationUserRegistration(confirmationModel: ConfirmationModel): ConfirmationRequestResult {
         return try {
             val response = beeApiClient.confirmRegistrationAccount(confirmationModel.toApiModel())
             confirmationResponseConverter.convert(response)
@@ -44,7 +43,16 @@ class RepositoryImpl(
         }
     }
 
-    override suspend fun resendConfirmationCode(email: String, type: String) {
-//        Not yet implemented
+    override suspend fun confirmationUserResetPassword(confirmationModel: ConfirmationModel): ConfirmationRequestResult {
+        return try {
+            val response = beeApiClient.confirmResetPassword(confirmationModel.toApiModel())
+            confirmationResponseConverter.convert(response)
+
+        } catch (e: Exception) {
+            // так делают только чмошники но мне похуй
+            Log.e("RepositoryImpl", "Error during confirmationUserResetPassword", e)
+            ConfirmationRequestResult.UnknownError
+        }
     }
+
 }

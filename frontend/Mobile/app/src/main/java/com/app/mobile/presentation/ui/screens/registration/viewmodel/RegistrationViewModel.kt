@@ -10,13 +10,12 @@ import com.app.mobile.domain.usecase.CreateUserAccountUseCase
 import com.app.mobile.domain.usecase.RegistrationAccountUseCase
 import com.app.mobile.presentation.mappers.toDomain
 import com.app.mobile.presentation.models.RegistrationResultUi
+import com.app.mobile.presentation.models.TypeConfirmationUi
 import com.app.mobile.presentation.navigation.RegistrationNavigationEvent
 import com.app.mobile.presentation.validators.RegistrationValidator
 import com.app.mobile.presentation.validators.ValidationResult
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
-
-const val TYPE_CONFIRMATION = "registration"
 
 class RegistrationViewModel(
     private val registrationAccountUseCase: RegistrationAccountUseCase,
@@ -99,12 +98,17 @@ class RegistrationViewModel(
             val nameResult = validator.validateName(model.name)
             val emailResult = validator.validateEmail(model.email)
             val passwordResult = validator.validatePassword(model.password)
-            val repeatPasswordResult = validator.validateRepeatPassword(model.password, model.repeatPassword)
+            val repeatPasswordResult =
+                validator.validateRepeatPassword(model.password, model.repeatPassword)
 
-            val nameError = if (nameResult is ValidationResult.Error) nameResult.errors.firstOrNull() else null
-            val emailError = if (emailResult is ValidationResult.Error) emailResult.errors.firstOrNull() else null
-            val passwordError = if (passwordResult is ValidationResult.Error) passwordResult.errors.firstOrNull() else null
-            val repeatPasswordError = if (repeatPasswordResult is ValidationResult.Error) repeatPasswordResult.errors.firstOrNull() else null
+            val nameError =
+                if (nameResult is ValidationResult.Error) nameResult.errors.firstOrNull() else null
+            val emailError =
+                if (emailResult is ValidationResult.Error) emailResult.errors.firstOrNull() else null
+            val passwordError =
+                if (passwordResult is ValidationResult.Error) passwordResult.errors.firstOrNull() else null
+            val repeatPasswordError =
+                if (repeatPasswordResult is ValidationResult.Error) repeatPasswordResult.errors.firstOrNull() else null
 
             if (nameError != null || emailError != null || passwordError != null || repeatPasswordError != null) {
                 val updatedModel = model.copy(
@@ -127,7 +131,7 @@ class RegistrationViewModel(
                     is RegistrationResultUi.Success -> {
                         _navigationEvent.value = RegistrationNavigationEvent.NavigateToConfirmation(
                             email = currentState.registrationModelUi.email,
-                            type = TYPE_CONFIRMATION
+                            type = TypeConfirmationUi.REGISTRATION
                         )
                     }
 
