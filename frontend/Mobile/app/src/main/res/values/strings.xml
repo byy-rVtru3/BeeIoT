@@ -1,15 +1,30 @@
 <resources>
     <string name="app_name">Mobile</string>
-    <string name="email">email</string>
+    <string name="email">Email</string>
     <string name="name">Имя</string>
     <string name="password">Пароль</string>
     <string name="repeat_password">Повторите пароль</string>
+    <string name="registration_title">Регистрация</string>
     <string name="registration_button">Зарегистрироваться</string>
+    <string name="confirm_registration_title">Подтверждение регистрации</string>
+    <string name="hide_password">Скрыть пароль</string>
+    <string name="show_password">Показать пароль</string>
+    <string name="resend_code">Отправить код повторно</string>
+
 
     <!-- Ошибки -->
     <string name="error_unknown">Неизвестная ошибка</string>
     <string name="error_dialog_title">Произошла ошибка</string>
     <string name="error_retry_button">Попробуйте еще раз</string>
-    <string name="enter_code">Код подверждения</string>
+    <string name="enter_code">Код подтверждения</string>
     <string name="confirm">Подтвердить</string>
+    <string name="error_empty_field">Поле не должно быть пустым</string>
+    <string name="error_invalid_email">Неверный формат email</string>
+    <string name="error_password_too_short">Пароль слишком короткий (минимум 8 символов)</string>
+    <string name="error_password_too_weak">Пароль должен содержать заглавные буквы, строчные буквы и цифры</string>
+    <string name="error_passwords_not_match">Пароли не совпадают</string>
+    <string name="error_invalid_code">Неверный формат кода (требуется 6 цифр)</string>
+    <string name="error_invalid_name">Имя может содержать только буквы</string>
+    <string name="error_name_too_short">Имя слишком короткое (минимум 2 символа)</string>
+    <string name="error_name_too_long">Имя слишком длинное (максимум 50 символов)</string>
 </resources>
