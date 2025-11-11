@@ -1,6 +1,5 @@
 package com.app.mobile.domain.usecase
 
-import com.app.mobile.domain.mappers.toApiModel
 import com.app.mobile.domain.models.registration.RegistrationModel
 import com.app.mobile.domain.models.registration.RegistrationRequestResult
 import com.app.mobile.domain.repository.Repository
@@ -15,7 +14,7 @@ class RegistrationAccountUseCase(
     suspend operator fun invoke(registrationModel: RegistrationModel):
             RegistrationRequestResult =
         withContext(dispatcher) {
-            repository.registrationAccount(registrationModel.toApiModel())
+            repository.registrationAccount(registrationModel)
         }
 
 }
