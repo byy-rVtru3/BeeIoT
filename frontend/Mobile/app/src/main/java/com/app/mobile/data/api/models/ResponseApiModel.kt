@@ -6,5 +6,5 @@ import kotlinx.serialization.Serializable
 data class ResponseApiModel(
     val status: String,
     val message: String,
-    val data: JwtToken?,
+    val data: JwtToken? = null,
 )
