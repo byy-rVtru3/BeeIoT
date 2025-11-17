@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.app.mobile.R
 import com.app.mobile.presentation.models.RegistrationModelUi
 import com.app.mobile.presentation.models.TypeConfirmationUi
-import com.app.mobile.presentation.navigation.RegistrationNavigationEvent
+import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationNavigationEvent
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.PasswordTextField
@@ -33,6 +33,10 @@ fun RegistrationScreen(
     registrationViewModel: RegistrationViewModel,
     onRegisterClick: (String, TypeConfirmationUi) -> Unit
 ) {
+    val registrationUiState by registrationViewModel.registrationUiState.observeAsState(
+        RegistrationUiState.Loading
+    )
+
     LaunchedEffect(key1 = Unit) {
         registrationViewModel.createUserAccount()
     }
@@ -50,13 +54,9 @@ fun RegistrationScreen(
         }
     }
 
-    val registrationUiState by registrationViewModel.registrationUiState.observeAsState(
-        RegistrationUiState.Loading
-    )
-
     when (val state = registrationUiState) {
         is RegistrationUiState.Loading -> FullScreenProgressIndicator()
-        is RegistrationUiState.Error -> ErrorMessage(message = state.message, onRetry = {})
+        is RegistrationUiState.Error -> ErrorMessage(message = state.message) {}
         is RegistrationUiState.Content -> {
             val registrationModelUi = state.registrationModelUi
 

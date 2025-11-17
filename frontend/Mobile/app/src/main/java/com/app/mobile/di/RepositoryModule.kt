@@ -1,6 +1,7 @@
 package com.app.mobile.di
 
 import com.app.mobile.data.api.BeeApiClient
+import com.app.mobile.data.converter.AuthorizationResponseConverter
 import com.app.mobile.data.converter.ConfirmationResponseConverter
 import com.app.mobile.data.converter.RegistrationResponseConverter
 import com.app.mobile.data.repository.RepositoryImpl
@@ -16,6 +17,7 @@ val repositoryModule = module {
 
     factoryOf(::RegistrationResponseConverter)
     factoryOf(::ConfirmationResponseConverter)
+    factoryOf(::AuthorizationResponseConverter)
 
     singleOf(::RepositoryImpl) bind Repository::class
 }

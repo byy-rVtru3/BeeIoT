@@ -8,7 +8,7 @@ import com.app.mobile.presentation.models.ConfirmationResultUi
 
 fun ConfirmationModelUi.toDomain() = ConfirmationModel(
     email = email,
-    code = code,
+    code = code.filter { it != '-' }, // так не должно быть думаю что надо фиксить в UI
     type = typeConfirmationFormatter(type)
 )
 
