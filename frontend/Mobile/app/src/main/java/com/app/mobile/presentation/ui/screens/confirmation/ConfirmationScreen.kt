@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +24,7 @@ import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.components.ValidatedTextField
 import com.app.mobile.presentation.ui.screens.confirmation.models.ConfirmationActions
+import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationNavigationEvent
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationUiState
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationViewModel
 import com.app.mobile.presentation.validators.ValidationError
@@ -31,20 +33,33 @@ import com.app.mobile.presentation.validators.ValidationError
 fun ConfirmationScreen(
     confirmationViewModel: ConfirmationViewModel,
     email: String,
-    type: TypeConfirmationUi
+    type: TypeConfirmationUi,
+    onConfirmClick: () -> Unit
 ) {
+    val confirmationUiState = confirmationViewModel.confirmationUiState.observeAsState(
+        ConfirmationUiState.Loading
+    )
 
     LaunchedEffect(key1 = Unit) {
         confirmationViewModel.createConfirmationModelUi(email, type)
     }
 
-    val confirmationUiState = confirmationViewModel.confirmationUiState.observeAsState(
-        ConfirmationUiState.Loading
-    )
+    val navigationEvent by confirmationViewModel.navigationEvent.observeAsState()
+
+    LaunchedEffect(navigationEvent) {
+        navigationEvent?.let { event ->
+            when (event) {
+                is ConfirmationNavigationEvent.NavigateToAuthorization -> {
+                    onConfirmClick()
+                    confirmationViewModel.onNavigationHandled()
+                }
+            }
+        }
+    }
 
     when (val state = confirmationUiState.value) {
         is ConfirmationUiState.Loading -> FullScreenProgressIndicator()
-        is ConfirmationUiState.Error -> ErrorMessage(message = state.message, onRetry = {})
+        is ConfirmationUiState.Error -> ErrorMessage(message = state.message) {}
         is ConfirmationUiState.Content -> {
             val actions = ConfirmationActions(
                 onCodeChange = confirmationViewModel::onCodeChange,

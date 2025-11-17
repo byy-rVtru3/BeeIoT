@@ -11,7 +11,6 @@ import com.app.mobile.domain.usecase.RegistrationAccountUseCase
 import com.app.mobile.presentation.mappers.toDomain
 import com.app.mobile.presentation.models.RegistrationResultUi
 import com.app.mobile.presentation.models.TypeConfirmationUi
-import com.app.mobile.presentation.navigation.RegistrationNavigationEvent
 import com.app.mobile.presentation.validators.RegistrationValidator
 import com.app.mobile.presentation.validators.ValidationResult
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -93,6 +92,7 @@ class RegistrationViewModel(
     fun onRegisterClick() {
         val currentState = _registrationUiState.value
         if (currentState is RegistrationUiState.Content) {
+            _registrationUiState.value = RegistrationUiState.Loading
             val model = currentState.registrationModelUi
 
             val nameResult = validator.validateName(model.name)
@@ -137,6 +137,7 @@ class RegistrationViewModel(
 
                     is RegistrationResultUi.Error -> {
                         _registrationUiState.value = RegistrationUiState.Error(response.message)
+                        // Добавить обработку ошибок
                     }
                 }
             }
