@@ -34,8 +34,7 @@ class AuthorizationViewModel(
             _authorizationUiState.value = AuthorizationUiState.Loading
             val model = currentState.authorizationModelUi
             viewModelScope.launch(handler) {
-                val codeResult = authorizationAccountUseCase(model.toDomain()).toUiModel()
-                when (codeResult) {
+                when (val codeResult = authorizationAccountUseCase(model.toDomain()).toUiModel()) {
                     is AuthorizationResultUi.Success -> {
                         _navigationEvent.value =
                             AuthorizationNavigationEvent.NavigateToMainScreen

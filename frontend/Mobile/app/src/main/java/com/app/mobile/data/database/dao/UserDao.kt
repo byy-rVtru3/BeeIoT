@@ -13,12 +13,16 @@ interface UserDao {
     suspend fun getUserByEmail(email: String): UserEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertUser(user: UserEntity)
+    suspend fun addUser(user: UserEntity)
 
     @Update
     suspend fun updateUser(user: UserEntity)
 
     @Query("DELETE FROM users WHERE email = :email")
     suspend fun deleteUserByEmail(email: String)
+
+    @Query("UPDATE users SET jwtToken = :token WHERE email = :email")
+    suspend fun addTokenToUser(email: String, token: String)
+
 
 }

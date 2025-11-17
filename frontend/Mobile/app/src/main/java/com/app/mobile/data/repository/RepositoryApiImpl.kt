@@ -12,14 +12,14 @@ import com.app.mobile.domain.models.confirmation.ConfirmationModel
 import com.app.mobile.domain.models.confirmation.ConfirmationRequestResult
 import com.app.mobile.domain.models.registration.RegistrationModel
 import com.app.mobile.domain.models.registration.RegistrationRequestResult
-import com.app.mobile.domain.repository.Repository
+import com.app.mobile.domain.repository.RepositoryApi
 
-class RepositoryImpl(
+class RepositoryApiImpl(
     private val beeApiClient: BeeApiClient,
     private val registrationResponseConverter: RegistrationResponseConverter,
     private val confirmationResponseConverter: ConfirmationResponseConverter,
     private val authorizationResponseConverter: AuthorizationResponseConverter
-) : Repository {
+) : RepositoryApi {
     override suspend fun registrationAccount(
         registrationModel: RegistrationModel
     ): RegistrationRequestResult {
