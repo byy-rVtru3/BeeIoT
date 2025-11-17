@@ -1,5 +1,6 @@
 package com.app.mobile.domain.mappers
 
+import com.app.mobile.domain.models.UserDomain
 import com.app.mobile.domain.models.registration.RegistrationModel
 import com.app.mobile.domain.models.registration.RegistrationRequestResult
 import com.app.mobile.presentation.models.RegistrationModelUi
@@ -7,11 +8,17 @@ import com.app.mobile.presentation.models.RegistrationResultUi
 
 fun RegistrationModel.toUiModel(repeatPassword: String = "") =
     RegistrationModelUi(
-        email = email,
         name = name,
+        email = email,
         password = password,
         repeatPassword = repeatPassword
     )
+
+fun RegistrationModel.toUserDomain() = UserDomain(
+    name = name,
+    email = email,
+    jwtToken = null
+)
 
 fun RegistrationRequestResult.toUiModel(): RegistrationResultUi {
     return when (this) {
