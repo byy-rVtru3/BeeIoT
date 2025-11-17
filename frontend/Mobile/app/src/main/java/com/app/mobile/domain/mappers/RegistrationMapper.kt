@@ -16,6 +16,7 @@ fun RegistrationModel.toUiModel(repeatPassword: String = "") =
 fun RegistrationRequestResult.toUiModel(): RegistrationResultUi {
     return when (this) {
         is RegistrationRequestResult.Success -> RegistrationResultUi.Success
+
         is RegistrationRequestResult.ServerError -> RegistrationResultUi.Error(
             "Ошибка сервера"
         )

@@ -1,4 +1,4 @@
-package com.app.mobile.presentation.ui.screens.main
+package com.app.mobile.presentation.ui.screens
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -9,7 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import com.app.mobile.presentation.navigation.AppNavigation
 
 @Composable
-fun MyApp() {
+fun AppHost() {
     val navController = rememberNavController()
 
     Scaffold(modifier = Modifier.fillMaxSize()) { paddingValues ->
