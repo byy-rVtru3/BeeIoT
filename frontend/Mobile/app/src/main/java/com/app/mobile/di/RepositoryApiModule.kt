@@ -4,20 +4,20 @@ import com.app.mobile.data.api.BeeApiClient
 import com.app.mobile.data.converter.AuthorizationResponseConverter
 import com.app.mobile.data.converter.ConfirmationResponseConverter
 import com.app.mobile.data.converter.RegistrationResponseConverter
-import com.app.mobile.data.repository.RepositoryImpl
-import com.app.mobile.domain.repository.Repository
+import com.app.mobile.data.repository.RepositoryApiImpl
+import com.app.mobile.domain.repository.RepositoryApi
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import retrofit2.Retrofit
 
-val repositoryModule = module {
+val repositoryApiModule = module {
     single { get<Retrofit>().create(BeeApiClient::class.java) }
 
     factoryOf(::RegistrationResponseConverter)
     factoryOf(::ConfirmationResponseConverter)
     factoryOf(::AuthorizationResponseConverter)
 
-    singleOf(::RepositoryImpl) bind Repository::class
+    singleOf(::RepositoryApiImpl) bind RepositoryApi::class
 }

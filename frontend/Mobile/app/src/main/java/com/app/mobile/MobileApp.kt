@@ -3,9 +3,11 @@ package com.app.mobile
 import android.app.Application
 import com.app.mobile.di.authorizationModule
 import com.app.mobile.di.confirmationModule
+import com.app.mobile.di.databaseModule
 import com.app.mobile.di.networkModule
 import com.app.mobile.di.registrationModule
-import com.app.mobile.di.repositoryModule
+import com.app.mobile.di.repositoryApiModule
+import com.app.mobile.di.repositoryDatabaseModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -20,10 +22,12 @@ class MobileApp : Application() {
 
             modules(
                 registrationModule,
-                repositoryModule,
+                repositoryApiModule,
                 networkModule,
                 confirmationModule,
-                authorizationModule
+                authorizationModule,
+                databaseModule,
+                repositoryDatabaseModule
             )
         }
     }
