@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.devtools.ksp)
 }
 
 android {
@@ -43,6 +44,10 @@ android {
             excludes.add("META-INF/versions/9/OSGI-INF/MANIFEST.MF")
         }
     }
+
+    ksp {
+        arg("room.schemaLocation", "$projectDir/schemas")
+    }
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -52,6 +57,12 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
+
+    //Room: Библиотека для работы с базой данных SQLite.
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
 
     // Koin: Библиотека для внедрения зависимостей (Dependency Injection).
     implementation(platform(libs.koin.bom))

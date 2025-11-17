@@ -16,14 +16,24 @@ okhttp = "5.3.1"
 koinBom = "4.1.1"
 koinAndroid = "4.1.1"
 koinAndroidxCompose = "4.1.1"
+ksp = "2.2.20-2.0.4"
+roomCompiler = "2.8.2"
+roomKtx = "2.8.2"
+roomRuntime = "2.8.2"
 
 [libraries]
+# Room
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
+androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomKtx" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
+
+
 # Koin - Dependency Injection
 # Библиотека для внедрения зависимостей.
-koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koinBom" } # Управляет версиями всех модулей Koin.
-koin-core = { module = "io.insert-koin:koin-core" } # Ядро фреймворка Koin.
-koin-android = { module = "io.insert-koin:koin-android", version.ref = "koinAndroid" } # Поддержка компонентов Android (ViewModel, etc.).
-koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koinAndroidxCompose" } # Интеграция с Jetpack Compose.
+koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koinBom" }
+koin-core = { module = "io.insert-koin:koin-core" }
+koin-android = { module = "io.insert-koin:koin-android", version.ref = "koinAndroid" }
+koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koinAndroidxCompose" }
 
 # Jetpack Compose - UI Toolkit
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
@@ -64,3 +74,4 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

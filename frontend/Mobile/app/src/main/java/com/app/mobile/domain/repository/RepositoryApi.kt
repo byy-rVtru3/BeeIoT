@@ -7,7 +7,7 @@ import com.app.mobile.domain.models.confirmation.ConfirmationRequestResult
 import com.app.mobile.domain.models.registration.RegistrationModel
 import com.app.mobile.domain.models.registration.RegistrationRequestResult
 
-interface Repository {
+interface RepositoryApi {
     suspend fun registrationAccount(registrationModel: RegistrationModel): RegistrationRequestResult
 
     suspend fun confirmationUserRegistration(confirmationModel: ConfirmationModel): ConfirmationRequestResult
