@@ -9,8 +9,8 @@ import com.app.mobile.data.database.entity.UserEntity
 
 @Dao
 interface UserDao {
-    @Query("SELECT * FROM users WHERE email = :email")
-    suspend fun getUserByEmail(email: String): UserEntity?
+    @Query("SELECT * FROM users WHERE email = :userId")
+    suspend fun getUserById(userId: Int): UserEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addUser(user: UserEntity)
@@ -18,8 +18,8 @@ interface UserDao {
     @Update
     suspend fun updateUser(user: UserEntity)
 
-    @Query("DELETE FROM users WHERE email = :email")
-    suspend fun deleteUserByEmail(email: String)
+    @Query("DELETE FROM users WHERE id = :userId")
+    suspend fun deleteUserById(userId: Int)
 
     @Query("UPDATE users SET jwtToken = :token WHERE email = :email")
     suspend fun addTokenToUser(email: String, token: String)

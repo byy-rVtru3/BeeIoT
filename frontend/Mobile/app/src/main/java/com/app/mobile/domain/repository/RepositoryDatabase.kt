@@ -8,9 +8,9 @@ interface RepositoryDatabase {
 
     suspend fun updateUser(userDomain: UserDomain)
 
-    suspend fun deleteUser(email: String)
+    suspend fun deleteUser(userId: Int)
 
-    suspend fun getUserByEmail(email: String): UserDomain?
+    suspend fun getUserById(userId: Int): UserDomain?
 
     suspend fun addTokenToUser(email: String, token: String): Int?
 }
