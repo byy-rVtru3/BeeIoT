@@ -17,6 +17,7 @@ fun RegistrationModel.toUiModel(repeatPassword: String = "") =
 fun RegistrationModel.toUserDomain() = UserDomain(
     name = name,
     email = email,
+    password = password,
     jwtToken = null
 )
 
