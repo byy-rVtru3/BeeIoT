@@ -26,7 +26,7 @@ class SettingsViewModel(
 
     fun onLogoutClick() {
         _navigationEvent.value = SettingsNavigationEvent.NavigateToAuthorization
-        TODO("Need to implement logout")
+//        TODO("Need to implement logout")
     }
 
     fun onAboutAppClick() {

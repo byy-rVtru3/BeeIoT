@@ -10,6 +10,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppRoute
+import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppScreen
+import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppViewModel
 import com.app.mobile.presentation.ui.screens.accountinfo.AccountInfoRoute
 import com.app.mobile.presentation.ui.screens.authorization.AuthorizationRoute
 import com.app.mobile.presentation.ui.screens.authorization.AuthorizationScreen
@@ -74,6 +76,12 @@ fun AppNavigation(
                 onAboutAppClick = { navController.navigate(AboutAppRoute) },
                 onLogoutClick = { navController.navigate(AuthorizationRoute) })
         }
+
+        animatedComposable<AboutAppRoute> {
+            val aboutAppViewModel: AboutAppViewModel = koinViewModel()
+            AboutAppScreen(aboutAppViewModel)
+        }
+
     }
 }
 
