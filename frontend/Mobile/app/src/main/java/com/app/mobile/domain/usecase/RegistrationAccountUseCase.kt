@@ -6,7 +6,6 @@ import com.app.mobile.domain.models.registration.RegistrationRequestResult
 import com.app.mobile.domain.repository.RepositoryApi
 import com.app.mobile.domain.repository.RepositoryDatabase
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 
 class RegistrationAccountUseCase(
@@ -18,18 +17,12 @@ class RegistrationAccountUseCase(
     suspend operator fun invoke(registrationModel: RegistrationModel):
         RegistrationRequestResult =
         withContext(dispatcher) {
-            val addUserDeferred = async {
-                repositoryDatabase.addUser(
-                    registrationModel.toUserDomain()
-                )
-            }
+            val result = repositoryApi.registrationAccount(registrationModel)
 
-            val registrationAccountDeferred = async {
-                repositoryApi.registrationAccount(registrationModel)
+            if (result is RegistrationRequestResult.Success) {
+                repositoryDatabase.addUser(registrationModel.toUserDomain())
             }
-
-            addUserDeferred.await()
-            registrationAccountDeferred.await()
+            result
         }
 
 }
