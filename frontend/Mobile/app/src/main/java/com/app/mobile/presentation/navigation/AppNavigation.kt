@@ -9,6 +9,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppRoute
+import com.app.mobile.presentation.ui.screens.accountinfo.AccountInfoRoute
 import com.app.mobile.presentation.ui.screens.authorization.AuthorizationRoute
 import com.app.mobile.presentation.ui.screens.authorization.AuthorizationScreen
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationViewModel
@@ -18,6 +20,9 @@ import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.Confirmatio
 import com.app.mobile.presentation.ui.screens.registration.RegistrationRoute
 import com.app.mobile.presentation.ui.screens.registration.RegistrationScreen
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationViewModel
+import com.app.mobile.presentation.ui.screens.settings.SettingsRoute
+import com.app.mobile.presentation.ui.screens.settings.SettingsScreen
+import com.app.mobile.presentation.ui.screens.settings.viewmodel.SettingsViewModel
 import org.koin.androidx.compose.koinViewModel
 
 
@@ -45,7 +50,9 @@ fun AppNavigation(
             val destination = it.toRoute<ConfirmationRoute>()
             val confirmationViewModel: ConfirmationViewModel = koinViewModel()
             ConfirmationScreen(
-                confirmationViewModel, destination.email, destination.type,
+                confirmationViewModel,
+                destination.email,
+                destination.type,
                 onConfirmClick = {
                     navController.navigate(AuthorizationRoute)
                 }
@@ -57,6 +64,15 @@ fun AppNavigation(
             AuthorizationScreen(
                 authorizationViewModel,
                 onAuthorizeClick = { TODO("add navigation to main screen") })
+        }
+
+        animatedComposable<SettingsRoute> {
+            val settingsViewModel: SettingsViewModel = koinViewModel()
+            SettingsScreen(
+                settingsViewModel,
+                onAccountInfoClick = { navController.navigate(AccountInfoRoute) },
+                onAboutAppClick = { navController.navigate(AboutAppRoute) },
+                onLogoutClick = { navController.navigate(AuthorizationRoute) })
         }
     }
 }
