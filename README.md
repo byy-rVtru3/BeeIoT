@@ -23,5 +23,6 @@
   https://docs.google.com/document/d/1E6JWQt-eEOeX0CoDFyc3pHSL-0Htkao_hHzbLtlq5SY/edit?usp=sharing
 - 📊 **Presentation** (презентация):
   https://docs.google.com/presentation/d/1yrYslXZLUU_pNW3oEP3yG8VLHuOIWepEDGlEcQZQyHI/edit?usp=sharing
-
+- **Gantt chart**:
+  https://miro.com/app/board/uXjVJsWVmWY=/
 ---
