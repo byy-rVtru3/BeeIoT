@@ -17,6 +17,9 @@ class RepositoryDatabaseImpl(private val userDao: UserDao) : RepositoryDatabase 
     override suspend fun getUserByEmail(email: String): UserDomain? =
         userDao.getUserByEmail(email)?.toDomain()
 
-    override suspend fun addTokenToUser(email: String, token: String) =
+    override suspend fun addTokenToUser(email: String, token: String): Int? {
+        val id = userDao.getUserIdByEmail(email) ?: return null
         userDao.addTokenToUser(email, token)
+        return id
+    }
 }

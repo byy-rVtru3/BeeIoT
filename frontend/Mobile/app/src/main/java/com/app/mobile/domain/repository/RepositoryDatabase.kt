@@ -12,5 +12,5 @@ interface RepositoryDatabase {
 
     suspend fun getUserByEmail(email: String): UserDomain?
 
-    suspend fun addTokenToUser(email: String, token: String)
+    suspend fun addTokenToUser(email: String, token: String): Int?
 }
