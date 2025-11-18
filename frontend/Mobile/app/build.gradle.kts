@@ -68,6 +68,9 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
 
+    //DataStore
+    implementation(libs.androidx.datastore.preferences)
+
     //Room: Библиотека для работы с базой данных SQLite.
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

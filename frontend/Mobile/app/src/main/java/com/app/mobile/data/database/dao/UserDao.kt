@@ -24,5 +24,6 @@ interface UserDao {
     @Query("UPDATE users SET jwtToken = :token WHERE email = :email")
     suspend fun addTokenToUser(email: String, token: String)
 
-
+    @Query("SELECT id FROM users WHERE email = :email")
+    suspend fun getUserIdByEmail(email: String): Int?
 }
