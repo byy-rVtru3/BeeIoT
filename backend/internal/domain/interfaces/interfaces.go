@@ -1,7 +1,8 @@
 package interfaces
 
 import (
-	"BeeIOT/internal/domain/types/httpType"
+	"BeeIOT/internal/domain/models/dbTypes"
+	"BeeIOT/internal/domain/models/httpType"
 	"context"
 	"time"
 )
@@ -18,12 +19,16 @@ type DB interface {
 	DeleteUser(ctx context.Context, email string) error
 	GetUserById(ctx context.Context, id int) (string, error)
 
-	NewHive(ctx context.Context, hive httpType.Hive) error
-	GetHives(ctx context.Context, req *httpType.Hive) ([]httpType.Hive, error)
-	GetHiveByName(ctx context.Context, req httpType.Hive) (httpType.Hive, error)
-	DeleteHive(ctx context.Context, hive httpType.Hive) error
-	UpdateHive(ctx context.Context, nameHive string, hive httpType.Hive) error
-	GetTemperaturesSinceTimeById(ctx context.Context, hiveId int, time time.Time) ([]httpType.HivesTemperatureData, error)
+	NewHive(ctx context.Context, email, nameHive string) error
+	GetHives(ctx context.Context, email string) ([]dbTypes.Hive, error)
+	GetHiveByName(ctx context.Context, email, nameHive string) (dbTypes.Hive, error)
+	DeleteHive(ctx context.Context, email, nameHive string) error
+	UpdateHive(ctx context.Context, nameHive string, hive dbTypes.Hive) error
+	GetTemperaturesSinceTimeById(
+		ctx context.Context, hiveId int, time time.Time) ([]dbTypes.HivesTemperatureData, error)
+
+	GetNoiseSinceTimeMap(
+		ctx context.Context, id int, date time.Time) (map[time.Time][]dbTypes.HivesNoiseData, error)
 }
 
 type InMemoryDB interface {

@@ -1,15 +1,14 @@
 package postgres
 
 import (
-	"BeeIOT/internal/domain/types/httpType"
+	"BeeIOT/internal/domain/models/dbTypes"
+	"BeeIOT/internal/domain/models/httpType"
 	"context"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 func (db *Postgres) NewTemperature(ctx context.Context, temp httpType.Temperature) error {
-	text := `INSERT INTO temperature_hive (user_id, hive_id, temperature, time) 
+	text := `INSERT INTO temperature_hive (user_id, hive_id, level, recorded_at) 
 			 VALUES (
 				(SELECT id FROM users WHERE email = $1),
 				(SELECT id FROM hives WHERE name = $2 AND user_id = (SELECT id FROM users WHERE email = $1),
@@ -28,8 +27,8 @@ func (db *Postgres) DeleteTemperature(ctx context.Context, temp httpType.Tempera
 	return err
 }
 
-func (db *Postgres) GetTemperaturesSinceTime(ctx context.Context, hive httpType.Hive, time time.Time) ([]httpType.Temperature, error) {
-	text := `SELECT temperature, time FROM temperature_hive 
+func (db *Postgres) GetTemperaturesSinceTime(ctx context.Context, hive dbTypes.Hive, time time.Time) ([]dbTypes.HivesTemperatureData, error) {
+	text := `SELECT level, recorded_at FROM temperature_hive 
 			 WHERE user_id = (SELECT id FROM users WHERE email = $1)
 			 AND hive_id = (SELECT id FROM hives WHERE name = $2 AND user_id = (SELECT id FROM users WHERE email = $1))
 			 AND time >= $3;`
@@ -38,10 +37,10 @@ func (db *Postgres) GetTemperaturesSinceTime(ctx context.Context, hive httpType.
 		return nil, err
 	}
 	defer rows.Close()
-	var temperatures []httpType.Temperature
+	var temperatures []dbTypes.HivesTemperatureData
 	for rows.Next() {
-		var temp httpType.Temperature
-		err := rows.Scan(&temp.Temperature, &temp.Time)
+		var temp dbTypes.HivesTemperatureData
+		err := rows.Scan(&temp.Temperature, &temp.Date)
 		if err != nil {
 			return nil, err
 		}
@@ -50,6 +49,23 @@ func (db *Postgres) GetTemperaturesSinceTime(ctx context.Context, hive httpType.
 	return temperatures, nil
 }
 
-func (db *Postgres) GetTemperaturesSinceTimeById(ctx context.Context, hiveId int, time time.Time) ([]httpType.HivesTemperatureData, error) {
-
+func (db *Postgres) GetTemperaturesSinceTimeById(ctx context.Context, hiveId int, time time.Time) ([]dbTypes.HivesTemperatureData, error) {
+	text := `SELECT level, recorded_at FROM temperature_hive
+            WHERE hive_id = $1
+            AND recorded_at >= $2;`
+	rows, err := db.conn.Query(ctx, text, hiveId, time)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var temperatures []dbTypes.HivesTemperatureData
+	for rows.Next() {
+		var temp dbTypes.HivesTemperatureData
+		err := rows.Scan(&temp.Temperature, &temp.Date)
+		if err != nil {
+			return nil, err
+		}
+		temperatures = append(temperatures, temp)
+	}
+	return temperatures, nil
 }

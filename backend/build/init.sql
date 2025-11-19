@@ -16,21 +16,21 @@ CREATE TABLE hives (
 CREATE TABLE temperature (
                              id SERIAL PRIMARY KEY,
                              hive_id INTEGER REFERENCES hives(id) ON DELETE CASCADE,
-                             value FLOAT NOT NULL,
+                             level FLOAT NOT NULL,
                              recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE weight (
                         id SERIAL PRIMARY KEY,
                         hive_id INTEGER REFERENCES hives(id) ON DELETE CASCADE,
-                        value FLOAT NOT NULL,
+                        level FLOAT NOT NULL,
                         recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE noise (
                        id SERIAL PRIMARY KEY,
                        hive_id INTEGER REFERENCES hives(id) ON DELETE CASCADE,
-                       value FLOAT NOT NULL,
+                       level FLOAT NOT NULL,
                        recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
