@@ -1,20 +1,8 @@
+// Package httpType могут подаваться в функции базы данных, но не могут возвращаться ими
+// нужны, чтобы парсить данные с тела запроса и одним параметром передавать их в бд
 package httpType
 
 import "time"
-
-type Hive struct { // вот эту пиздень надо изменить, чтобы она всю инфу о улье хранила
-	Id              int       `json:"id"`
-	NameHive        string    `json:"name"`
-	Email           string    `json:"email"`
-	DateTemperature time.Time `json:"temperature_check"`
-}
-
-type Task struct {
-	Name  string    `json:"name"`
-	Time  time.Time `json:"time"`
-	Email string    `json:"email"`
-	Hive  string    `json:"hive"`
-}
 
 type Registration struct {
 	Email    string `json:"email"`
@@ -43,8 +31,10 @@ type NotificationData struct {
 	Date     int64  `json:"date"`
 }
 
-// 3 таблицы нижние полная залупа
-// Таблица 1 - уровень шума
+type QueenRequest struct {
+	StartDate string `json:"start_date"`
+}
+
 type NoiseLevel struct {
 	Level int       `json:"level"`
 	Time  time.Time `json:"time"`
@@ -66,14 +56,4 @@ type Temperature struct {
 	Time        time.Time `json:"time"`
 	Email       string    `json:"email"`
 	Hive        string    `json:"hive"`
-}
-
-type QueenRequest struct {
-	StartDate string `json:"start_date"`
-}
-
-type HivesTemperatureData struct {
-	Id          int       `json:"id"`
-	Date        time.Time `json:"temperature_check"`
-	Temperature float64   `json:"temperature"`
 }

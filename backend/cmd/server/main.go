@@ -1,12 +1,16 @@
 package main
 
 import (
+	"BeeIOT/internal/analyzer/noise"
+	"BeeIOT/internal/analyzer/temperature"
 	"BeeIOT/internal/http"
 	"BeeIOT/internal/infrastructure/postgres"
 	redis2 "BeeIOT/internal/infrastructure/redis"
 	smtp2 "BeeIOT/internal/infrastructure/smtp"
+	"context"
 	"log/slog"
 	"os"
+	"time"
 )
 
 func init() {
@@ -45,5 +49,11 @@ func main() {
 		return
 	}
 	defer redis.Close()
+
+	analyzersCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	temperature.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
+	noise.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
+
 	http.StartServer(db, smtp, redis)
 }

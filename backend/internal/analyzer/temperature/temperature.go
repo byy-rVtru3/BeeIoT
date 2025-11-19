@@ -2,7 +2,8 @@ package temperature
 
 import (
 	"BeeIOT/internal/domain/interfaces"
-	"BeeIOT/internal/domain/types/httpType"
+	"BeeIOT/internal/domain/models/dbTypes"
+	"BeeIOT/internal/domain/models/httpType"
 	"context"
 	"fmt"
 	"log/slog"
@@ -34,7 +35,7 @@ func (a *Analyzer) Start() {
 }
 
 func (a *Analyzer) analyzeTemperature() {
-	hives, err := a.db.GetHives(a.ctx, nil)
+	hives, err := a.db.GetHives(a.ctx, "")
 	if err != nil {
 		slog.Error("не удалось получить улья для анализа температуры",
 			"module", "temperature", "function", "analyzeTemperature", "error", err)
@@ -64,14 +65,14 @@ func (a *Analyzer) isNormallyTemperature(temp float64) bool {
 	return temp >= (temperatureNormal-temperatureDeltaDown) && temp <= (temperatureNormal+temperatureDeltaUp)
 }
 
-func (a *Analyzer) temperatureAnalysis(data []httpType.HivesTemperatureData, hive httpType.Hive) {
+func (a *Analyzer) temperatureAnalysis(data []dbTypes.HivesTemperatureData, hive dbTypes.Hive) {
 	for _, elem := range data {
 		if !a.isNormallyTemperature(elem.Temperature) {
 			email, err := a.db.GetUserById(a.ctx, hive.Id)
 			if err != nil {
 				slog.Warn("не удалось получить email пользователя",
 					"module", "temperature", "function", "analyzeTemperature",
-					"id", hive.Id, email, "error", err)
+					"id", hive.Id, "email", email, "error", err)
 				continue
 			}
 			err = a.inMemDb.SetNotification(a.ctx, email, httpType.NotificationData{
@@ -82,6 +83,11 @@ func (a *Analyzer) temperatureAnalysis(data []httpType.HivesTemperatureData, hiv
 				NameHive: hive.NameHive,
 				Date:     elem.Date.UnixNano(),
 			})
+			if err != nil {
+				slog.Warn("не удалось сохранить уведомление об отклонении температуры",
+					"module", "temperature", "function", "analyzeTemperature",
+					"id", hive.Id, "email", email, "error", err)
+			}
 		}
 	}
 }
