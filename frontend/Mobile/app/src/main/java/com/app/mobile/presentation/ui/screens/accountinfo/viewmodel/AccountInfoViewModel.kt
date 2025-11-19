@@ -17,6 +17,9 @@ class AccountInfoViewModel(
     private val _accountInfoUiState = MutableLiveData<AccountInfoUiState>()
     val accountInfoUiState: LiveData<AccountInfoUiState> = _accountInfoUiState
 
+    private val _accountInfoDialogState = MutableLiveData<AccountInfoDialogState>()
+    val accountInfoDialogState: LiveData<AccountInfoDialogState> = _accountInfoDialogState
+
     val handler = CoroutineExceptionHandler { _, exception ->
         _accountInfoUiState.value = AccountInfoUiState.Error(exception.message.toString())
         Log.e("AccountInfoViewModel", exception.message.toString())
@@ -35,6 +38,40 @@ class AccountInfoViewModel(
                 }
             }
         }
+    }
 
+    fun onNameClick() {
+        val currentState = _accountInfoUiState.value
+        if (currentState is AccountInfoUiState.Content) {
+            viewModelScope.launch(handler) {
+                _accountInfoDialogState.value = AccountInfoDialogState.SetName(
+                    currentState.userInfo.name
+                )
+
+            }
+        }
+    }
+
+    fun onEmailClick() {
+        val currentState = _accountInfoUiState.value
+        if (currentState is AccountInfoUiState.Content) {
+            viewModelScope.launch(handler) {
+                _accountInfoDialogState.value = AccountInfoDialogState.SetEmail(
+                    currentState.userInfo.email
+                )
+            }
+        }
+    }
+
+    fun onPasswordClick() {
+        val currentState = _accountInfoUiState.value
+        if (currentState is AccountInfoUiState.Content) {
+            viewModelScope.launch(handler) {
+                _accountInfoDialogState.value = AccountInfoDialogState.SetPassword(
+                    currentState.userInfo.password
+                )
+
+            }
+        }
     }
 }
