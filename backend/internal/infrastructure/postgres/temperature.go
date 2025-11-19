@@ -1,45 +1,46 @@
 package postgres
 
 import (
-	"BeeIOT/internal/domain/types/httpType"
+	"BeeIOT/internal/domain/models/dbTypes"
+	"BeeIOT/internal/domain/models/httpType"
 	"context"
 	"time"
 )
 
 func (db *Postgres) NewTemperature(ctx context.Context, temp httpType.Temperature) error {
-	text := `INSERT INTO temperature_hive (user_id, hive_id, temperature, time) 
+	text := `INSERT INTO temperature_hive (user_id, hive_id, level, recorded_at) 
 			 VALUES (
-				(SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2),
-				(SELECT id FROM hives WHERE name = $3 AND user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2)),
-				$4, $5
+				(SELECT id FROM users WHERE email = $1),
+				(SELECT id FROM hives WHERE name = $2 AND user_id = (SELECT id FROM users WHERE email = $1),
+				$3, $4
 			 );`
-	_, err := db.conn.Exec(ctx, text, temp.Email, temp.Hash, temp.Hive, temp.Temperature, temp.Time)
+	_, err := db.conn.Exec(ctx, text, temp.Email, temp.Hive, temp.Temperature, temp.Time)
 	return err
 }
 
 func (db *Postgres) DeleteTemperature(ctx context.Context, temp httpType.Temperature) error {
 	text := `DELETE FROM temperature_hive 
-			 WHERE user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2)
-			 AND hive_id = (SELECT id FROM hives WHERE name = $3 AND user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2))
-			 AND time = $4;`
-	_, err := db.conn.Exec(ctx, text, temp.Email, temp.Hash, temp.Hive, temp.Time)
+			 WHERE user_id = (SELECT id FROM users WHERE email = $1)
+			 AND hive_id = (SELECT id FROM hives WHERE name = $2 AND user_id = (SELECT id FROM users WHERE email = $1)))
+			 AND time = $3;`
+	_, err := db.conn.Exec(ctx, text, temp.Email, temp.Hive, temp.Time)
 	return err
 }
 
-func (db *Postgres) getTemperaturesSinceTime(ctx context.Context, hive httpType.Hive, time time.Time) ([]httpType.Temperature, error) {
-	text := `SELECT temperature, time FROM temperature_hive 
-			 WHERE user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2)
-			 AND hive_id = (SELECT id FROM hives WHERE name = $3 AND user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2))
-			 AND time >= $4;`
-	rows, err := db.conn.Query(ctx, text, hive.Email, hive.Hash, hive.NameHive, time)
+func (db *Postgres) GetTemperaturesSinceTime(ctx context.Context, hive dbTypes.Hive, time time.Time) ([]dbTypes.HivesTemperatureData, error) {
+	text := `SELECT level, recorded_at FROM temperature_hive 
+			 WHERE user_id = (SELECT id FROM users WHERE email = $1)
+			 AND hive_id = (SELECT id FROM hives WHERE name = $2 AND user_id = (SELECT id FROM users WHERE email = $1))
+			 AND time >= $3;`
+	rows, err := db.conn.Query(ctx, text, hive.Email, hive.NameHive, time)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var temperatures []httpType.Temperature
+	var temperatures []dbTypes.HivesTemperatureData
 	for rows.Next() {
-		var temp httpType.Temperature
-		err := rows.Scan(&temp.Temperature, &temp.Time)
+		var temp dbTypes.HivesTemperatureData
+		err := rows.Scan(&temp.Temperature, &temp.Date)
 		if err != nil {
 			return nil, err
 		}
@@ -48,17 +49,23 @@ func (db *Postgres) getTemperaturesSinceTime(ctx context.Context, hive httpType.
 	return temperatures, nil
 }
 
-func (db *Postgres) GetTemperatureForDay(ctx context.Context, hive httpType.Hive) ([]httpType.Temperature, error) {
-	dayAgo := time.Now().Add(-24 * time.Hour)
-	return db.getTemperaturesSinceTime(ctx, hive, dayAgo)
-}
-
-func (db *Postgres) GetTemperatureForWeek(ctx context.Context, hive httpType.Hive) ([]httpType.Temperature, error) {
-	weekAgo := time.Now().Add(-7 * 24 * time.Hour)
-	return db.getTemperaturesSinceTime(ctx, hive, weekAgo)
-}
-
-func (db *Postgres) GetTemperatureForMonth(ctx context.Context, hive httpType.Hive) ([]httpType.Temperature, error) {
-	monthAgo := time.Now().Add(-30 * 24 * time.Hour)
-	return db.getTemperaturesSinceTime(ctx, hive, monthAgo)
+func (db *Postgres) GetTemperaturesSinceTimeById(ctx context.Context, hiveId int, time time.Time) ([]dbTypes.HivesTemperatureData, error) {
+	text := `SELECT level, recorded_at FROM temperature_hive
+            WHERE hive_id = $1
+            AND recorded_at >= $2;`
+	rows, err := db.conn.Query(ctx, text, hiveId, time)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var temperatures []dbTypes.HivesTemperatureData
+	for rows.Next() {
+		var temp dbTypes.HivesTemperatureData
+		err := rows.Scan(&temp.Temperature, &temp.Date)
+		if err != nil {
+			return nil, err
+		}
+		temperatures = append(temperatures, temp)
+	}
+	return temperatures, nil
 }

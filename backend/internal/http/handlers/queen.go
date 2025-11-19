@@ -10,7 +10,6 @@ import (
 
 func (h *Handler) QueenCalculator(w http.ResponseWriter, r *http.Request) {
 	var req httpType.QueenRequest
-
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		slog.Warn("Failed to decode JSON request",
 			"module", "handlers",
