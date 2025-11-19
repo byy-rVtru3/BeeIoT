@@ -1,8 +1,10 @@
 package interfaces
 
 import (
-	"BeeIOT/internal/domain/types/httpType"
+	"BeeIOT/internal/domain/models/dbTypes"
+	"BeeIOT/internal/domain/models/httpType"
 	"context"
+	"time"
 )
 
 type ConfirmSender interface {
@@ -15,6 +17,18 @@ type DB interface {
 	Login(ctx context.Context, login httpType.Login) (string, error)
 	ChangePassword(ctx context.Context, user httpType.ChangePassword) error
 	DeleteUser(ctx context.Context, email string) error
+	GetUserById(ctx context.Context, id int) (string, error)
+
+	NewHive(ctx context.Context, email, nameHive string) error
+	GetHives(ctx context.Context, email string) ([]dbTypes.Hive, error)
+	GetHiveByName(ctx context.Context, email, nameHive string) (dbTypes.Hive, error)
+	DeleteHive(ctx context.Context, email, nameHive string) error
+	UpdateHive(ctx context.Context, nameHive string, hive dbTypes.Hive) error
+	GetTemperaturesSinceTimeById(
+		ctx context.Context, hiveId int, time time.Time) ([]dbTypes.HivesTemperatureData, error)
+
+	GetNoiseSinceTimeMap(
+		ctx context.Context, id int, date time.Time) (map[time.Time][]dbTypes.HivesNoiseData, error)
 }
 
 type InMemoryDB interface {
