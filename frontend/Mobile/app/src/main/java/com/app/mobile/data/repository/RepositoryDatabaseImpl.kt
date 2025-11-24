@@ -7,16 +7,20 @@ import com.app.mobile.domain.models.UserDomain
 import com.app.mobile.domain.repository.RepositoryDatabase
 
 class RepositoryDatabaseImpl(private val userDao: UserDao) : RepositoryDatabase {
+
     override suspend fun addUser(userDomain: UserDomain) = userDao.addUser(userDomain.toEntity())
 
     override suspend fun updateUser(userDomain: UserDomain) =
         userDao.updateUser(userDomain.toEntity())
 
-    override suspend fun deleteUser(email: String) = userDao.deleteUserByEmail(email)
+    override suspend fun deleteUser(userId: Int) = userDao.deleteUserById(userId)
 
-    override suspend fun getUserByEmail(email: String): UserDomain? =
-        userDao.getUserByEmail(email)?.toDomain()
+    override suspend fun getUserById(userId: Int): UserDomain? =
+        userDao.getUserById(userId)?.toDomain()
 
-    override suspend fun addTokenToUser(email: String, token: String) =
+    override suspend fun addTokenToUser(email: String, token: String): Int? {
+        val id = userDao.getUserIdByEmail(email) ?: return null
         userDao.addTokenToUser(email, token)
+        return id
+    }
 }

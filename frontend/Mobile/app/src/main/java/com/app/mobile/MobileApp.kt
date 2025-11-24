@@ -8,6 +8,7 @@ import com.app.mobile.di.networkModule
 import com.app.mobile.di.registrationModule
 import com.app.mobile.di.repositoryApiModule
 import com.app.mobile.di.repositoryDatabaseModule
+import com.app.mobile.di.sessionModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -27,7 +28,8 @@ class MobileApp : Application() {
                 confirmationModule,
                 authorizationModule,
                 databaseModule,
-                repositoryDatabaseModule
+                repositoryDatabaseModule,
+                sessionModule
             )
         }
     }

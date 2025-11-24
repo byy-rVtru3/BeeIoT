@@ -20,8 +20,12 @@ ksp = "2.2.20-2.0.4"
 roomCompiler = "2.8.2"
 roomKtx = "2.8.2"
 roomRuntime = "2.8.2"
+dataStore = "1.0.0"
 
 [libraries]
+#DataStore
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "dataStore" }
+
 # Room
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomKtx" }
