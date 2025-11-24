@@ -9,6 +9,16 @@ plugins {
     alias(libs.plugins.google.devtools.ksp)
 }
 
+configurations.all {
+    resolutionStrategy {
+        eachDependency {
+            if (requested.group == "com.intellij" && requested.name == "annotations") {
+                useTarget("org.jetbrains:annotations:23.0.0")
+            }
+        }
+    }
+}
+
 android {
     namespace = "com.app.mobile"
     compileSdk = 36
@@ -57,6 +67,9 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
+
+    //DataStore
+    implementation(libs.androidx.datastore.preferences)
 
     //Room: Библиотека для работы с базой данных SQLite.
     implementation(libs.androidx.room.runtime)
