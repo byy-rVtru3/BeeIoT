@@ -13,6 +13,8 @@ import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppRoute
 import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppScreen
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppViewModel
 import com.app.mobile.presentation.ui.screens.accountinfo.AccountInfoRoute
+import com.app.mobile.presentation.ui.screens.accountinfo.AccountInfoScreen
+import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoViewModel
 import com.app.mobile.presentation.ui.screens.authorization.AuthorizationRoute
 import com.app.mobile.presentation.ui.screens.authorization.AuthorizationScreen
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationViewModel
@@ -75,6 +77,11 @@ fun AppNavigation(
                 onAccountInfoClick = { navController.navigate(AccountInfoRoute) },
                 onAboutAppClick = { navController.navigate(AboutAppRoute) },
                 onLogoutClick = { navController.navigate(AuthorizationRoute) })
+        }
+
+        animatedComposable<AccountInfoRoute> {
+            val accountInfoViewModel: AccountInfoViewModel = koinViewModel()
+            AccountInfoScreen(accountInfoViewModel)
         }
 
         animatedComposable<AboutAppRoute> {
