@@ -26,27 +26,36 @@ class SettingsViewModel(
     }
 
     fun onAccountInfoClick() {
-        _navigationEvent.value = SettingsNavigationEvent.NavigateToAccountInfo
+        val currentState = _settingsUiState.value
+        if (currentState is SettingsUiState.Content) {
+            _navigationEvent.value = SettingsNavigationEvent.NavigateToAccountInfo
+        }
     }
 
     fun onLogoutClick() {
-        _settingsUiState.value = SettingsUiState.Loading
-        viewModelScope.launch(handler) {
-            when (val result = logoutUseCase().toUiModel()) {
-                is LogoutResultUi.Success -> {
-                    _navigationEvent.value = SettingsNavigationEvent.NavigateToAuthorization
-                }
+        val currentState = _settingsUiState.value
+        if (currentState is SettingsUiState.Content) {
+            _settingsUiState.value = SettingsUiState.Loading
+            viewModelScope.launch(handler) {
+                when (val result = logoutUseCase().toUiModel()) {
+                    is LogoutResultUi.Success -> {
+                        _navigationEvent.value = SettingsNavigationEvent.NavigateToAuthorization
+                    }
 
-                is LogoutResultUi.Error -> {
-                    _settingsUiState.value = SettingsUiState.Error(result.message)
+                    is LogoutResultUi.Error -> {
+                        _settingsUiState.value = SettingsUiState.Error(result.message)
 
+                    }
                 }
             }
         }
     }
 
     fun onAboutAppClick() {
-        _navigationEvent.value = SettingsNavigationEvent.NavigateToAboutApp
+        val currentState = _settingsUiState.value
+        if (currentState is SettingsUiState.Content) {
+            _navigationEvent.value = SettingsNavigationEvent.NavigateToAboutApp
+        }
     }
 
     fun onNavigationHandled() {
