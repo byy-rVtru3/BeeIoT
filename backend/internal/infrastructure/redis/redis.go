@@ -1,7 +1,7 @@
 package redis
 
 import (
-	"BeeIOT/internal/domain/types/httpType"
+	"BeeIOT/internal/domain/models/httpType"
 	"context"
 	"encoding/json"
 	"errors"

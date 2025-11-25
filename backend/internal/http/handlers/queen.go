@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"BeeIOT/internal/domain/calcQueen"
-	"BeeIOT/internal/domain/types/httpType"
+	"BeeIOT/internal/domain/models/httpType"
 	"encoding/json"
 	"log/slog"
 	"net/http"
