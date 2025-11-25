@@ -47,6 +47,14 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 		r.Route("/calcQueen", func(r chi.Router) {
 			r.Post("/calc", h.QueenCalculator)
 		})
+		r.Route("/hive", func(r chi.Router) {
+			//r.Use(m.CheckAuth)
+			r.Post("/create", h.CreateHive)
+			r.Get("/list", h.GetHives)
+			r.Get("/", h.GetHive)
+			r.Put("/update", h.UpdateHive)
+			r.Delete("/delete", h.DeleteHive)
+		})
 	})
 
 	srv := &http.Server{
