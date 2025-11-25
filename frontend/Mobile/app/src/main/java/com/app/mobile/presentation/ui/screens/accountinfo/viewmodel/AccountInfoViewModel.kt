@@ -6,12 +6,16 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.mappers.toPresentation
+import com.app.mobile.domain.mappers.toUiModel
+import com.app.mobile.domain.usecase.DeleteAccountUseCase
 import com.app.mobile.domain.usecase.GetAccountInfoUseCase
+import com.app.mobile.presentation.models.DeleteResultUi
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 
 class AccountInfoViewModel(
-    private val getAccountInfoUseCase: GetAccountInfoUseCase
+    private val getAccountInfoUseCase: GetAccountInfoUseCase,
+    private val deleteAccountUseCase: DeleteAccountUseCase
 ) : ViewModel() {
 
     private val _accountInfoUiState = MutableLiveData<AccountInfoUiState>()
@@ -19,6 +23,9 @@ class AccountInfoViewModel(
 
     private val _accountInfoDialogState = MutableLiveData<AccountInfoDialogState>()
     val accountInfoDialogState: LiveData<AccountInfoDialogState> = _accountInfoDialogState
+
+    private val _navigationEvent = MutableLiveData<AccountInfoNavigationEvent?>()
+    val navigationEvent: LiveData<AccountInfoNavigationEvent?> = _navigationEvent
 
     val handler = CoroutineExceptionHandler { _, exception ->
         _accountInfoUiState.value = AccountInfoUiState.Error(exception.message.toString())
@@ -75,4 +82,25 @@ class AccountInfoViewModel(
         }
     }
 
+    fun onDeleteAccountClick() {
+        val currentState = _accountInfoUiState.value
+        if (currentState is AccountInfoUiState.Content) {
+            _accountInfoUiState.value = AccountInfoUiState.Loading
+            viewModelScope.launch(handler) {
+                when (val result = deleteAccountUseCase().toUiModel()) {
+                    is DeleteResultUi.Success -> {
+                        _navigationEvent.value = AccountInfoNavigationEvent.NavigateToRegistration
+                    }
+
+                    is DeleteResultUi.Error -> {
+                        _accountInfoUiState.value = AccountInfoUiState.Error(result.message)
+                    }
+                }
+            }
+        }
+    }
+
+    fun onNavigationHandled() {
+        _navigationEvent.value = null
+    }
 }

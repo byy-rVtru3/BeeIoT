@@ -81,7 +81,9 @@ fun AppNavigation(
 
         animatedComposable<AccountInfoRoute> {
             val accountInfoViewModel: AccountInfoViewModel = koinViewModel()
-            AccountInfoScreen(accountInfoViewModel)
+            AccountInfoScreen(
+                accountInfoViewModel,
+                onDeleteClick = { navController.navigate(AuthorizationRoute) })
         }
 
         animatedComposable<AboutAppRoute> {
