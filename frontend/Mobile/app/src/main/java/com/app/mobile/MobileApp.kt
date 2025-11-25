@@ -12,6 +12,7 @@ import com.app.mobile.di.screens.registrationModule
 import com.app.mobile.di.repository.repositoryApiModule
 import com.app.mobile.di.repository.repositoryDatabaseModule
 import com.app.mobile.di.screens.aboutAppModule
+import com.app.mobile.di.screens.accountInfoModule
 import com.app.mobile.di.screens.settingsModule
 import com.app.mobile.di.sessionModule
 import org.koin.android.ext.koin.androidContext
@@ -39,7 +40,8 @@ class MobileApp : Application() {
                 authApiModule,
                 authRepository,
                 settingsModule,
-                aboutAppModule
+                aboutAppModule,
+                accountInfoModule
             )
         }
     }
