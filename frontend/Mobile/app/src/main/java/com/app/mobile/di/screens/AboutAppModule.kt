@@ -1,4 +1,4 @@
-package com.app.mobile.di
+package com.app.mobile.di.screens
 
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppViewModel
 import org.koin.core.module.dsl.viewModelOf

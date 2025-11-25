@@ -5,9 +5,10 @@ import com.app.mobile.data.api.models.ResponseApiModel
 import com.app.mobile.data.api.models.ConfirmationRequestApiModel
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.POST
 
-interface BeeApiClient {
+interface PublicApiClient {
     @POST("auth/registration")
     suspend fun registrationAccount(@Body request: AuthRequestApiModel):
         Response<ResponseApiModel>

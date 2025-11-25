@@ -1,4 +1,4 @@
-package com.app.mobile.di
+package com.app.mobile.di.screens
 
 import com.app.mobile.domain.usecase.CreateUserAccountUseCase
 import com.app.mobile.domain.usecase.RegistrationAccountUseCase

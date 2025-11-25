@@ -23,4 +23,12 @@ class RepositoryDatabaseImpl(private val userDao: UserDao) : RepositoryDatabase 
         userDao.addTokenToUser(email, token)
         return id
     }
+
+    override suspend fun updateTokenToUser(userId: Int, token: String) =
+        userDao.updateTokenToUser(userId, token)
+
+    override suspend fun getUserToken(userId: Int) = userDao.getUserToken(userId)
+
+    override suspend fun deleteTokenFromUser(userId: Int) = userDao.deleteTokenFromUser(userId)
+
 }

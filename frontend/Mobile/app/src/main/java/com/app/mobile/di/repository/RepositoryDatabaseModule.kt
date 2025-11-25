@@ -1,4 +1,4 @@
-package com.app.mobile.di
+package com.app.mobile.di.repository
 
 import com.app.mobile.data.repository.RepositoryDatabaseImpl
 import com.app.mobile.domain.repository.RepositoryDatabase
