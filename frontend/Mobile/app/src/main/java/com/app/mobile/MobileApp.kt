@@ -20,6 +20,7 @@ import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 
 class MobileApp : Application() {
+    @Suppress("UNRESOLVED_REFERENCE")
     override fun onCreate() {
         super.onCreate()
 
