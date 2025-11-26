@@ -4,12 +4,17 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.app.mobile.domain.mappers.toUiModel
+import com.app.mobile.domain.usecase.LogoutAccountUseCase
+import com.app.mobile.presentation.models.LogoutResultUi
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.launch
 
 class SettingsViewModel(
-
+    private val logoutUseCase: LogoutAccountUseCase
 ) : ViewModel() {
-    private val _settingsUiState = MutableLiveData<SettingsUiState>()
+    private val _settingsUiState = MutableLiveData<SettingsUiState>(SettingsUiState.Content)
     val settingsUiState: LiveData<SettingsUiState> = _settingsUiState
 
     private val _navigationEvent = MutableLiveData<SettingsNavigationEvent?>()
@@ -21,16 +26,37 @@ class SettingsViewModel(
     }
 
     fun onAccountInfoClick() {
-        _navigationEvent.value = SettingsNavigationEvent.NavigateToAccountInfo
+        val currentState = _settingsUiState.value
+        if (currentState is SettingsUiState.Content) {
+            _navigationEvent.value = SettingsNavigationEvent.NavigateToAccountInfo
+        }
     }
 
     fun onLogoutClick() {
-        _navigationEvent.value = SettingsNavigationEvent.NavigateToAuthorization
-//        TODO("Need to implement logout")
+        val currentState = _settingsUiState.value
+        if (currentState is SettingsUiState.Content) {
+            _settingsUiState.value = SettingsUiState.Loading
+            viewModelScope.launch(handler) {
+
+                when (val result = logoutUseCase().toUiModel()) {
+                    is LogoutResultUi.Success -> {
+                        _navigationEvent.value = SettingsNavigationEvent.NavigateToAuthorization
+                    }
+
+                    is LogoutResultUi.Error -> {
+                        _settingsUiState.value = SettingsUiState.Error(result.message)
+
+                    }
+                }
+            }
+        }
     }
 
     fun onAboutAppClick() {
-        _navigationEvent.value = SettingsNavigationEvent.NavigateToAboutApp
+        val currentState = _settingsUiState.value
+        if (currentState is SettingsUiState.Content) {
+            _navigationEvent.value = SettingsNavigationEvent.NavigateToAboutApp
+        }
     }
 
     fun onNavigationHandled() {

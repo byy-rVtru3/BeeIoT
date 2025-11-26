@@ -13,7 +13,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.app.mobile.presentation.models.AuthorizationModelUi
 import com.app.mobile.presentation.ui.components.ErrorMessage
@@ -27,7 +26,8 @@ import com.app.mobile.presentation.ui.screens.authorization.viewmodel.Authorizat
 @Composable
 fun AuthorizationScreen(
     authorizationViewModel: AuthorizationViewModel,
-    onAuthorizeClick: () -> Unit
+    onAuthorizeClick: () -> Unit,
+    onRegistrationClick: () -> Unit
 ) {
     val authorizationUiState by authorizationViewModel.authorizationUiState.observeAsState(
         AuthorizationUiState.Loading
@@ -43,6 +43,11 @@ fun AuthorizationScreen(
             when (event) {
                 is AuthorizationNavigationEvent.NavigateToMainScreen -> {
                     onAuthorizeClick()
+                    authorizationViewModel.onNavigationHandled()
+                }
+
+                is AuthorizationNavigationEvent.NavigateToRegistration -> {
+                    onRegistrationClick()
                     authorizationViewModel.onNavigationHandled()
                 }
             }
@@ -62,7 +67,8 @@ fun AuthorizationScreen(
             val actions = AuthorizationActions(
                 onEmailChange = authorizationViewModel::onEmailChange,
                 onPasswordChange = authorizationViewModel::onPasswordChange,
-                onAuthorizeClick = authorizationViewModel::onAuthorizeClick
+                onAuthorizeClick = authorizationViewModel::onAuthorizeClick,
+                onRegistrationClick = authorizationViewModel::onRegistrationClick
             )
 
             AuthorizationContent(
@@ -93,6 +99,7 @@ private fun AuthorizationContent(
             onValueChange = { actions.onEmailChange(it) },
             label = { Text(text = "Email") }
         )
+
         OutlinedTextField(
             value = authorizationModelUi.password,
             onValueChange = { actions.onPasswordChange(it) },
@@ -105,21 +112,11 @@ private fun AuthorizationContent(
         ) {
             Text(text = "Авторизация")
         }
-    }
-}
 
-@Preview(showBackground = true)
-@Composable
-private fun AuthorizationContentPreview() {
-    AuthorizationContent(
-        authorizationModelUi = AuthorizationModelUi(
-            email = "",
-            password = "",
-        ),
-        actions = AuthorizationActions(
-            onEmailChange = {},
-            onPasswordChange = {},
-            onAuthorizeClick = {}
-        )
-    )
+        Button(
+            onClick = { actions.onRegistrationClick() }
+        ) {
+            Text(text = "Регистрация")
+        }
+    }
 }

@@ -105,7 +105,7 @@ private fun AboutAppButton(onAboutAppClick: () -> Unit) {
         modifier = Modifier.padding(bottom = 16.dp),
         onClick = onAboutAppClick
     ) {
-        Text(text = " О приложениии")
+        Text(text = " О приложении")
     }
 }
 
