@@ -1,13 +1,19 @@
 package com.app.mobile
 
 import android.app.Application
-import com.app.mobile.di.authorizationModule
-import com.app.mobile.di.confirmationModule
+import com.app.mobile.di.authApiModule
+import com.app.mobile.di.screens.authorizationModule
+import com.app.mobile.di.screens.confirmationModule
 import com.app.mobile.di.databaseModule
 import com.app.mobile.di.networkModule
-import com.app.mobile.di.registrationModule
-import com.app.mobile.di.repositoryApiModule
-import com.app.mobile.di.repositoryDatabaseModule
+import com.app.mobile.di.publicApiModule
+import com.app.mobile.di.repository.authRepository
+import com.app.mobile.di.screens.registrationModule
+import com.app.mobile.di.repository.repositoryApiModule
+import com.app.mobile.di.repository.repositoryDatabaseModule
+import com.app.mobile.di.screens.aboutAppModule
+import com.app.mobile.di.screens.accountInfoModule
+import com.app.mobile.di.screens.settingsModule
 import com.app.mobile.di.sessionModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -29,7 +35,13 @@ class MobileApp : Application() {
                 authorizationModule,
                 databaseModule,
                 repositoryDatabaseModule,
-                sessionModule
+                sessionModule,
+                publicApiModule,
+                authApiModule,
+                authRepository,
+                settingsModule,
+                aboutAppModule,
+                accountInfoModule
             )
         }
     }
