@@ -37,7 +37,7 @@ fun AppNavigation(
 ) {
     NavHost(
         navController = navController,
-        startDestination = RegistrationRoute,
+        startDestination = AuthorizationRoute,
         modifier = modifier
     ) {
         animatedComposable<RegistrationRoute> {
@@ -67,7 +67,9 @@ fun AppNavigation(
             val authorizationViewModel: AuthorizationViewModel = koinViewModel()
             AuthorizationScreen(
                 authorizationViewModel,
-                onAuthorizeClick = { TODO("add navigation to main screen") })
+                onAuthorizeClick = { navController.navigate(SettingsRoute) },
+                onRegistrationClick = { navController.navigate(RegistrationRoute) }
+            )
         }
 
         animatedComposable<SettingsRoute> {

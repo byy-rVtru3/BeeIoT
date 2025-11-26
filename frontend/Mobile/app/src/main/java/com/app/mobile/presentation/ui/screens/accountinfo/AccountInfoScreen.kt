@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,9 +32,23 @@ fun AccountInfoScreen(accountInfoViewModel: AccountInfoViewModel, onDeleteClick:
         AccountInfoUiState.Loading
     )
 
-    val accountInfoDialogState by accountInfoViewModel.accountInfoDialogState.observeAsState(
-        AccountInfoDialogState.Hidden
-    )
+    LaunchedEffect(key1 = Unit) {
+        accountInfoViewModel.getAccountInfo()
+    }
+
+    when (val currentState = accountInfoUiState) {
+        is AccountInfoUiState.Loading -> FullScreenProgressIndicator()
+        is AccountInfoUiState.Error -> ErrorMessage(currentState.message, {})
+        is AccountInfoUiState.Content -> {
+            val actions = AccountInfoActions(
+                onNameClick = accountInfoViewModel::onNameClick,
+                onEmailClick = accountInfoViewModel::onEmailClick,
+                onPasswordClick = accountInfoViewModel::onPasswordClick,
+                onDeleteClick = accountInfoViewModel::onDeleteAccountClick
+            )
+            AccountInfoContent(currentState.userInfo, actions)
+        }
+    }
 
     val navigationEvent by accountInfoViewModel.navigationEvent.observeAsState()
 
@@ -47,6 +62,10 @@ fun AccountInfoScreen(accountInfoViewModel: AccountInfoViewModel, onDeleteClick:
             }
         }
     }
+
+    val accountInfoDialogState by accountInfoViewModel.accountInfoDialogState.observeAsState(
+        AccountInfoDialogState.Hidden
+    )
 
     when (val state = accountInfoDialogState) {
         is AccountInfoDialogState.SetName -> {
@@ -63,24 +82,6 @@ fun AccountInfoScreen(accountInfoViewModel: AccountInfoViewModel, onDeleteClick:
 
         is AccountInfoDialogState.Hidden -> {
             //Hidden dialog
-        }
-    }
-
-    LaunchedEffect(key1 = Unit) {
-        accountInfoViewModel.getAccountInfo()
-    }
-
-    when (val currentState = accountInfoUiState) {
-        is AccountInfoUiState.Loading -> FullScreenProgressIndicator()
-        is AccountInfoUiState.Error -> ErrorMessage(currentState.message, {})
-        is AccountInfoUiState.Content -> {
-            val actions = AccountInfoActions(
-                onNameClick = accountInfoViewModel::onNameClick,
-                onEmailClick = accountInfoViewModel::onEmailClick,
-                onPasswordClick = accountInfoViewModel::onPasswordClick,
-                onDeleteClick = accountInfoViewModel::onDeleteAccountClick
-            )
-            AccountInfoContent(currentState.userInfo, actions)
         }
     }
 }
@@ -109,7 +110,10 @@ private fun AccountInfoContent(userInfo: UserInfoModel, actions: AccountInfoActi
 @Composable
 private fun NameText(name: String, onNameClick: () -> Unit) {
     Text(
-        name, modifier = Modifier
+        name,
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onBackground,
+        modifier = Modifier
             .padding(bottom = 16.dp)
             .clickable(onClick = onNameClick)
     )
@@ -118,7 +122,10 @@ private fun NameText(name: String, onNameClick: () -> Unit) {
 @Composable
 private fun EmailText(email: String, onEmailClick: () -> Unit) {
     Text(
-        email, modifier = Modifier
+        email,
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onBackground,
+        modifier = Modifier
             .padding(bottom = 16.dp)
             .clickable(onClick = onEmailClick)
     )
@@ -127,7 +134,10 @@ private fun EmailText(email: String, onEmailClick: () -> Unit) {
 @Composable
 private fun PasswordText(password: String, onPasswordClick: () -> Unit) {
     Text(
-        password, modifier = Modifier
+        password,
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onBackground,
+        modifier = Modifier
             .padding(bottom = 16.dp)
             .clickable(onClick = onPasswordClick)
     )

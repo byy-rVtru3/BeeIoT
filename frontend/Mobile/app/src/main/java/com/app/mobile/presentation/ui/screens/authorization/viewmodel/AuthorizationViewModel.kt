@@ -76,6 +76,13 @@ class AuthorizationViewModel(
         _authorizationUiState.value = AuthorizationUiState.Content(AuthorizationModelUi("", ""))
     }
 
+    fun onRegistrationClick() {
+        val currentState = _authorizationUiState.value
+        if (currentState is AuthorizationUiState.Content) {
+            _navigationEvent.value = AuthorizationNavigationEvent.NavigateToRegistration
+        }
+    }
+
     fun onNavigationHandled() {
         _navigationEvent.value = null
     }

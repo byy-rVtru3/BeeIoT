@@ -33,16 +33,13 @@ class AccountInfoViewModel(
     }
 
     fun getAccountInfo() {
-        val currentState = _accountInfoUiState.value
-        if (currentState is AccountInfoUiState.Content) {
-            _accountInfoUiState.value = AccountInfoUiState.Loading
-            viewModelScope.launch(handler) {
-                val user = getAccountInfoUseCase()?.toPresentation()
-                if (user != null) {
-                    _accountInfoUiState.value = AccountInfoUiState.Content(user)
-                } else {
-                    _accountInfoUiState.value = AccountInfoUiState.Error("Пользователь не найден")
-                }
+        _accountInfoUiState.value = AccountInfoUiState.Loading
+        viewModelScope.launch(handler) {
+            val user = getAccountInfoUseCase()?.toPresentation()
+            if (user != null) {
+                _accountInfoUiState.value = AccountInfoUiState.Content(user)
+            } else {
+                _accountInfoUiState.value = AccountInfoUiState.Error("Пользователь не найден")
             }
         }
     }
