@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.app.mobile.R
+import com.app.mobile.presentation.ui.components.ErrorMessage
+import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppUiState
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppViewModel
@@ -26,19 +28,40 @@ import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppViewMod
 @Composable
 fun AboutAppScreen(aboutAppViewModel: AboutAppViewModel) {
 
-    val aboutAppUiState by aboutAppViewModel.aboutAppUiState.observeAsState(AboutAppUiState.Loading)
+    val aboutAppUiState by aboutAppViewModel.aboutAppUiState
+        .observeAsState(AboutAppUiState.Loading)
 
     when (val state = aboutAppUiState) {
-        is AboutAppUiState.Success -> AboutAppContent(
+
+        is AboutAppUiState.Content -> AboutAppContent()
+
+        is AboutAppUiState.Success -> AboutAppContentWithMock(
             isMockEnabled = state.isMockEnabled,
             onMockToggle = { aboutAppViewModel.toggleMockMode(it) }
         )
-        is AboutAppUiState.Loading -> { /* Loading */ }
+
+        is AboutAppUiState.Error -> ErrorMessage(state.message) {}
+
+        is AboutAppUiState.Loading -> FullScreenProgressIndicator()
     }
 }
 
 @Composable
-private fun AboutAppContent(
+private fun AboutAppContent() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Title("О приложении", modifier = Modifier.padding(bottom = 16.dp))
+        Text(stringResource(R.string.app_info))
+    }
+}
+
+@Composable
+private fun AboutAppContentWithMock(
     isMockEnabled: Boolean,
     onMockToggle: (Boolean) -> Unit
 ) {
@@ -52,7 +75,7 @@ private fun AboutAppContent(
         Title("О приложении", modifier = Modifier.padding(bottom = 16.dp))
         Text(stringResource(R.string.app_info))
 
-        // Показываем переключатель только в develop flavor
+        // Mock switch card (only for develop flavor)
         Card(
             modifier = Modifier
                 .fillMaxWidth()
