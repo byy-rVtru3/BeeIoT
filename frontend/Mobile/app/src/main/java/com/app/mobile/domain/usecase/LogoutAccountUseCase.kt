@@ -12,16 +12,13 @@ class LogoutAccountUseCase(
 ) {
     suspend operator fun invoke(): LogoutRequestResult {
         return try {
-            val userId = sessionManager.getCurrentUserId()
-            userId?.let {
-                val result = repositoryApi.logoutAccount()
-                if (result is LogoutRequestResult.Success) {
-                    repositoryDatabase.deleteTokenFromUser(it)
-                    sessionManager.clearSession()
-                }
-                result
+            val userId = sessionManager.getCurrentUserId() ?: return LogoutRequestResult.UnknownError
+            val result = repositoryApi.logoutAccount()
+            if (result is LogoutRequestResult.Success) {
+                repositoryDatabase.deleteTokenFromUser(userId)
+                sessionManager.clearSession()
             }
-            LogoutRequestResult.UnknownError
+            result
         } catch (_: Exception) {
             LogoutRequestResult.UnknownError
         }

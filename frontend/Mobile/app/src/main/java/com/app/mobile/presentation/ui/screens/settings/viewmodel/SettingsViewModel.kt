@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 class SettingsViewModel(
     private val logoutUseCase: LogoutAccountUseCase
 ) : ViewModel() {
-    private val _settingsUiState = MutableLiveData<SettingsUiState>()
+    private val _settingsUiState = MutableLiveData<SettingsUiState>(SettingsUiState.Content)
     val settingsUiState: LiveData<SettingsUiState> = _settingsUiState
 
     private val _navigationEvent = MutableLiveData<SettingsNavigationEvent?>()
@@ -37,6 +37,7 @@ class SettingsViewModel(
         if (currentState is SettingsUiState.Content) {
             _settingsUiState.value = SettingsUiState.Loading
             viewModelScope.launch(handler) {
+
                 when (val result = logoutUseCase().toUiModel()) {
                     is LogoutResultUi.Success -> {
                         _navigationEvent.value = SettingsNavigationEvent.NavigateToAuthorization

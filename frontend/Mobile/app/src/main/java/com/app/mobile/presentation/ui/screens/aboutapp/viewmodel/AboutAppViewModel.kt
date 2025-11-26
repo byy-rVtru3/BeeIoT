@@ -8,6 +8,6 @@ class AboutAppViewModel(
 
 ) : ViewModel() {
 
-    private val _aboutAppUiState = MutableLiveData<AboutAppUiState>()
+    private val _aboutAppUiState = MutableLiveData<AboutAppUiState>(AboutAppUiState.Content)
     val aboutAppUiState: LiveData<AboutAppUiState> = _aboutAppUiState
 }

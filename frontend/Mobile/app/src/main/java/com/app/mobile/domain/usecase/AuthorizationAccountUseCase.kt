@@ -1,6 +1,5 @@
 package com.app.mobile.domain.usecase
 
-import android.util.Log
 import com.app.mobile.data.session.manager.SessionManager
 import com.app.mobile.domain.models.authorization.AuthorizationModel
 import com.app.mobile.domain.models.authorization.AuthorizationRequestResult
@@ -20,9 +19,7 @@ class AuthorizationAccountUseCase(
         val result = repositoryApi.authorizationAccount(authorizationModel)
 
         if (result is AuthorizationRequestResult.Success) {
-            val token = result.token
-            Log.w("token", token)
-            val userId = repositoryDatabase.addTokenToUser(authorizationModel.email, token)
+            val userId = repositoryDatabase.addTokenToUser(authorizationModel.email, result.token)
             userId?.let {
                 sessionManager.saveCurrentUser(it)
             } ?: AuthorizationRequestResult.UnknownError

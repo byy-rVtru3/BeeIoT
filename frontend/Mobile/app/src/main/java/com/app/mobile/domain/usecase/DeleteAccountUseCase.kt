@@ -12,16 +12,13 @@ class DeleteAccountUseCase(
 ) {
     suspend operator fun invoke(): DeleteRequestResult {
         return try {
-            val userId = sessionManager.getCurrentUserId()
-            userId?.let {
-                val result = repositoryApi.deleteAccount()
-                if (result is DeleteRequestResult.Success) {
-                    repositoryDatabase.deleteUser(it)
-                    sessionManager.clearSession()
-                }
-                result
+            val userId = sessionManager.getCurrentUserId() ?: return DeleteRequestResult.UnknownError
+            val result = repositoryApi.deleteAccount()
+            if (result is DeleteRequestResult.Success) {
+                repositoryDatabase.deleteUser(userId)
+                sessionManager.clearSession()
             }
-            DeleteRequestResult.UnknownError
+            result
         } catch (_: Exception) {
             DeleteRequestResult.UnknownError
         }
