@@ -39,9 +39,11 @@ android {
             dimension = "version"
             versionNameSuffix = "-dev"
             applicationIdSuffix = ".dev"
+            buildConfigField("Boolean", "IS_DEVELOP", "true")
         }
         create("live") {
             dimension = "version"
+            buildConfigField("Boolean", "IS_DEVELOP", "false")
         }
     }
 
@@ -60,6 +62,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true // Включаем генерацию BuildConfig
     }
     packaging {
         resources {

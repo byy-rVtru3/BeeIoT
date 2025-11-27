@@ -34,7 +34,8 @@ class FormField private constructor(
             if (isOptional) {
                 FormField(filters, validators, formatter, true)
             } else {
-                FormField(filters, listOf(NotEmptyValidator) + validators, formatter, false)
+                // Оборачиваем NotEmptyValidator в conditional, чтобы он тоже отключался
+                FormField(filters, listOf(NotEmptyValidator.withConditionalValidation()) + validators, formatter, false)
             }
     }
 }

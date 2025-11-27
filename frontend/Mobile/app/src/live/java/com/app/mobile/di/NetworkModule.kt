@@ -2,7 +2,6 @@ package com.app.mobile.di
 
 import com.app.mobile.data.api.interceptor.AuthInterceptor
 import com.app.mobile.data.repository.AuthRepository
-import com.app.mobile.data.mock.MockDataSource
 import com.app.mobile.data.mock.MockDataSourceImpl
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -30,7 +29,7 @@ val authorizedRetrofit = named("authorizedRetrofit")
 val networkModule = module {
 
     // MockDataSource (из develop-app)
-    single<MockDataSource> { MockDataSourceImpl(get()) }
+    single { MockDataSourceImpl(get()) }
 
     // Converter Factory
     single {

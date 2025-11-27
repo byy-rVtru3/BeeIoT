@@ -46,9 +46,6 @@ fun AppNavigation(
                 registrationViewModel = registrationViewModel,
                 onRegisterClick = { email, type ->
                     navController.navigate(ConfirmationRoute(email, type))
-                },
-                onSettingsClick = {
-                    navController.navigate(AboutAppRoute)
                 }
             )
         }
