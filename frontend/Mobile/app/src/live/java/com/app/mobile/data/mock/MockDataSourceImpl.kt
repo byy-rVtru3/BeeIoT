@@ -2,12 +2,17 @@ package com.app.mobile.data.mock
 
 import android.content.Context
 
-class MockDataSourceImpl(context: Context) : MockDataSource {
+class MockDataSourceImpl(context: Context) {
 
-    override fun isMock(): Boolean = false
+    fun isMock(): Boolean = false
 
-    override fun setMock(enabled: Boolean) {
+    fun setMock(enabled: Boolean) {
+        // Ничего не делаем в live версии
+    }
+
+    fun isValidationEnabled(): Boolean = true  // Всегда включена в live
+
+    fun setValidationEnabled(enabled: Boolean) {
         // Ничего не делаем в live версии
     }
 }
-

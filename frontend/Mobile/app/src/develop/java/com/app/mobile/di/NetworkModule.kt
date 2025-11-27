@@ -2,7 +2,6 @@ package com.app.mobile.di
 
 import android.content.Context
 import com.app.mobile.data.api.interceptor.AuthInterceptor
-import com.app.mobile.data.mock.MockDataSource
 import com.app.mobile.data.mock.MockDataSourceImpl
 import com.app.mobile.data.mock.interceptor.FakeServerInterceptor
 import com.app.mobile.data.repository.AuthRepository
@@ -33,7 +32,7 @@ val authorizedRetrofit = named("authorizedRetrofit")
 val networkModule = module {
 
     // MockDataSource
-    single<MockDataSource> { MockDataSourceImpl(get()) }
+    single { MockDataSourceImpl(get()) }
 
     // Converter Factory
     single {
@@ -108,7 +107,7 @@ val networkModule = module {
 
     // Public OkHttpClient (выбирается в зависимости от MockDataSource)
     single(publicClient) {
-        val mockDataSource = get<MockDataSource>()
+        val mockDataSource = get<MockDataSourceImpl>()
         if (mockDataSource.isMock()) {
             get<OkHttpClient>(named("fakePublic"))
         } else {
@@ -118,7 +117,7 @@ val networkModule = module {
 
     // Authorized OkHttpClient (выбирается в зависимости от MockDataSource)
     single(authorizedClient) {
-        val mockDataSource = get<MockDataSource>()
+        val mockDataSource = get<MockDataSourceImpl>()
         if (mockDataSource.isMock()) {
             get<OkHttpClient>(named("fakeAuthorized"))
         } else {
@@ -128,7 +127,7 @@ val networkModule = module {
 
     // Public Retrofit
     single(publicRetrofit) {
-        val mockDataSource = get<MockDataSource>()
+        val mockDataSource = get<MockDataSourceImpl>()
         val baseUrl = if (mockDataSource.isMock()) FAKE_BASE_URL else REAL_BASE_URL
 
         Retrofit.Builder().apply {
@@ -140,7 +139,7 @@ val networkModule = module {
 
     // Authorized Retrofit
     single(authorizedRetrofit) {
-        val mockDataSource = get<MockDataSource>()
+        val mockDataSource = get<MockDataSourceImpl>()
         val baseUrl = if (mockDataSource.isMock()) FAKE_BASE_URL else REAL_BASE_URL
 
         Retrofit.Builder().apply {
