@@ -2,6 +2,7 @@ package com.app.mobile.di
 
 import com.app.mobile.data.api.interceptor.AuthInterceptor
 import com.app.mobile.data.repository.AuthRepository
+import com.app.mobile.data.mock.MockDataSourceImpl
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import okhttp3.Interceptor
@@ -25,18 +26,24 @@ val authorizedClient = named("authorizedClient")
 val publicRetrofit = named("publicRetrofit")
 val authorizedRetrofit = named("authorizedRetrofit")
 
-
 val networkModule = module {
+
+    // MockDataSource (из develop-app)
+    single { MockDataSourceImpl(get()) }
+
+    // Converter Factory
     single {
         Json.asConverterFactory("application/json; charset=UTF8".toMediaType())
     }
 
+    // Logging Interceptor
     single {
         HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
     }
 
+    // AuthInterceptor (из твоей ветки)
     single<Interceptor>(named("AuthInterceptor")) {
         val authRepository: AuthRepository = get()
         AuthInterceptor {
@@ -46,6 +53,7 @@ val networkModule = module {
         }
     }
 
+    // PUBLIC OkHttpClient
     single(publicClient) {
         OkHttpClient.Builder().apply {
             addInterceptor(get<HttpLoggingInterceptor>())
@@ -55,6 +63,7 @@ val networkModule = module {
         }.build()
     }
 
+    // AUTHORIZED OkHttpClient (из твоей ветки)
     single(authorizedClient) {
         OkHttpClient.Builder().apply {
             addInterceptor(get<HttpLoggingInterceptor>())
@@ -65,6 +74,7 @@ val networkModule = module {
         }.build()
     }
 
+    // PUBLIC Retrofit
     single(publicRetrofit) {
         Retrofit.Builder().apply {
             client(get(publicClient))
@@ -73,6 +83,7 @@ val networkModule = module {
         }.build()
     }
 
+    // AUTHORIZED Retrofit
     single(authorizedRetrofit) {
         Retrofit.Builder().apply {
             client(get(authorizedClient))

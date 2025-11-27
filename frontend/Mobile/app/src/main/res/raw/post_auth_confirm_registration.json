@@ -1,0 +1,7 @@
+{
+  "status": "success",
+  "message": "Registration confirmed successfully",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSJ9.mock_token_registration"
+  }
+}

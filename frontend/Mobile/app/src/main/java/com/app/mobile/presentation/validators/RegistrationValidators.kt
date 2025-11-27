@@ -12,39 +12,39 @@ package com.app.mobile.presentation.validators
 
 // Валидатор для поля "Имя"
 val nameField = formField {
-    +FilterOnlyLettersAndSpaces
-    +FilterTrimSpaces
-    +FilterMaxLength(50)
-    +NameValidator
-    +MinLengthValidator(2, NameTooShortError)
-    +MaxLengthValidator(50, NameTooLongError)
+    +FilterOnlyLettersAndSpaces.withConditionalValidation()
+    +FilterTrimSpaces.withConditionalValidation()
+    +FilterMaxLength(50).withConditionalValidation()
+    +NameValidator.withConditionalValidation()
+    +MinLengthValidator(2, NameTooShortError).withConditionalValidation()
+    +MaxLengthValidator(50, NameTooLongError).withConditionalValidation()
     +NameFormatter
 }
 
 // Валидатор для поля "Email"
 val emailField = formField {
-    +FilterEmailCharacters
-    +FilterTrimSpaces
-    +FilterMaxLength(100)
-    +EmailValidator
+    +FilterEmailCharacters.withConditionalValidation()
+    +FilterTrimSpaces.withConditionalValidation()
+    +FilterMaxLength(100).withConditionalValidation()
+    +EmailValidator.withConditionalValidation()
     +EmailFormatter
 }
 
 // Валидатор для поля "Пароль"
 val passwordField = formField {
-    +FilterPasswordCharacters()
-    +FilterMaxLength(50)
-    +MinLengthValidator(8, PasswordTooShortError)
-    +PasswordStrengthValidator
+    +FilterPasswordCharacters().withConditionalValidation()
+    +FilterMaxLength(50).withConditionalValidation()
+    +MinLengthValidator(8, PasswordTooShortError).withConditionalValidation()
+    +PasswordStrengthValidator.withConditionalValidation()
 }
 
 // Валидатор для поля "Повтор пароля"
 // Примечание: для проверки совпадения паролей нужно создавать динамически
 fun repeatPasswordField(originalPassword: String) = formField {
-    +FilterPasswordCharacters()
-    +FilterMaxLength(50)
-    +MinLengthValidator(8, PasswordTooShortError)
-    +PasswordMatchValidator(originalPassword)
+    +FilterPasswordCharacters().withConditionalValidation()
+    +FilterMaxLength(50).withConditionalValidation()
+    +MinLengthValidator(8, PasswordTooShortError).withConditionalValidation()
+    +PasswordMatchValidator(originalPassword).withConditionalValidation()
 }
 
 /**
@@ -61,4 +61,3 @@ class RegistrationValidator {
         repeatPasswordField(password).process(repeatPassword)
 
 }
-

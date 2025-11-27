@@ -5,6 +5,25 @@ fun interface Filter {
     fun filter(data: String): String
 }
 
+/**
+ * Условный фильтр - учитывает глобальный флаг ValidationConfig
+ * Если валидация отключена, фильтр пропускает данные без изменений
+ */
+class ConditionalFilter(private val filter: Filter) : Filter {
+    override fun filter(data: String): String {
+        return if (ValidationConfig.isValidationEnabled) {
+            filter.filter(data)
+        } else {
+            data  // Пропускаем данные как есть
+        }
+    }
+}
+
+/**
+ * Extension для создания условного фильтра
+ */
+fun Filter.withConditionalValidation(): Filter = ConditionalFilter(this)
+
 // Комплексный фильтр - цепочка фильтров
 open class ComplexFilter private constructor(private val filters: List<Filter>) : Filter {
     override fun filter(data: String): String =
