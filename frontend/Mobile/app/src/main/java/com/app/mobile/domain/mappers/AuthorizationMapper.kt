@@ -2,8 +2,8 @@ package com.app.mobile.domain.mappers
 
 import com.app.mobile.domain.models.authorization.AuthorizationModel
 import com.app.mobile.domain.models.authorization.AuthorizationRequestResult
-import com.app.mobile.presentation.models.AuthorizationModelUi
-import com.app.mobile.presentation.models.AuthorizationResultUi
+import com.app.mobile.presentation.models.account.AuthorizationModelUi
+import com.app.mobile.presentation.models.account.AuthorizationResultUi
 
 fun AuthorizationModelUi.toDomain() = AuthorizationModel(
     email = email,

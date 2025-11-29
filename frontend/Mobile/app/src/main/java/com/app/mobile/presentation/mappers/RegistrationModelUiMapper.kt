@@ -1,7 +1,7 @@
 package com.app.mobile.presentation.mappers
 
 import com.app.mobile.domain.models.registration.RegistrationModel
-import com.app.mobile.presentation.models.RegistrationModelUi
+import com.app.mobile.presentation.models.account.RegistrationModelUi
 
 
 fun RegistrationModelUi.toDomain() = RegistrationModel(

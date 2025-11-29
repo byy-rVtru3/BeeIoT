@@ -1,6 +1,6 @@
 package com.app.mobile.di.screens
 
-import com.app.mobile.domain.usecase.ConfirmationUserUseCase
+import com.app.mobile.domain.usecase.account.ConfirmationUserUseCase
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers

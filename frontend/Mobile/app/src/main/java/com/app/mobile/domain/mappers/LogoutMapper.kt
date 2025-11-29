@@ -1,7 +1,7 @@
 package com.app.mobile.domain.mappers
 
 import com.app.mobile.domain.models.logout.LogoutRequestResult
-import com.app.mobile.presentation.models.LogoutResultUi
+import com.app.mobile.presentation.models.account.LogoutResultUi
 
 
 fun LogoutRequestResult.toUiModel() = when (this) {

@@ -11,7 +11,7 @@ val databaseModule = module {
         Room.databaseBuilder(
             androidContext(),
             AppDatabase::class.java,
-            "users_database"
+            "app_database"
         ).fallbackToDestructiveMigration(dropAllTables = true).build()
     }
 

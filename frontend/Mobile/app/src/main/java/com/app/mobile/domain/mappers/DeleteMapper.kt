@@ -1,7 +1,7 @@
 package com.app.mobile.domain.mappers
 
 import com.app.mobile.domain.models.delete.DeleteRequestResult
-import com.app.mobile.presentation.models.DeleteResultUi
+import com.app.mobile.presentation.models.account.DeleteResultUi
 
 fun DeleteRequestResult.toUiModel() = when (this) {
     is DeleteRequestResult.Success -> DeleteResultUi.Success

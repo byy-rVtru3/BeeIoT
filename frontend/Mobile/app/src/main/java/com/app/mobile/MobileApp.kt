@@ -4,9 +4,16 @@ import android.app.Application
 import com.app.mobile.di.screens.authorizationModule
 import com.app.mobile.di.screens.confirmationModule
 import com.app.mobile.di.databaseModule
+import com.app.mobile.di.networkModule
+import com.app.mobile.di.publicApiModule
+import com.app.mobile.di.repository.authRepository
+import com.app.mobile.di.repository.hivesLocalRepositoryModule
 import com.app.mobile.di.screens.registrationModule
+import com.app.mobile.di.repository.repositoryApiModule
+import com.app.mobile.di.repository.userLocalRepositoryModule
 import com.app.mobile.di.screens.aboutAppModule
 import com.app.mobile.di.screens.accountInfoModule
+import com.app.mobile.di.screens.hivesListModule
 import com.app.mobile.di.screens.settingsModule
 import com.app.mobile.di.networkModules
 import com.app.mobile.di.sessionModule
@@ -36,11 +43,14 @@ class MobileApp : Application() {
                 confirmationModule,
                 authorizationModule,
                 databaseModule,
+                userLocalRepositoryModule,
                 sessionModule,
                 authRepository,
                 settingsModule,
                 aboutAppModule,
-                accountInfoModule
+                accountInfoModule,
+                hivesLocalRepositoryModule,
+                hivesListModule
             )
         }
     }

@@ -21,6 +21,9 @@ import com.app.mobile.presentation.ui.screens.authorization.viewmodel.Authorizat
 import com.app.mobile.presentation.ui.screens.confirmation.ConfirmationRoute
 import com.app.mobile.presentation.ui.screens.confirmation.ConfirmationScreen
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationViewModel
+import com.app.mobile.presentation.ui.screens.hives.list.HivesListRoute
+import com.app.mobile.presentation.ui.screens.hives.list.HivesListScreen
+import com.app.mobile.presentation.ui.screens.hives.list.vewmodel.HivesListViewModel
 import com.app.mobile.presentation.ui.screens.registration.RegistrationRoute
 import com.app.mobile.presentation.ui.screens.registration.RegistrationScreen
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationViewModel
@@ -92,6 +95,16 @@ fun AppNavigation(
             val aboutAppViewModel: AboutAppViewModel = koinViewModel()
             AboutAppScreen(aboutAppViewModel)
         }
+
+        animatedComposable<HivesListRoute> {
+            val hivesListViewModel: HivesListViewModel = koinViewModel()
+            HivesListScreen(
+                hivesListViewModel,
+                onHiveClick = { TODO("HiveRoute") },
+                onCreateHiveClick = {TODO("HiveCreateRoute")}
+            )
+        }
+
 
     }
 }

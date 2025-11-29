@@ -3,8 +3,8 @@ package com.app.mobile.domain.mappers
 import com.app.mobile.domain.models.UserDomain
 import com.app.mobile.domain.models.registration.RegistrationModel
 import com.app.mobile.domain.models.registration.RegistrationRequestResult
-import com.app.mobile.presentation.models.RegistrationModelUi
-import com.app.mobile.presentation.models.RegistrationResultUi
+import com.app.mobile.presentation.models.account.RegistrationModelUi
+import com.app.mobile.presentation.models.account.RegistrationResultUi
 
 fun RegistrationModel.toUiModel(repeatPassword: String = "") =
     RegistrationModelUi(

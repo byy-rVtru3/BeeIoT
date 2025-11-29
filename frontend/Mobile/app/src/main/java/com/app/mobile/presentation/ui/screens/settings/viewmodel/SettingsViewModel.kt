@@ -6,8 +6,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.mappers.toUiModel
-import com.app.mobile.domain.usecase.LogoutAccountUseCase
-import com.app.mobile.presentation.models.LogoutResultUi
+import com.app.mobile.domain.usecase.account.LogoutAccountUseCase
+import com.app.mobile.presentation.models.account.LogoutResultUi
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 

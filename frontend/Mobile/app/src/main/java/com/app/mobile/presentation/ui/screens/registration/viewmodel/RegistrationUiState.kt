@@ -1,6 +1,6 @@
 package com.app.mobile.presentation.ui.screens.registration.viewmodel
 
-import com.app.mobile.presentation.models.RegistrationModelUi
+import com.app.mobile.presentation.models.account.RegistrationModelUi
 
 sealed interface RegistrationUiState {
     data class Content(

@@ -1,7 +1,7 @@
 package com.app.mobile.di.screens
 
-import com.app.mobile.domain.usecase.CreateUserAccountUseCase
-import com.app.mobile.domain.usecase.RegistrationAccountUseCase
+import com.app.mobile.domain.usecase.account.CreateUserAccountUseCase
+import com.app.mobile.domain.usecase.account.RegistrationAccountUseCase
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
