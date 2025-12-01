@@ -20,6 +20,8 @@ import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 
 class MobileApp : Application() {
+    // Suppress UNRESOLVED_REFERENCE because some references (e.g., BuildConfig) are generated at compile time
+    // and may not be visible to the IDE during editing, leading to false unresolved reference warnings.
     @Suppress("UNRESOLVED_REFERENCE")
     override fun onCreate() {
         super.onCreate()

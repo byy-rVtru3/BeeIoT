@@ -63,13 +63,19 @@ fun AuthorizationScreen(
     // Получаем MockDataSource - он всегда доступен
     val mockDataSource: MockDataSourceImpl = koinInject()
 
-    // Инициализируем ValidationConfig при первой загрузке
-    LaunchedEffect(mockDataSource) {
+    // Создаём state один раз
+    val isMockEnabled = remember { mutableStateOf(false) }
+    val isValidationEnabled = remember { mutableStateOf(false) }
+
+    // Синхронизируем состояние при каждом появлении экрана
+    // LaunchedEffect с ключом Unit выполняется каждый раз при входе на экран
+    LaunchedEffect(Unit) {
+        // Читаем актуальные значения из SharedPreferences
+        isMockEnabled.value = mockDataSource.isMock()
+        isValidationEnabled.value = mockDataSource.isValidationEnabled()
+        // Инициализируем ValidationConfig
         ValidationConfig.init(mockDataSource)
     }
-
-    val isMockEnabled = remember { mutableStateOf(mockDataSource.isMock()) }
-    val isValidationEnabled = remember { mutableStateOf(mockDataSource.isValidationEnabled()) }
 
     when (val state = authorizationUiState) {
         is AuthorizationUiState.Loading -> {
@@ -88,21 +94,21 @@ fun AuthorizationScreen(
                 onRegistrationClick = authorizationViewModel::onRegistrationClick
             )
 
-            // Оборачиваем контент в Box чтобы разместить плавающую кнопку поверх
+            // Оборачиваем контент в Box чтобы разместить FloatingActionButton поверх
             Box(modifier = Modifier.fillMaxSize()) {
                 AuthorizationContent(
                     authorizationModelUi = state.authorizationModelUi,
                     actions = actions
                 )
 
-                // Панель разработчика - в develop показывает кнопки, в live пустая
+                // Панель разработчика - в develop показывает FAB, в live пустая
                 DeveloperPanel(
                     mockDataSource = mockDataSource,
                     isMockEnabled = isMockEnabled,
                     isValidationEnabled = isValidationEnabled,
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp)
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
                 )
             }
         }

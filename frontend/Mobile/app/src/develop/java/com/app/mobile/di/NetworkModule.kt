@@ -7,7 +7,6 @@ import com.app.mobile.data.mock.interceptor.FakeServerInterceptor
 import com.app.mobile.data.repository.AuthRepository
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
-import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -31,23 +30,23 @@ val authorizedRetrofit = named("authorizedRetrofit")
 
 val networkModule = module {
 
-    // MockDataSource
+    // MockDataSource для переключения между mock/real режимами
     single { MockDataSourceImpl(get()) }
 
-    // Converter Factory
+    // JSON Converter Factory
     single {
         Json.asConverterFactory("application/json; charset=UTF8".toMediaType())
     }
 
     // Logging Interceptor
-    single<Interceptor>(named("logging")) {
+    single<HttpLoggingInterceptor> {
         HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
     }
 
     // Auth Interceptor
-    single<Interceptor>(named("auth")) {
+    single<AuthInterceptor> {
         val authRepository: AuthRepository = get()
         AuthInterceptor {
             runBlocking {
@@ -57,76 +56,48 @@ val networkModule = module {
     }
 
     // Fake Server Interceptor
-    single<Interceptor>(named("fake")) {
+    single<FakeServerInterceptor> {
         FakeServerInterceptor(get<Context>())
     }
 
-    // Real Public OkHttpClient
-    single(named("realPublic")) {
-        OkHttpClient.Builder().apply {
-            addInterceptor(get<Interceptor>(named("logging")))
-            connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
-            readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
-            writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
-        }.build()
-    }
-
-    // Real Authorized OkHttpClient
-    single(named("realAuthorized")) {
-        OkHttpClient.Builder().apply {
-            addInterceptor(get<Interceptor>(named("logging")))
-            addInterceptor(get<Interceptor>(named("auth")))
-            connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
-            readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
-            writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
-        }.build()
-    }
-
-    // Fake Public OkHttpClient
-    single(named("fakePublic")) {
-        OkHttpClient.Builder().apply {
-            addInterceptor(get<Interceptor>(named("fake")))
-            addInterceptor(get<Interceptor>(named("logging")))
-            connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
-            readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
-            writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
-        }.build()
-    }
-
-    // Fake Authorized OkHttpClient
-    single(named("fakeAuthorized")) {
-        OkHttpClient.Builder().apply {
-            addInterceptor(get<Interceptor>(named("fake")))
-            addInterceptor(get<Interceptor>(named("logging")))
-            addInterceptor(get<Interceptor>(named("auth")))
-            connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
-            readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
-            writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
-        }.build()
-    }
-
-    // Public OkHttpClient (выбирается в зависимости от MockDataSource)
-    single(publicClient) {
+    // Public Client (без авторизации)
+    factory(publicClient) {
         val mockDataSource = get<MockDataSourceImpl>()
-        if (mockDataSource.isMock()) {
-            get<OkHttpClient>(named("fakePublic"))
-        } else {
-            get<OkHttpClient>(named("realPublic"))
-        }
+        val loggingInterceptor = get<HttpLoggingInterceptor>()
+
+        OkHttpClient.Builder().apply {
+            addInterceptor(loggingInterceptor)
+            // FakeServerInterceptor
+            if (mockDataSource.isMock()) {
+                addInterceptor(get<FakeServerInterceptor>())
+            }
+            connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+            readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+            writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+        }.build()
     }
 
-    // Authorized OkHttpClient (выбирается в зависимости от MockDataSource)
-    single(authorizedClient) {
+    // Authorized Client
+    factory(authorizedClient) {
         val mockDataSource = get<MockDataSourceImpl>()
-        if (mockDataSource.isMock()) {
-            get<OkHttpClient>(named("fakeAuthorized"))
-        } else {
-            get<OkHttpClient>(named("realAuthorized"))
-        }
+        val loggingInterceptor = get<HttpLoggingInterceptor>()
+        val authInterceptor = get<AuthInterceptor>()
+
+        OkHttpClient.Builder().apply {
+            addInterceptor(loggingInterceptor)
+            addInterceptor(authInterceptor)
+            // FakeServerInterceptor
+            if (mockDataSource.isMock()) {
+                addInterceptor(get<FakeServerInterceptor>())
+            }
+            connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+            readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+            writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+        }.build()
     }
 
     // Public Retrofit
-    single(publicRetrofit) {
+    factory(publicRetrofit) {
         val mockDataSource = get<MockDataSourceImpl>()
         val baseUrl = if (mockDataSource.isMock()) FAKE_BASE_URL else REAL_BASE_URL
 
@@ -138,7 +109,7 @@ val networkModule = module {
     }
 
     // Authorized Retrofit
-    single(authorizedRetrofit) {
+    factory(authorizedRetrofit) {
         val mockDataSource = get<MockDataSourceImpl>()
         val baseUrl = if (mockDataSource.isMock()) FAKE_BASE_URL else REAL_BASE_URL
 

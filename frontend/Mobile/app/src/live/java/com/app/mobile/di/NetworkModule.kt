@@ -5,7 +5,6 @@ import com.app.mobile.data.repository.AuthRepository
 import com.app.mobile.data.mock.MockDataSourceImpl
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
-import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -28,23 +27,23 @@ val authorizedRetrofit = named("authorizedRetrofit")
 
 val networkModule = module {
 
-    // MockDataSource (из develop-app)
+    // MockDataSource
     single { MockDataSourceImpl(get()) }
 
-    // Converter Factory
+    // JSON Converter Factory
     single {
         Json.asConverterFactory("application/json; charset=UTF8".toMediaType())
     }
 
     // Logging Interceptor
-    single {
+    single<HttpLoggingInterceptor> {
         HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
     }
 
-    // AuthInterceptor (из твоей ветки)
-    single<Interceptor>(named("AuthInterceptor")) {
+    // Auth Interceptor
+    single<AuthInterceptor> {
         val authRepository: AuthRepository = get()
         AuthInterceptor {
             runBlocking {
@@ -53,28 +52,33 @@ val networkModule = module {
         }
     }
 
-    // PUBLIC OkHttpClient
+    // Public Client (без авторизации)
     single(publicClient) {
+        val loggingInterceptor = get<HttpLoggingInterceptor>()
+
         OkHttpClient.Builder().apply {
-            addInterceptor(get<HttpLoggingInterceptor>())
+            addInterceptor(loggingInterceptor)
             connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
             readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
             writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
         }.build()
     }
 
-    // AUTHORIZED OkHttpClient (из твоей ветки)
+    // Authorized Client
     single(authorizedClient) {
+        val loggingInterceptor = get<HttpLoggingInterceptor>()
+        val authInterceptor = get<AuthInterceptor>()
+
         OkHttpClient.Builder().apply {
-            addInterceptor(get<HttpLoggingInterceptor>())
-            addInterceptor(get<Interceptor>(named("AuthInterceptor")))
+            addInterceptor(loggingInterceptor)
+            addInterceptor(authInterceptor)
             connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
             readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
             writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
         }.build()
     }
 
-    // PUBLIC Retrofit
+    // Public Retrofit
     single(publicRetrofit) {
         Retrofit.Builder().apply {
             client(get(publicClient))
@@ -83,7 +87,7 @@ val networkModule = module {
         }.build()
     }
 
-    // AUTHORIZED Retrofit
+    // Authorized Retrofit
     single(authorizedRetrofit) {
         Retrofit.Builder().apply {
             client(get(authorizedClient))
