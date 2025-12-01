@@ -1,6 +1,6 @@
 package com.app.mobile.domain.models.hives
 
-data class Hub(
+data class HubDomain(
     val id: Int,
     val hiveId: Int?,
     val name: String,

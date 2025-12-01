@@ -21,6 +21,9 @@ import com.app.mobile.presentation.ui.screens.authorization.viewmodel.Authorizat
 import com.app.mobile.presentation.ui.screens.confirmation.ConfirmationRoute
 import com.app.mobile.presentation.ui.screens.confirmation.ConfirmationScreen
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationViewModel
+import com.app.mobile.presentation.ui.screens.hive.HiveRoute
+import com.app.mobile.presentation.ui.screens.hive.HiveScreen
+import com.app.mobile.presentation.ui.screens.hive.viewmodel.HiveViewModel
 import com.app.mobile.presentation.ui.screens.hives.list.HivesListRoute
 import com.app.mobile.presentation.ui.screens.hives.list.HivesListScreen
 import com.app.mobile.presentation.ui.screens.hives.list.vewmodel.HivesListViewModel
@@ -100,11 +103,27 @@ fun AppNavigation(
             val hivesListViewModel: HivesListViewModel = koinViewModel()
             HivesListScreen(
                 hivesListViewModel,
-                onHiveClick = { TODO("HiveRoute") },
+                onHiveClick = { navController.navigate(HiveRoute(it)) },
                 onCreateHiveClick = {TODO("HiveCreateRoute")}
             )
         }
 
+        animatedComposable<HiveRoute> {
+            val destination = it.toRoute<HiveRoute>()
+            val hiveViewModel: HiveViewModel = koinViewModel()
+            HiveScreen(
+                hiveViewModel,
+                destination.hiveId,
+                onQueenClick = { TODO("QueenRoute") },
+                onWorksClick = { TODO("WorksRoute") },
+                onNotificationsClick = {TODO("NotificationsRoute")},
+                onTemperatureClick = {TODO("TemperatureRoute") },
+                onNoiseClick = {TODO("NoiseRoute") },
+                onWeightClick = {TODO("WeightRoute") },
+                onHiveListClick = { navController.navigate(HivesListRoute) },
+                onHiveEditClick = {TODO("HiveEditRoute")}
+            )
+        }
 
     }
 }

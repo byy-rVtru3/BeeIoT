@@ -13,6 +13,7 @@ import com.app.mobile.di.repository.repositoryApiModule
 import com.app.mobile.di.repository.userLocalRepositoryModule
 import com.app.mobile.di.screens.aboutAppModule
 import com.app.mobile.di.screens.accountInfoModule
+import com.app.mobile.di.screens.hiveModule
 import com.app.mobile.di.screens.hivesListModule
 import com.app.mobile.di.screens.settingsModule
 import com.app.mobile.di.networkModules
@@ -50,7 +51,8 @@ class MobileApp : Application() {
                 aboutAppModule,
                 accountInfoModule,
                 hivesLocalRepositoryModule,
-                hivesListModule
+                hivesListModule,
+                hiveModule
             )
         }
     }

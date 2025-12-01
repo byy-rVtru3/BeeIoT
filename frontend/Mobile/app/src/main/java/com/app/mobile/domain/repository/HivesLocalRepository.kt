@@ -7,4 +7,5 @@ interface HivesLocalRepository {
 
     suspend fun getHives(): List<HiveDomainPreview>
 
+    suspend fun getHive(hiveId: Int): HiveDomain?
 }
