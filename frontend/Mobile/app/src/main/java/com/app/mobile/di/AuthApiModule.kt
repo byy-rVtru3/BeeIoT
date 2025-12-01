@@ -5,7 +5,7 @@ import org.koin.dsl.module
 import retrofit2.Retrofit
 
 val authApiModule = module {
-    single {
+    factory {
         get<Retrofit>(authorizedRetrofit).create(AuthApiClient::class.java)
     }
 }

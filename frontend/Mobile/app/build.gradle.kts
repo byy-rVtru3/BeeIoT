@@ -33,6 +33,20 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    flavorDimensions += "version"
+    productFlavors {
+        create("develop") {
+            dimension = "version"
+            versionNameSuffix = "-dev"
+            applicationIdSuffix = ".dev"
+            buildConfigField("Boolean", "IS_DEVELOP", "true")
+        }
+        create("live") {
+            dimension = "version"
+            buildConfigField("Boolean", "IS_DEVELOP", "false")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -48,6 +62,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true // Включаем генерацию BuildConfig
     }
     packaging {
         resources {

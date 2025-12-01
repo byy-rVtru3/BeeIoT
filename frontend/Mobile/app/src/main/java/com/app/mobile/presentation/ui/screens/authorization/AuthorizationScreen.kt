@@ -1,6 +1,7 @@
 package com.app.mobile.presentation.ui.screens.authorization
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -11,6 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -22,6 +25,9 @@ import com.app.mobile.presentation.ui.screens.authorization.models.Authorization
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationNavigationEvent
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationUiState
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationViewModel
+import com.app.mobile.data.mock.MockDataSourceImpl
+import com.app.mobile.presentation.validators.ValidationConfig
+import org.koin.compose.koinInject
 
 @Composable
 fun AuthorizationScreen(
@@ -54,6 +60,23 @@ fun AuthorizationScreen(
         }
     }
 
+    // Получаем MockDataSource - он всегда доступен
+    val mockDataSource: MockDataSourceImpl = koinInject()
+
+    // Создаём state один раз
+    val isMockEnabled = remember { mutableStateOf(false) }
+    val isValidationEnabled = remember { mutableStateOf(false) }
+
+    // Синхронизируем состояние при каждом появлении экрана
+    // LaunchedEffect с ключом Unit выполняется каждый раз при входе на экран
+    LaunchedEffect(Unit) {
+        // Читаем актуальные значения из SharedPreferences
+        isMockEnabled.value = mockDataSource.isMock()
+        isValidationEnabled.value = mockDataSource.isValidationEnabled()
+        // Инициализируем ValidationConfig
+        ValidationConfig.init(mockDataSource)
+    }
+
     when (val state = authorizationUiState) {
         is AuthorizationUiState.Loading -> {
             FullScreenProgressIndicator()
@@ -71,10 +94,23 @@ fun AuthorizationScreen(
                 onRegistrationClick = authorizationViewModel::onRegistrationClick
             )
 
-            AuthorizationContent(
-                authorizationModelUi = state.authorizationModelUi,
-                actions = actions
-            )
+            // Оборачиваем контент в Box чтобы разместить FloatingActionButton поверх
+            Box(modifier = Modifier.fillMaxSize()) {
+                AuthorizationContent(
+                    authorizationModelUi = state.authorizationModelUi,
+                    actions = actions
+                )
+
+                // Панель разработчика - в develop показывает FAB, в live пустая
+                DeveloperPanel(
+                    mockDataSource = mockDataSource,
+                    isMockEnabled = isMockEnabled,
+                    isValidationEnabled = isValidationEnabled,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                )
+            }
         }
     }
 }

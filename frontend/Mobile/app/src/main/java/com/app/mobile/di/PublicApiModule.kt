@@ -5,7 +5,7 @@ import org.koin.dsl.module
 import retrofit2.Retrofit
 
 val publicApiModule = module {
-    single {
+    factory {
         get<Retrofit>(publicRetrofit).create(PublicApiClient::class.java)
     }
 }
