@@ -61,4 +61,3 @@ class RegistrationValidator {
         repeatPasswordField(password).process(repeatPassword)
 
 }
-

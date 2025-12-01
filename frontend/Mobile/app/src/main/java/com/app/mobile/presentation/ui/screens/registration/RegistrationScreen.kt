@@ -1,6 +1,7 @@
 package com.app.mobile.presentation.ui.screens.registration
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -74,50 +75,56 @@ fun RegistrationScreen(
 }
 
 @Composable
-fun RegistrationContent(registrationModelUi: RegistrationModelUi, actions: RegistrationActions) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(36.dp, 56.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Title(
-            text = stringResource(R.string.registration_title),
-            modifier = Modifier.padding(top = 52.dp)
-        )
+fun RegistrationContent(
+    registrationModelUi: RegistrationModelUi,
+    actions: RegistrationActions
+) {
 
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(36.dp, 56.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            RegistrationNameTextField(
-                name = registrationModelUi.name,
-                nameError = registrationModelUi.nameError,
-                onNameChange = actions.onNameChange
+            Title(
+                text = stringResource(R.string.registration_title),
+                modifier = Modifier.padding(top = 52.dp)
             )
 
-            RegistrationEmailTextField(
-                email = registrationModelUi.email,
-                emailError = registrationModelUi.emailError,
-                onEmailChange = actions.onEmailChange
-            )
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                RegistrationNameTextField(
+                    name = registrationModelUi.name,
+                    nameError = registrationModelUi.nameError,
+                    onNameChange = actions.onNameChange
+                )
 
-            RegistrationPasswordTextField(
-                password = registrationModelUi.password,
-                passwordError = registrationModelUi.passwordError,
-                onPasswordChange = actions.onPasswordChange
-            )
+                RegistrationEmailTextField(
+                    email = registrationModelUi.email,
+                    emailError = registrationModelUi.emailError,
+                    onEmailChange = actions.onEmailChange
+                )
 
-            RegistrationRepeatPasswordTextField(
-                repeatPassword = registrationModelUi.repeatPassword,
-                repeatPasswordError = registrationModelUi.repeatPasswordError,
-                onRepeatPasswordChange = actions.onRepeatPasswordChange
-            )
+                RegistrationPasswordTextField(
+                    password = registrationModelUi.password,
+                    passwordError = registrationModelUi.passwordError,
+                    onPasswordChange = actions.onPasswordChange
+                )
+
+                RegistrationRepeatPasswordTextField(
+                    repeatPassword = registrationModelUi.repeatPassword,
+                    repeatPasswordError = registrationModelUi.repeatPasswordError,
+                    onRepeatPasswordChange = actions.onRepeatPasswordChange
+                )
+            }
+
+            RegistrationButton(onClick = actions.onRegisterClick)
         }
-
-        RegistrationButton(onClick = actions.onRegisterClick)
     }
 }
 

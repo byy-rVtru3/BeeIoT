@@ -45,4 +45,3 @@ class ConfirmationValidator {
 
     fun isCodeValid(code: String): Boolean = validateCode(code).isValid()
 }
-

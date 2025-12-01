@@ -193,3 +193,89 @@ class PasswordMatchValidator(private val originalPassword: String) : Validator {
         }
     }
 }
+
+// ============================================================================
+// Система отключения валидации (только для develop-режима)
+// ============================================================================
+
+/**
+ * Интерфейс для источника данных о состоянии валидации
+ * Реализуется MockDataSourceImpl в обеих версиях (develop и live)
+ */
+interface ValidationStateProvider {
+    /**
+     * Проверяет, включена ли валидация
+     */
+    fun isValidationEnabled(): Boolean
+
+    /**
+     * Устанавливает состояние валидации
+     */
+    fun setValidationEnabled(enabled: Boolean)
+}
+
+/**
+ * Глобальная конфигурация валидации
+ * Позволяет отключать валидацию в develop-режиме для ускорения тестирования
+ *
+ * ВАЖНО: Состояние сохраняется через ValidationStateProvider в SharedPreferences
+ */
+object ValidationConfig {
+    /**
+     * Включена ли валидация
+     * В develop-версии можно отключить через UI
+     * В live-версии всегда включена
+     */
+    var isValidationEnabled: Boolean = true
+        private set
+
+    private var stateProvider: ValidationStateProvider? = null
+
+    /**
+     * Инициализация с провайдером состояния для сохранения
+     */
+    fun init(provider: ValidationStateProvider) {
+        stateProvider = provider
+        // Загружаем сохраненное состояние
+        isValidationEnabled = provider.isValidationEnabled()
+    }
+
+    /**
+     * Отключает все валидации (только в develop)
+     */
+    fun disableValidation() {
+        isValidationEnabled = false
+        saveState()
+    }
+
+    /**
+     * Включает все валидации
+     */
+    fun enableValidation() {
+        isValidationEnabled = true
+        saveState()
+    }
+
+    private fun saveState() {
+        stateProvider?.setValidationEnabled(isValidationEnabled)
+    }
+}
+
+/**
+ * Wrapper для валидатора, который учитывает глобальный флаг
+ */
+class ConditionalValidator(private val validator: Validator) : Validator {
+    override fun validate(data: String): ValidationResult {
+        return if (ValidationConfig.isValidationEnabled) {
+            validator.validate(data)
+        } else {
+            // Если валидация выключена, всегда возвращаем Valid
+            ValidationResult.valid(data)
+        }
+    }
+}
+
+/**
+ * Extension для создания условного валидатора
+ */
+fun Validator.withConditionalValidation(): Validator = ConditionalValidator(this)
