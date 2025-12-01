@@ -199,10 +199,26 @@ class PasswordMatchValidator(private val originalPassword: String) : Validator {
 // ============================================================================
 
 /**
+ * Интерфейс для источника данных о состоянии валидации
+ * Реализуется MockDataSourceImpl в обеих версиях (develop и live)
+ */
+interface ValidationStateProvider {
+    /**
+     * Проверяет, включена ли валидация
+     */
+    fun isValidationEnabled(): Boolean
+
+    /**
+     * Устанавливает состояние валидации
+     */
+    fun setValidationEnabled(enabled: Boolean)
+}
+
+/**
  * Глобальная конфигурация валидации
  * Позволяет отключать валидацию в develop-режиме для ускорения тестирования
  *
- * ВАЖНО: Состояние сохраняется через MockDataSourceImpl в SharedPreferences
+ * ВАЖНО: Состояние сохраняется через ValidationStateProvider в SharedPreferences
  */
 object ValidationConfig {
     /**
@@ -213,20 +229,15 @@ object ValidationConfig {
     var isValidationEnabled: Boolean = true
         private set
 
-    private var mockDataSource: Any? = null
+    private var stateProvider: ValidationStateProvider? = null
 
     /**
-     * Инициализация с MockDataSource для сохранения состояния
+     * Инициализация с провайдером состояния для сохранения
      */
-    fun init(dataSource: Any) {
-        mockDataSource = dataSource
+    fun init(provider: ValidationStateProvider) {
+        stateProvider = provider
         // Загружаем сохраненное состояние
-        isValidationEnabled = try {
-            val method = dataSource::class.java.getMethod("isValidationEnabled")
-            method.invoke(dataSource) as? Boolean ?: true
-        } catch (_: Exception) {
-            true
-        }
+        isValidationEnabled = provider.isValidationEnabled()
     }
 
     /**
@@ -246,12 +257,7 @@ object ValidationConfig {
     }
 
     private fun saveState() {
-        try {
-            val method = mockDataSource?.javaClass?.getMethod("setValidationEnabled", Boolean::class.java)
-            method?.invoke(mockDataSource, isValidationEnabled)
-        } catch (_: Exception) {
-            // Игнорируем ошибки
-        }
+        stateProvider?.setValidationEnabled(isValidationEnabled)
     }
 }
 

@@ -1,5 +1,6 @@
 package com.app.mobile.presentation.ui.screens.registration
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -85,7 +86,7 @@ fun RegistrationContent(
                 .fillMaxSize()
                 .padding(36.dp, 56.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Title(
                 text = stringResource(R.string.registration_title),
@@ -95,7 +96,7 @@ fun RegistrationContent(
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(20.dp)
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 RegistrationNameTextField(
                     name = registrationModelUi.name,

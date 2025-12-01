@@ -12,19 +12,19 @@ package com.app.mobile.presentation.validators
 // Валидатор для поля "Код подтверждения"
 // Код состоит из 6 цифр, форматируется как XXX-XXX
 val confirmationCodeField = formField {
-    +FilterOnlyDigits.withConditionalValidation()
-    +FilterMaxLength(6).withConditionalValidation()
-    +ExactLengthValidator(6).withConditionalValidation()
-    +OnlyDigitsValidator.withConditionalValidation()
+    +FilterOnlyDigits
+    +FilterMaxLength(6)
+    +ExactLengthValidator(6)
+    +OnlyDigitsValidator
     +CodeFormatter(3)
 }
 
 // Альтернативный валидатор для 4-значного кода (если нужен)
 val confirmationCode4Field = formField {
-    +FilterOnlyDigits.withConditionalValidation()
-    +FilterMaxLength(4).withConditionalValidation()
-    +ExactLengthValidator(4).withConditionalValidation()
-    +OnlyDigitsValidator.withConditionalValidation()
+    +FilterOnlyDigits
+    +FilterMaxLength(4)
+    +ExactLengthValidator(4)
+    +OnlyDigitsValidator
     +CodeFormatter(2)
 }
 

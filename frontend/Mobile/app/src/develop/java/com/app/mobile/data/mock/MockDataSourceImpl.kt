@@ -2,8 +2,9 @@ package com.app.mobile.data.mock
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.app.mobile.presentation.validators.ValidationStateProvider
 
-class MockDataSourceImpl(context: Context) {
+class MockDataSourceImpl(context: Context) : ValidationStateProvider {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(
         "mock_prefs",
@@ -18,11 +19,11 @@ class MockDataSourceImpl(context: Context) {
         prefs.edit().putBoolean(KEY_MOCK_ENABLED, enabled).apply()
     }
 
-    fun isValidationEnabled(): Boolean {
+    override fun isValidationEnabled(): Boolean {
         return prefs.getBoolean(KEY_VALIDATION_ENABLED, true) // по умолчанию включена
     }
 
-    fun setValidationEnabled(enabled: Boolean) {
+    override fun setValidationEnabled(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_VALIDATION_ENABLED, enabled).apply()
     }
 

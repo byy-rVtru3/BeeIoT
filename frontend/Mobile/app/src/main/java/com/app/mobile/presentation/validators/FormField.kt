@@ -30,13 +30,7 @@ class FormField private constructor(
             validators: List<Validator>,
             formatter: Formatter,
             isOptional: Boolean
-        ): FormField =
-            if (isOptional) {
-                FormField(filters, validators, formatter, true)
-            } else {
-                // Оборачиваем NotEmptyValidator в conditional, чтобы он тоже отключался
-                FormField(filters, listOf(NotEmptyValidator.withConditionalValidation()) + validators, formatter, false)
-            }
+        ): FormField = FormField(filters, validators, formatter, isOptional)
     }
 }
 
@@ -48,7 +42,16 @@ class FormFieldBuilder {
     private var isOptional: Boolean = false
 
     fun build(): FormField {
-        return FormField.build(filters, validators, formatter, isOptional)
+        // Для неопциональных полей добавляем NotEmptyValidator в начало списка
+        val allValidators = if (!isOptional) {
+            listOf(NotEmptyValidator) + validators
+        } else {
+            validators
+        }
+
+        val conditionalValidators = allValidators.map { it.withConditionalValidation() }
+
+        return FormField.build(filters, conditionalValidators, formatter, isOptional)
     }
 
     operator fun Filter.unaryPlus(): FormFieldBuilder {
@@ -65,7 +68,6 @@ class FormFieldBuilder {
         formatter = this
         return this@FormFieldBuilder
     }
-
 }
 
 // DSL функция для создания FormField
