@@ -66,3 +66,17 @@ func (db *Postgres) UpdateHive(ctx context.Context, nameHive string, hive dbType
 	_, err := db.conn.Exec(ctx, text, hive.NameHive, hive.Email, nameHive)
 	return err
 }
+
+func (db *Postgres) GetEmailHiveBySensorID(ctx context.Context, sensorID string) (string, string, error) {
+	text := `SELECT u.email, h.name FROM users u
+			 JOIN hives h ON h.user_id = u.id
+			 JOIN sensors s ON s.hive_id = h.id
+			 WHERE s.sensor_id = $1;`
+	row := db.conn.QueryRow(ctx, text, sensorID)
+	var email, hiveName string
+	err := row.Scan(&email, &hiveName)
+	if err != nil {
+		return "", "", err
+	}
+	return email, hiveName, nil
+}

@@ -24,9 +24,13 @@ type DB interface {
 	GetHiveByName(ctx context.Context, email, nameHive string) (dbTypes.Hive, error)
 	DeleteHive(ctx context.Context, email, nameHive string) error
 	UpdateHive(ctx context.Context, nameHive string, hive dbTypes.Hive) error
+	GetEmailHiveBySensorID(ctx context.Context, sensorID string) (string, string, error)
+
+	NewTemperature(ctx context.Context, temp httpType.Temperature) error
 	GetTemperaturesSinceTimeById(
 		ctx context.Context, hiveId int, time time.Time) ([]dbTypes.HivesTemperatureData, error)
 
+	NewNoise(ctx context.Context, noise httpType.NoiseLevel) error
 	GetNoiseSinceTimeMap(
 		ctx context.Context, id int, date time.Time) (map[time.Time][]dbTypes.HivesNoiseData, error)
 }
@@ -38,4 +42,9 @@ type InMemoryDB interface {
 	ExistJwt(ctx context.Context, email, jwtId string) (bool, error)
 	DeleteJwt(ctx context.Context, email, jwtId string) error
 	DeleteAllJwts(ctx context.Context, email string) error
+	SetSensor(ctx context.Context, sensorID string) error
+	UpdateSensorTimestamp(ctx context.Context, sensorID string, timestamp int64) error
+	ExistSensor(ctx context.Context, sensorID string) (bool, error)
+	GetAllSensors(ctx context.Context) (map[string]int64, error)
+	DeleteSensor(ctx context.Context, sensorID string) error
 }
