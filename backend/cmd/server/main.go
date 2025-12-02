@@ -3,6 +3,7 @@ package main
 import (
 	"BeeIOT/internal/analyzer/noise"
 	"BeeIOT/internal/analyzer/temperature"
+	"BeeIOT/internal/domain/mqtt"
 	"BeeIOT/internal/http"
 	"BeeIOT/internal/infrastructure/postgres"
 	redis2 "BeeIOT/internal/infrastructure/redis"
@@ -55,5 +56,14 @@ func main() {
 	temperature.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
 	noise.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
 
+	mqttServer, err := mqtt.NewMQTTClient(analyzersCtx)
+	if err != nil {
+		slog.Error("Failed to initialize MQTT client",
+			"module", "server",
+			"function", "main",
+			"error", err)
+		return
+	}
+	defer mqttServer.Disconnect()
 	http.StartServer(db, smtp, redis)
 }

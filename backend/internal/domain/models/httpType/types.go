@@ -36,7 +36,7 @@ type QueenRequest struct {
 }
 
 type NoiseLevel struct {
-	Level int       `json:"level"`
+	Level float64   `json:"level"`
 	Time  time.Time `json:"time"`
 	Email string    `json:"email"`
 	Hive  string    `json:"hive"`
