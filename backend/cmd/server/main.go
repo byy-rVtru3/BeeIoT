@@ -46,7 +46,7 @@ func main() {
 	}()
 
 	// start analyzers
-	analyzersCtx, cancel := context.WithCancel(context.WithValue(context.Background(), "log", logger))
+	analyzersCtx, cancel := context.WithCancel(context.WithValue(context.Background(), "logger", logger))
 	defer cancel()
 	temperature.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
 	noise.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()

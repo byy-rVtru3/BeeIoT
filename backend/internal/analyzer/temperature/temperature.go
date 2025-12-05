@@ -6,8 +6,9 @@ import (
 	"BeeIOT/internal/domain/models/httpType"
 	"context"
 	"fmt"
-	"log/slog"
 	"time"
+
+	"github.com/rs/zerolog"
 )
 
 type Analyzer struct {
@@ -15,10 +16,12 @@ type Analyzer struct {
 	db      interfaces.DB
 	ctx     context.Context
 	inMemDb interfaces.InMemoryDB
+	logger  zerolog.Logger
 }
 
 func NewAnalyzer(ctx context.Context, period time.Duration, db interfaces.DB, inMemDb interfaces.InMemoryDB) *Analyzer {
-	return &Analyzer{period: period, db: db, ctx: ctx, inMemDb: inMemDb}
+	logger := ctx.Value("logger").(zerolog.Logger)
+	return &Analyzer{period: period, db: db, ctx: ctx, inMemDb: inMemDb, logger: logger}
 }
 
 func (a *Analyzer) Start() {
@@ -37,22 +40,19 @@ func (a *Analyzer) Start() {
 func (a *Analyzer) analyzeTemperature() {
 	hives, err := a.db.GetHives(a.ctx, "")
 	if err != nil {
-		slog.Error("не удалось получить улья для анализа температуры",
-			"module", "temperature", "function", "analyzeTemperature", "error", err)
+		a.logger.Error().Err(err).Msg("failed to get hives")
 		return
 	}
 	for _, hive := range hives {
 		data, err := a.db.GetTemperaturesSinceTimeById(a.ctx, hive.Id, hive.DateTemperature)
 		if err != nil {
-			slog.Warn("не удалось получить температуру для улья",
-				"module", "temperature", "function", "analyzeTemperature", "id", hive.Id, "error", err)
+			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Msg("failed to get temperature")
 			continue
 		}
 		a.temperatureAnalysis(data, hive)
 		hive.DateTemperature = time.Now()
 		if a.db.UpdateHive(a.ctx, hive.NameHive, hive) != nil {
-			slog.Warn("не удалось обновить дату последней проверки температуры",
-				"module", "temperature", "function", "analyzeTemperature", "id", hive.Id)
+			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Msg("failed to update hive")
 		}
 	}
 }
@@ -67,27 +67,24 @@ func (a *Analyzer) isNormallyTemperature(temp float64) bool {
 
 func (a *Analyzer) temperatureAnalysis(data []dbTypes.HivesTemperatureData, hive dbTypes.Hive) {
 	for _, elem := range data {
-		if !a.isNormallyTemperature(elem.Temperature) {
-			email, err := a.db.GetUserById(a.ctx, hive.Id)
-			if err != nil {
-				slog.Warn("не удалось получить email пользователя",
-					"module", "temperature", "function", "analyzeTemperature",
-					"id", hive.Id, "email", email, "error", err)
-				continue
-			}
-			err = a.inMemDb.SetNotification(a.ctx, email, httpType.NotificationData{
-				Text: fmt.Sprintf(`Обнаружено отклонение температуры в улье %s: %.2f°C.
+		if a.isNormallyTemperature(elem.Temperature) {
+			continue
+		}
+		email, err := a.db.GetUserById(a.ctx, hive.Id)
+		if err != nil {
+			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Str("email", email).Msg("failed to get user")
+			continue
+		}
+		err = a.inMemDb.SetNotification(a.ctx, email, httpType.NotificationData{
+			Text: fmt.Sprintf(`Обнаружено отклонение температуры в улье %s: %.2f°C.
 Нормальное значение температуры находится в пределе от %.2f до %.2f.
 Необходимо принять меры`, hive.NameHive, elem.Temperature,
-					temperatureNormal-temperatureDeltaDown, temperatureNormal+temperatureDeltaUp),
-				NameHive: hive.NameHive,
-				Date:     elem.Date.UnixNano(),
-			})
-			if err != nil {
-				slog.Warn("не удалось сохранить уведомление об отклонении температуры",
-					"module", "temperature", "function", "analyzeTemperature",
-					"id", hive.Id, "email", email, "error", err)
-			}
+				temperatureNormal-temperatureDeltaDown, temperatureNormal+temperatureDeltaUp),
+			NameHive: hive.NameHive,
+			Date:     elem.Date.UnixNano(),
+		})
+		if err != nil {
+			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Str("email", email).Msg("failed to set notification")
 		}
 	}
 }
