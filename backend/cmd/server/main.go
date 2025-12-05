@@ -9,61 +9,56 @@ import (
 	redis2 "BeeIOT/internal/infrastructure/redis"
 	smtp2 "BeeIOT/internal/infrastructure/smtp"
 	"context"
-	"log/slog"
 	"os"
 	"time"
+
+	"github.com/rs/zerolog"
 )
 
-func init() {
-	// JSON вывод, показываем Debug и выше
-	handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
-	})
-	logger := slog.New(handler)
-	slog.SetDefault(logger)
-}
-
 func main() {
+	logger := zerolog.New(os.Stdout).With().Timestamp().Caller().Logger()
+
+	// init postgres
 	db, err := postgres.NewDB()
 	if err != nil {
-		slog.Error("Failed to connect to the database",
-			"module", "server",
-			"function", "main",
-			"error", err)
+		logger.Error().Err(err).Msg("Failed to connect to the database")
 		return
 	}
-	defer db.CloseDB()
+	defer func() {
+		_ = db.CloseDB()
+	}()
+
+	// init smtp
 	smtp, err := smtp2.NewSMTP()
 	if err != nil {
-		slog.Error("Failed to initialize SMTP",
-			"module", "server",
-			"function", "main",
-			"error", err)
+		logger.Error().Err(err).Msg("Failed to connect to SMTP")
 		return
 	}
+
+	// init redis
 	redis, err := redis2.NewRedis()
 	if err != nil {
-		slog.Error("Failed to initialize Redis",
-			"module", "server",
-			"function", "main",
-			"error", err)
+		logger.Error().Err(err).Msg("Failed to connect to redis")
 		return
 	}
-	defer redis.Close()
+	defer func() {
+		_ = redis.Close()
+	}()
 
-	analyzersCtx, cancel := context.WithCancel(context.Background())
+	// start analyzers
+	analyzersCtx, cancel := context.WithCancel(context.WithValue(context.Background(), "log", logger))
 	defer cancel()
 	temperature.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
 	noise.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
 
-	mqttServer, err := mqtt.NewMQTTClient(analyzersCtx)
+	// init mqtt server
+	mqttServer, err := mqtt.NewMQTTClient(db, redis)
 	if err != nil {
-		slog.Error("Failed to initialize MQTT client",
-			"module", "server",
-			"function", "main",
-			"error", err)
+		logger.Error().Err(err).Msg("Failed to connect to mqtt server")
 		return
 	}
 	defer mqttServer.Disconnect()
-	http.StartServer(db, smtp, redis)
+
+	// start http server
+	http.StartServer(db, smtp, redis, logger)
 }

@@ -1,432 +1,165 @@
 package handlers
 
 import (
-	"BeeIOT/internal/domain/confirm"
-	"BeeIOT/internal/domain/interfaces"
-	"BeeIOT/internal/domain/jwtToken"
 	"BeeIOT/internal/domain/models/httpType"
 	"BeeIOT/internal/domain/passwords"
-	"encoding/json"
-	"log/slog"
 	"net/http"
 )
 
-type Handler struct {
-	db       interfaces.DB
-	conf     *confirm.Confirm
-	tokenJWT *jwtToken.JWTToken
-	inMemDb  interfaces.InMemoryDB
-}
-
-func NewHandler(db interfaces.DB, codeSender interfaces.ConfirmSender, inMem interfaces.InMemoryDB) (*Handler, error) {
-	conf, err := confirm.NewConfirm(codeSender)
-	if err != nil {
-		slog.Error("Failed to create confirm service",
-			"module", "handlers",
-			"function", "NewHandler",
-			"error", err)
-		return nil, err
-	}
-	slog.Debug("Confirm service created successfully",
-		"module", "handlers",
-		"function", "NewHandler")
-
-	jw, err := jwtToken.NewJWTToken()
-	if err != nil {
-		slog.Error("Failed to create JWT token service",
-			"module", "handlers",
-			"function", "NewHandler",
-			"error", err)
-		return nil, err
-	}
-	slog.Debug("JWT token service created successfully",
-		"module", "handlers",
-		"function", "NewHandler")
-
-	return &Handler{db: db, conf: conf, tokenJWT: jw, inMemDb: inMem}, nil
-}
-
-type Response struct {
-	Status  string `json:"status"`
-	Message string `json:"message"`
-	Data    any    `json:"data,omitempty"`
-}
-
 func (h *Handler) Registration(w http.ResponseWriter, r *http.Request) {
 	var userData httpType.Registration
-	if err := json.NewDecoder(r.Body).Decode(&userData); err != nil {
-		slog.Error("Failed to decode JSON request body",
-			"module", "handlers",
-			"function", "Registration",
-			"error", err)
-		http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
+	if err := h.readBodyJSON(w, r, &userData); err != nil {
 		return
 	}
-	slog.Debug("JSON request decoded successfully",
-		"module", "handlers",
-		"function", "Registration",
-		"email", userData.Email)
 
 	exist, err := h.db.IsExistUser(r.Context(), userData.Email)
 	if err != nil {
-		slog.Error("Failed to check if user exists",
-			"module", "handlers",
-			"function", "Registration",
-			"email", userData.Email,
-			"error", err)
+		h.logger.Error().Str("email", userData.Email).Err(err).Msg("failed to check user existence")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
-	if exist {
-		slog.Warn("User already exists",
-			"module", "handlers",
-			"function", "Registration",
-			"email", userData.Email)
-		http.Error(w, "Пользователь с таким email уже зарегистрирован", http.StatusConflict)
+	if !exist {
+		h.logger.Warn().Str("email", userData.Email).Msg("user does not exist")
+		http.Error(w, "Пользователь с таким email не зарегистрирован", http.StatusNotFound)
 		return
 	}
 
 	confirmCode, err := h.conf.NewCode(userData.Email, userData.Password)
 	if err != nil {
-		slog.Error("Failed to generate confirmation code",
-			"module", "handlers",
-			"function", "Registration",
-			"email", userData.Email,
-			"error", err)
+		h.logger.Error().Str("email", userData.Email).Err(err).Msg("failed to create new confirmation code")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
-	slog.Debug("Confirmation code generated",
-		"module", "handlers",
-		"function", "Registration",
-		"email", userData.Email)
+	h.logger.Debug().Str("email", userData.Email).Str("code", confirmCode).
+		Msg("new confirmation code created")
 
 	if err := h.conf.Sender.SendConfirmationCode(userData.Email, confirmCode); err != nil {
-		slog.Warn("Failed to send confirmation code",
-			"module", "handlers",
-			"function", "Registration",
-			"email", userData.Email,
-			"error", err)
+		h.logger.Warn().Str("email", userData.Email).Err(err).Msg("failed to send confirmation code")
 	}
 
-	resp := Response{
-		Status:  "ok",
-		Message: "Код подтверждения отправлен на email",
-		Data:    nil,
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(resp)
-	if err != nil {
-		slog.Warn("Failed to encode JSON response",
-			"module", "handlers",
-			"function", "Registration",
-			"error", err)
-	}
+	h.writeBodyJSON(w, "Код подтверждения отправлен на email", nil)
 }
 
 func (h *Handler) ConfirmRegistration(w http.ResponseWriter, r *http.Request) {
 	var confirmData httpType.Confirm
-	if err := json.NewDecoder(r.Body).Decode(&confirmData); err != nil {
-		slog.Error("Failed to decode JSON request body",
-			"module", "handlers",
-			"function", "ConfirmRegistration",
-			"error", err)
-		http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
+	if err := h.readBodyJSON(w, r, &confirmData); err != nil {
 		return
 	}
-	slog.Debug("JSON request decoded successfully",
-		"module", "handlers",
-		"function", "ConfirmRegistration",
-		"email", confirmData.Email)
 
 	pswd, exist := h.conf.Verify(confirmData.Email, confirmData.Code)
 	if !exist {
-		slog.Warn("Invalid or expired confirmation code",
-			"module", "handlers",
-			"function", "ConfirmRegistration",
-			"email", confirmData.Email)
+		h.logger.Warn().Str("email", confirmData.Email).Msg("invalid or expired confirmation code")
 		http.Error(w, "Неверный или истекший код подтверждения", http.StatusUnauthorized)
 		return
 	}
-	slog.Debug("Confirmation code verified successfully",
-		"module", "handlers",
-		"function", "ConfirmRegistration",
-		"email", confirmData.Email)
 
 	err := h.db.Registration(r.Context(), httpType.Registration{Email: confirmData.Email, Password: pswd})
 	if err != nil {
-		slog.Error("Failed to register user in database",
-			"module", "handlers",
-			"function", "ConfirmRegistration",
-			"email", confirmData.Email,
-			"error", err)
+		h.logger.Error().Err(err).Str("email", confirmData.Email).Msg("failed to register user in database")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
 
-	resp := Response{
-		Status:  "ok",
-		Message: "Ваш аккаунт успешно зарегистрирован",
-		Data:    nil,
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(resp)
-	if err != nil {
-		slog.Warn("Failed to encode JSON response",
-			"module", "handlers",
-			"function", "ConfirmRegistration",
-			"error", err)
-	}
+	h.writeBodyJSON(w, "Ваш аккаунт успешно зарегистрирован", nil)
 }
 
 func (h *Handler) ConfirmChangePassword(w http.ResponseWriter, r *http.Request) {
 	var confirmData httpType.Confirm
-	if err := json.NewDecoder(r.Body).Decode(&confirmData); err != nil {
-		slog.Error("Failed to decode JSON request body",
-			"module", "handlers",
-			"function", "ConfirmChangePassword",
-			"error", err)
-		http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
+	if err := h.readBodyJSON(w, r, &confirmData); err != nil {
 		return
 	}
-	slog.Debug("JSON request decoded successfully",
-		"module", "handlers",
-		"function", "ConfirmChangePassword",
-		"email", confirmData.Email)
 
 	pswd, exist := h.conf.Verify(confirmData.Email, confirmData.Code)
 	if !exist {
-		slog.Warn("Invalid or expired confirmation code",
-			"module", "handlers",
-			"function", "ConfirmChangePassword",
-			"email", confirmData.Email)
+		h.logger.Warn().Str("email", confirmData.Email).Msg("invalid or expired confirmation code")
 		http.Error(w, "Неверный или истекший код подтверждения", http.StatusUnauthorized)
 		return
 	}
-	slog.Debug("Confirmation code verified successfully",
-		"module", "handlers",
-		"function", "ConfirmChangePassword",
-		"email", confirmData.Email)
+	h.logger.Debug().Str("email", confirmData.Email).Msg("new confirmation code created")
 
-	exist, err := h.db.IsExistUser(r.Context(), confirmData.Email)
-	if err != nil {
-		slog.Error("Failed to check if user exists",
-			"module", "handlers",
-			"function", "ConfirmChangePassword",
-			"email", confirmData.Email,
-			"error", err)
-		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
-		return
-	}
-	if !exist {
-		slog.Warn("User not found",
-			"module", "handlers",
-			"function", "ConfirmChangePassword",
-			"email", confirmData.Email)
-		http.Error(w, "Пользователь с таким email не зарегистрирован", http.StatusNotFound)
+	if !h.checkExistenceUser(w, r, confirmData.Email) {
 		return
 	}
 
-	err = h.db.ChangePassword(r.Context(), httpType.ChangePassword{Email: confirmData.Email, Password: pswd})
+	err := h.db.ChangePassword(r.Context(), httpType.ChangePassword{
+		Email: confirmData.Email, Password: pswd,
+	})
 	if err != nil {
-		slog.Error("Failed to change password in database",
-			"module", "handlers",
-			"function", "ConfirmChangePassword",
-			"email", confirmData.Email,
-			"error", err)
+		h.logger.Error().Err(err).Str("email", confirmData.Email).Msg("failed to change password in database")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
 
-	resp := Response{
-		Status:  "ok",
-		Message: "Пароль успешно изменен",
-		Data:    nil,
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(resp)
-	if err != nil {
-		slog.Warn("Failed to encode JSON response",
-			"module", "handlers",
-			"function", "ConfirmChangePassword",
-			"error", err)
-	}
+	h.writeBodyJSON(w, "Пароль успешно изменен", nil)
 }
 
 func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	var dataChange httpType.ChangePassword
-	if err := json.NewDecoder(r.Body).Decode(&dataChange); err != nil {
-		slog.Error("Failed to decode JSON request body",
-			"module", "handlers",
-			"function", "ChangePassword",
-			"error", err)
-		http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
+	if err := h.readBodyJSON(w, r, &dataChange); err != nil {
 		return
 	}
-	slog.Debug("JSON request decoded successfully",
-		"module", "handlers",
-		"function", "ChangePassword",
-		"email", dataChange.Email)
-	exist, err := h.db.IsExistUser(r.Context(), dataChange.Email)
-	if err != nil {
-		slog.Error("Failed to check if user exists",
-			"module", "handlers",
-			"function", "ChangePassword",
-			"email", dataChange.Email,
-			"error", err)
-		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+	if !h.checkExistenceUser(w, r, dataChange.Email) {
 		return
 	}
-	if !exist {
-		slog.Warn("User not found",
-			"module", "handlers",
-			"function", "ChangePassword",
-			"email", dataChange.Email)
-		http.Error(w, "Пользователь с таким email не зарегистрирован", http.StatusNotFound)
-		return
-	}
-	err = h.inMemDb.DeleteAllJwts(r.Context(), dataChange.Email)
-	if err != nil {
-		slog.Error("Failed to delete all JWTs from in-memory database",
-			"module", "handlers",
-			"function", "ChangePassword",
-			"email", dataChange.Email,
-		)
+	if err := h.inMemDb.DeleteAllJwts(r.Context(), dataChange.Email); err != nil {
+		h.logger.Error().Err(err).Str("email", dataChange.Email).Msg("failed to delete user jwt")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
 	confirmCode, err := h.conf.NewCode(dataChange.Email, dataChange.Password)
 	if err != nil {
-		slog.Error("Failed to generate confirmation code",
-			"module", "handlers",
-			"function", "ChangePassword",
-			"email", dataChange.Email,
-			"error", err)
+		h.logger.Error().Err(err).Str("email", dataChange.Email).Msg("failed to generate confirmation code")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
-	slog.Debug("Confirmation code generated",
-		"module", "handlers",
-		"function", "ChangePassword",
-		"email", dataChange.Email)
+	h.logger.Debug().Str("email", dataChange.Email).Msg("new confirmation code created")
 
 	if err := h.conf.Sender.SendConfirmationCode(dataChange.Email, confirmCode); err != nil {
-		slog.Warn("Failed to send confirmation code",
-			"module", "handlers",
-			"function", "ChangePassword",
-			"email", dataChange.Email,
-			"error", err)
+		h.logger.Warn().Str("email", dataChange.Email).Err(err).Msg("failed to send confirmation code")
 	}
 
-	resp := Response{
-		Status:  "ok",
-		Message: "Код подтверждения отправлен на email",
-		Data:    nil,
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(resp)
-	if err != nil {
-		slog.Warn("Failed to encode JSON response",
-			"module", "handlers",
-			"function", "ChangePassword",
-			"error", err)
-	}
+	h.writeBodyJSON(w, "Код подтверждения отправлен на email", nil)
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var loginData httpType.Login
-	if err := json.NewDecoder(r.Body).Decode(&loginData); err != nil {
-		slog.Error("Failed to decode JSON request body",
-			"module", "handlers",
-			"function", "Login",
-			"error", err)
-		http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
+	if err := h.readBodyJSON(w, r, &loginData); err != nil {
 		return
 	}
-	slog.Debug("JSON request decoded successfully",
-		"module", "handlers",
-		"function", "Login",
-		"email", loginData.Email)
+
 	pswdDb, err := h.db.Login(r.Context(), loginData)
 	switch {
 	case err != nil:
-		slog.Error("Failed to authenticate user",
-			"module", "handlers",
-			"function", "Login",
-			"email", loginData.Email,
-			"error", err)
+		h.logger.Error().Err(err).Str("email", loginData.Email).Msg("failed to login")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 
-	case pswdDb == "":
-		slog.Warn("Authentication failed - user not found or invalid password",
-			"module", "handlers",
-			"function", "Login",
-			"email", loginData.Email)
-		http.Error(w, "Пользователь с таким email не "+
-			"зарегистрирован или неверный пароль", http.StatusNotFound)
-		return
-	case !passwords.CheckPasswordHash(loginData.Password, pswdDb):
-		slog.Warn("Authentication failed - hashes passwords do not equals",
-			"module", "handlers",
-			"function", "Login",
-			"email", loginData.Email)
+	case pswdDb == "", !passwords.CheckPasswordHash(loginData.Password, pswdDb):
+		h.logger.Warn().Str("email", loginData.Email).Msg("user not found or invalid password")
 		http.Error(w, "Пользователь с таким email не "+
 			"зарегистрирован или неверный пароль", http.StatusNotFound)
 		return
 	}
 	token, err := h.tokenJWT.GenerateToken(loginData.Email)
 	if err != nil {
-		slog.Error("Failed to generate JWT token",
-			"module", "handlers",
-			"function", "Login",
-			"email", loginData.Email,
-			"error", err)
+		h.logger.Error().Err(err).Str("email", loginData.Email).Msg("failed to generate jwt token")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
-	err = h.inMemDb.SetJwt(r.Context(), loginData.Email, token)
-	if err != nil {
-		slog.Error("Failed to store JWT token in in-memory database",
-			"module", "handlers",
-			"function", "Login",
-			"email", loginData.Email,
-			"error", err)
+	if err := h.inMemDb.SetJwt(r.Context(), loginData.Email, token); err != nil {
+		h.logger.Error().Err(err).Str("email", loginData.Email).
+			Msg("failed to set jwt token in in-memory database")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
-	slog.Debug("JWT token generated successfully",
-		"module", "handlers",
-		"function", "Login",
-		"email", loginData.Email)
+	h.logger.Debug().Str("email", loginData.Email).Msg("new jwt token created successfully")
 
-	resp := Response{
-		Status:  "ok",
-		Message: "Авторизация успешна",
-		Data:    map[string]string{"token": token},
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(resp)
-	if err != nil {
-		slog.Warn("Failed to encode JSON response",
-			"module", "handlers",
-			"function", "Login",
-			"error", err)
-	}
+	h.writeBodyJSON(w, "Авторизация успешна", map[string]string{"token": token})
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-	email := r.Context().Value("email").(string)
-	if email == "" {
-		slog.Error("Email not found in context",
-			"module", "handlers",
-			"function", "Logout")
-		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+	email, err := h.getEmailFromContext(w, r)
+	if err != nil {
 		return
 	}
 
@@ -434,83 +167,71 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	const bearerPrefix = "Bearer "
 	token := authHeader[len(bearerPrefix):]
 
-	err := h.inMemDb.DeleteJwt(r.Context(), email, token)
-	if err != nil {
-		slog.Error("Failed to delete JWT from in-memory database",
-			"module", "handlers",
-			"function", "Logout",
-			"email", email,
-			"error", err)
+	if err := h.inMemDb.DeleteJwt(r.Context(), email, token); err != nil {
+		h.logger.Error().Err(err).Str("email", email).Msg("failed to delete jwt from in-memory database")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
-	slog.Debug("JWT deleted successfully from in-memory database",
-		"module", "handlers",
-		"function", "Logout",
-		"email", email)
+	h.logger.Debug().Str("email", email).Msg("user logged out successfully")
 
-	resp := Response{
-		Status:  "ok",
-		Message: "Вы успешно вышли из системы",
-		Data:    nil,
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(resp)
-	if err != nil {
-		slog.Warn("Failed to encode JSON response",
-			"module", "handlers",
-			"function", "Logout",
-			"error", err)
-	}
+	h.writeBodyJSON(w, "Вы успешно вышли из системы", nil)
 }
 
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	email := r.Context().Value("email").(string)
-	if email == "" {
-		slog.Error("Email not found in context",
-			"module", "handlers",
-			"function", "DeleteUser")
-		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
-		return
-	}
-	err := h.db.DeleteUser(r.Context(), email)
+	email, err := h.getEmailFromContext(w, r)
 	if err != nil {
-		slog.Error("Failed to delete user from database",
-			"module", "handlers",
-			"function", "DeleteUser",
-			"email", email,
-			"error", err)
+		return
+	}
+	if err := h.db.DeleteUser(r.Context(), email); err != nil {
+		h.logger.Error().Str("email", email).Err(err).Msg("failed to delete user from in-memory database")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
-	err = h.inMemDb.DeleteAllJwts(r.Context(), email)
-	if err != nil {
-		slog.Error("Failed to delete all JWTs from in-memory database",
-			"module", "handlers",
-			"function", "DeleteUser",
-			"email", email,
-			"error", err)
-		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
-		return
-	}
-	slog.Debug("User deleted successfully",
-		"module", "handlers",
-		"function", "DeleteUser",
-		"email", email)
 
-	resp := Response{
-		Status:  "ok",
-		Message: "Ваш аккаунт успешно удален",
-		Data:    nil,
+	if err := h.inMemDb.DeleteAllJwts(r.Context(), email); err != nil {
+		h.logger.Error().Err(err).Str("email", email).Msg("failed to delete jwt from in-memory database")
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(resp)
+	h.logger.Debug().Str("email", email).Msg("user deleted successfully")
+
+	h.writeBodyJSON(w, "Ваш аккаунт успешно удален", nil)
+}
+
+func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
+	var userData httpType.Registration
+	if err := h.readBodyJSON(w, r, &userData); err != nil {
+		return
+	}
+
+	confirmCode, err := h.conf.NewCode(userData.Email, userData.Password)
 	if err != nil {
-		slog.Warn("Failed to encode JSON response",
-			"module", "handlers",
-			"function", "DeleteUser",
-			"error", err)
+		h.logger.Error().Str("email", userData.Email).Err(err).
+			Msg("failed to create new confirmation code")
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
 	}
+	h.logger.Debug().Str("email", userData.Email).Str("code", confirmCode).
+		Msg("new confirmation code created")
+
+	if err := h.conf.Sender.SendConfirmationCode(userData.Email, confirmCode); err != nil {
+		h.logger.Warn().Str("email", userData.Email).Err(err).Msg("failed to send confirmation code")
+	}
+
+	h.writeBodyJSON(w, "Код подтверждения отправлен на email", nil)
+}
+
+func (h *Handler) checkExistenceUser(w http.ResponseWriter, r *http.Request, email string) bool {
+	exist, err := h.db.IsExistUser(r.Context(), email)
+	if err != nil {
+		h.logger.Error().Str("email", email).Err(err).Msg("failed to check user existence")
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return false
+	}
+	if !exist {
+		h.logger.Warn().Str("email", email).Msg("user does not exist")
+		http.Error(w, "Пользователь с таким email не зарегистрирован", http.StatusNotFound)
+		return false
+	}
+	return true
 }
