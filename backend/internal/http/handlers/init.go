@@ -4,6 +4,7 @@ import (
 	"BeeIOT/internal/domain/confirm"
 	"BeeIOT/internal/domain/interfaces"
 	"BeeIOT/internal/domain/jwtToken"
+	"BeeIOT/internal/domain/mqtt"
 	"encoding/json"
 	"net/http"
 
@@ -16,11 +17,11 @@ type Handler struct {
 	tokenJWT *jwtToken.JWTToken
 	inMemDb  interfaces.InMemoryDB
 	logger   zerolog.Logger
+	mqtt     *mqtt.Client
 }
 
 func NewHandler(db interfaces.DB, codeSender interfaces.ConfirmSender,
-	inMem interfaces.InMemoryDB, logger zerolog.Logger) (*Handler, error) {
-
+	inMem interfaces.InMemoryDB, mqtt *mqtt.Client, logger zerolog.Logger) (*Handler, error) {
 	conf, err := confirm.NewConfirm(codeSender)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to create confirm service")
@@ -34,7 +35,7 @@ func NewHandler(db interfaces.DB, codeSender interfaces.ConfirmSender,
 		return nil, err
 	}
 	logger.Info().Msg("jwt token created successfully")
-	return &Handler{db: db, conf: conf, tokenJWT: jw, inMemDb: inMem, logger: logger}, nil
+	return &Handler{db: db, conf: conf, tokenJWT: jw, inMemDb: inMem, logger: logger, mqtt: mqtt}, nil
 }
 
 type Response struct {
