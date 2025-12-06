@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.app.mobile.R
-import com.app.mobile.presentation.models.ConfirmationModelUi
 import com.app.mobile.presentation.models.TypeConfirmationUi
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
@@ -24,6 +23,7 @@ import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.components.ValidatedTextField
 import com.app.mobile.presentation.ui.screens.confirmation.models.ConfirmationActions
+import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationFormState
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationNavigationEvent
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationUiState
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationViewModel
@@ -61,13 +61,16 @@ fun ConfirmationScreen(
         is ConfirmationUiState.Loading -> FullScreenProgressIndicator()
         is ConfirmationUiState.Error -> ErrorMessage(message = state.message) {}
         is ConfirmationUiState.Content -> {
+            // Подписываемся на formState для отображения и валидации
+            val formState = state.formState
+
             val actions = ConfirmationActions(
                 onCodeChange = confirmationViewModel::onCodeChange,
                 onConfirmClick = confirmationViewModel::onConfirmClick,
                 onResendCodeClick = confirmationViewModel::onResendCode
             )
             ConfirmationContent(
-                confirmationModelUi = state.confirmationModelUi,
+                formState = formState,
                 actions = actions
             )
         }
@@ -76,8 +79,8 @@ fun ConfirmationScreen(
 
 @Composable
 private fun ConfirmationContent(
-    confirmationModelUi: ConfirmationModelUi, actions:
-    ConfirmationActions
+    formState: ConfirmationFormState,
+    actions: ConfirmationActions
 ) {
 
     Column(
@@ -99,8 +102,8 @@ private fun ConfirmationContent(
             modifier = Modifier.fillMaxWidth(),
         ) {
             CodeTextField(
-                code = confirmationModelUi.code,
-                codeError = confirmationModelUi.codeError,
+                code = formState.code,
+                codeError = formState.codeError,
                 onCodeChange = actions.onCodeChange
             )
             CodeResendButton(onClick = actions.onResendCodeClick)
