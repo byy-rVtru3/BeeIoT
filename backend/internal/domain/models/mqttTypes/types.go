@@ -54,8 +54,8 @@ type DeviceConfig struct {
 	Delete bool `json:"delete_device"`
 }
 
-func NewDeviceConfig() *DeviceConfig {
-	return &DeviceConfig{
+func NewDeviceConfig() DeviceConfig {
+	return DeviceConfig{
 		SamplingNoise: -1,
 		SamplingTemp:  -1,
 		Restart:       false,

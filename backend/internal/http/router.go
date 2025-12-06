@@ -2,6 +2,7 @@ package http
 
 import (
 	"BeeIOT/internal/domain/interfaces"
+	"BeeIOT/internal/domain/mqtt"
 	"BeeIOT/internal/http/handlers"
 	"BeeIOT/internal/http/middlewares"
 	"context"
@@ -19,9 +20,10 @@ import (
 
 const serverPort = ":8000"
 
-func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb interfaces.InMemoryDB, logger zerolog.Logger) {
+func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb interfaces.InMemoryDB,
+	mqtt *mqtt.Client, logger zerolog.Logger) {
 	r := chi.NewRouter()
-	h, err := handlers.NewHandler(db, sender, inMemDb, logger)
+	h, err := handlers.NewHandler(db, sender, inMemDb, mqtt, logger)
 	if err != nil {
 		logger.Error().Err(err).Msg("could not create new handler")
 		return
@@ -57,6 +59,10 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.Get("/", h.GetHive)
 			r.Put("/update", h.UpdateHive)
 			r.Delete("/delete", h.DeleteHive)
+		})
+		r.Route("/mqtt", func(r chi.Router) {
+			r.Post("/config", h.MQTTSendConfig)
+			r.Get("/data", h.GetNoiseAndTemp)
 		})
 	})
 
