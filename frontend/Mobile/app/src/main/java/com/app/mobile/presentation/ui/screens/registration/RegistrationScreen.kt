@@ -84,19 +84,19 @@ fun RegistrationContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(36.dp, 56.dp),
+                .padding(36.dp, 48.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Title(
                 text = stringResource(R.string.registration_title),
-                modifier = Modifier.padding(top = 52.dp)
+                modifier = Modifier.padding(top = 24.dp)
             )
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(20.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 RegistrationNameTextField(
                     name = formState.name,
@@ -167,6 +167,7 @@ fun RegistrationPasswordTextField(
         onValueChange = onPasswordChange,
         placeholder = stringResource(R.string.password),
         error = passwordError
+
     )
 }
 
@@ -180,7 +181,8 @@ fun RegistrationRepeatPasswordTextField(
         value = repeatPassword,
         onValueChange = onRepeatPasswordChange,
         placeholder = stringResource(R.string.repeat_password),
-        error = repeatPasswordError
+        error = repeatPasswordError,
+        supportingText = stringResource(R.string.password_requirements)
     )
 }
 
@@ -189,6 +191,6 @@ fun RegistrationButton(onClick: () -> Unit) {
     PrimaryButton(
         text = stringResource(R.string.registration_button),
         onClick = onClick,
-        modifier = Modifier.padding(20.dp)
+        modifier = Modifier.padding(48.dp,32.dp)
     )
 }
