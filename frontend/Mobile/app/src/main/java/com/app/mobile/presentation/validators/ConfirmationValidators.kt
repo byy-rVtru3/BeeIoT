@@ -16,32 +16,17 @@ val confirmationCodeField = formField {
     +FilterMaxLength(6)
     +ExactLengthValidator(6)
     +OnlyDigitsValidator
-    +CodeFormatter(3)
 }
 
-// Альтернативный валидатор для 4-значного кода (если нужен)
-val confirmationCode4Field = formField {
-    +FilterOnlyDigits
-    +FilterMaxLength(4)
-    +ExactLengthValidator(4)
-    +OnlyDigitsValidator
-    +CodeFormatter(2)
-}
+
 
 /**
  * Класс для управления валидацией полей подтверждения
  */
 class ConfirmationValidator {
-    // По умолчанию используем 6-значный код
-    private val codeLength: Int = 6
 
     fun validateCode(code: String): ValidationResult {
-        return when (codeLength) {
-            4 -> confirmationCode4Field.process(code)
-            6 -> confirmationCodeField.process(code)
-            else -> confirmationCodeField.process(code)
-        }
+        return confirmationCodeField.process(code)
     }
 
-    fun isCodeValid(code: String): Boolean = validateCode(code).isValid()
 }
