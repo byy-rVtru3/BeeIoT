@@ -18,10 +18,3 @@ val NameFormatter = Formatter { data ->
             word.lowercase().replaceFirstChar { it.uppercase() }
         }
 }
-
-// Форматтер для кода подтверждения - добавляет тире
-class CodeFormatter(private val groupSize: Int = 3) : Formatter {
-    override fun format(data: String): String {
-        return data.chunked(groupSize).joinToString("-")
-    }
-}
