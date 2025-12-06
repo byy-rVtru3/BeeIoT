@@ -52,7 +52,7 @@ func main() {
 	noise.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
 
 	// init mqtt server
-	mqttServer, err := mqtt.NewMQTTClient(db, redis)
+	mqttServer, err := mqtt.NewMQTTClient(db, redis, logger)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to connect to mqtt server")
 		return
