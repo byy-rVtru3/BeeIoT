@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.SolidColor
@@ -48,7 +49,7 @@ fun CustomTextField(
         modifier = modifier
             .fillMaxWidth()
             .drawBehind {
-                val strokeWidth = 4.dp.toPx()
+                val strokeWidth = 3.dp.toPx()
                 val y = size.height - strokeWidth / 2
                 drawLine(
                     color = borderColor,
@@ -103,6 +104,7 @@ fun ValidatedTextField(
     placeholder: String,
     modifier: Modifier = Modifier,
     error: ValidationError? = null,
+    supportingText: String? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     trailingIcon: @Composable (() -> Unit)? = null
 ) {
@@ -116,12 +118,26 @@ fun ValidatedTextField(
             trailingIcon = trailingIcon
         )
 
-        error?.let { validationError ->
+        // Текст для отображения: ошибка или подсказка
+        val displayText = error?.toErrorMessage() ?: supportingText
+        // Шаблон для резервирования высоты: подсказка или пустая строка (для одной строки)
+        val templateText = supportingText ?: " "
+
+        Box(modifier = Modifier.padding(start = 4.dp, top = 4.dp)) {
+            // Невидимый текст для резервирования высоты
             Text(
-                text = validationError.toErrorMessage(),
-                color = MaterialTheme.colorScheme.error,
+                text = templateText,
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+                modifier = Modifier.alpha(0f)
+            )
+            // Видимый текст поверх
+            Text(
+                text = displayText ?: "",
+                color = if (error != null)
+                    MaterialTheme.colorScheme.error
+                else
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                style = MaterialTheme.typography.bodySmall
             )
         }
     }
@@ -133,7 +149,8 @@ fun PasswordTextField(
     onValueChange: (String) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
-    error: ValidationError? = null
+    error: ValidationError? = null,
+    supportingText: String? = null
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
 
@@ -143,6 +160,7 @@ fun PasswordTextField(
         placeholder = placeholder,
         modifier = modifier,
         error = error,
+        supportingText = supportingText,
         visualTransformation = if (passwordVisible) {
             VisualTransformation.None
         } else {

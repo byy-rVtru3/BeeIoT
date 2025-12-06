@@ -36,7 +36,7 @@ fun PrimaryButton(
     )
 
     val borderWidth by animateFloatAsState(
-        targetValue = if (isPressed) 2.dp.value else 4.dp.value,
+        targetValue = if (isPressed) 2.dp.value else 3.dp.value,
         animationSpec = tween(durationMillis = 100),
         label = "border_width"
     )
@@ -60,7 +60,6 @@ fun PrimaryButton(
         )
     }
 }
-
 @Composable
 fun LabelButton(
     text: String,
@@ -84,7 +83,7 @@ fun LabelButton(
 
     Text(
         text = text,
-        style = MaterialTheme.typography.labelSmall,
+        style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onBackground.copy(alpha = alpha),
         modifier = modifier
             .scale(scale)
