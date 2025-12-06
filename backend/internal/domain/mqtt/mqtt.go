@@ -4,20 +4,21 @@ import (
 	"BeeIOT/internal/domain/interfaces"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/rs/zerolog"
 )
 
-type MQTTClient struct {
+type Client struct {
 	client  mqtt.Client
 	inMemDb interfaces.InMemoryDB
 	db      interfaces.DB
+	logger  zerolog.Logger
 }
 
-func NewMQTTClient(db interfaces.DB, inMemDb interfaces.InMemoryDB) (*MQTTClient, error) {
+func NewMQTTClient(db interfaces.DB, inMemDb interfaces.InMemoryDB, logger zerolog.Logger) (*Client, error) {
 	host := os.Getenv("MQTT_HOST")
 	port := os.Getenv("MQTT_PORT")
 	username := os.Getenv("MQTT_USERNAME")
@@ -30,7 +31,7 @@ func NewMQTTClient(db interfaces.DB, inMemDb interfaces.InMemoryDB) (*MQTTClient
 		return nil, errors.New("MQTT_PORT environment variable is not set")
 	}
 
-	mqttClient := &MQTTClient{inMemDb: inMemDb, db: db}
+	mqttClient := &Client{inMemDb: inMemDb, db: db, logger: logger}
 
 	opts := mqtt.NewClientOptions().
 		AddBroker(fmt.Sprintf("tcp://%s:%s", host, port)).
@@ -45,60 +46,62 @@ func NewMQTTClient(db interfaces.DB, inMemDb interfaces.InMemoryDB) (*MQTTClient
 		SetOnConnectHandler(mqttClient.onConnect)
 
 	if username != "" {
-		opts.SetUsername(username)
+		opts = opts.SetUsername(username)
 	}
 	if password != "" {
-		opts.SetPassword(password)
+		opts = opts.SetPassword(password)
 	}
 
 	mqttClient.client = mqtt.NewClient(opts)
 
-	if token := mqttClient.client.Connect(); token.Wait() && token.Error() != nil {
+	if token := mqttClient.client.Connect(); token.Wait() && (token.Error() != nil) {
 		return nil, fmt.Errorf("failed to connect to MQTT broker: %w", token.Error())
 	}
 
-	slog.Info("MQTT client connected successfully", "broker", fmt.Sprintf("%s:%s", host, port))
+	logger.Info().Str("broker", fmt.Sprintf("%s:%s", host, port)).
+		Msg("MQTT client connected successfully")
 
 	return mqttClient, nil
 }
 
-func (m *MQTTClient) onConnect(client mqtt.Client) {
-	slog.Info("MQTT client connected to broker")
+func (m *Client) onConnect(_ mqtt.Client) {
+	m.logger.Info().Msg("MQTT client connected to broker")
 
 	m.SubscribeToTopics()
 }
 
-func (m *MQTTClient) onConnectionLost(client mqtt.Client, err error) {
-	slog.Error("MQTT connection lost", "error", err)
+func (m *Client) onConnectionLost(_ mqtt.Client, err error) {
+	m.logger.Error().Err(err).Msg("MQTT connection lost")
 }
 
-func (m *MQTTClient) SubscribeToTopics() {
-	if token := m.client.Subscribe("/device/+/data", 1, m.handleDeviceData); token.Wait() && token.Error() != nil {
-		slog.Error("Failed to subscribe to data topics", "error", token.Error())
+func (m *Client) SubscribeToTopics() {
+	token := m.client.Subscribe("/device/+/data", 1, m.handleDeviceData)
+	if token.Wait() && token.Error() != nil {
+		m.logger.Error().Err(token.Error()).Str("topic", "data").Msg("failed to subscribe to topic")
 	} else {
-		slog.Info("Subscribed to data topics", "pattern", "/device/+/data")
+		m.logger.Info().Str("topic", "data").Msg("subscribed to topic successfully")
 	}
-
-	if token := m.client.Subscribe("/device/+/status", 1, m.handleDeviceStatus); token.Wait() && token.Error() != nil {
-		slog.Error("Failed to subscribe to status topics", "error", token.Error())
+	token = m.client.Subscribe("/device/+/status", 1, m.handleDeviceStatus)
+	if token.Wait() && token.Error() != nil {
+		m.logger.Error().Err(token.Error()).Str("topic", "status").Msg("failed to subscribe to topic")
 	} else {
-		slog.Info("Subscribed to status topics", "pattern", "/device/+/status")
+		m.logger.Info().Str("topic", "status").Msg("subscribed to topic successfully")
 	}
 }
 
 // IsConnected проверяет, подключен ли клиент
-func (m *MQTTClient) IsConnected() bool {
+func (m *Client) IsConnected() bool {
 	return m.client.IsConnected()
 }
 
 // Disconnect отключается от MQTT брокера
-func (m *MQTTClient) Disconnect() {
-	slog.Info("Disconnecting MQTT client")
+func (m *Client) Disconnect() {
+	m.logger.Info().Msg("MQTT client disconnecting")
 	m.client.Disconnect(250)
 }
 
 // Close закрывает соединение
-func (m *MQTTClient) Close() error {
+func (m *Client) Close() error {
 	m.Disconnect()
 	return nil
 }

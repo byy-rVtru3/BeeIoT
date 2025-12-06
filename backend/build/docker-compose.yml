@@ -92,11 +92,14 @@ services:
       REDIS_ADDR: ${REDIS_ADDR}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       REDIS_DB: ${REDIS_DB}
+      MQTT_HOST: ${MQTT_HOST}
+      MQTT_PORT: ${MQTT_PORT}
     depends_on:
       - db
       - redis
+      - mqtt
     ports:
-      - "127.0.0.1:8000:8000"
+      - "8000:8000"
     networks:
       - app-net
     restart: unless-stopped
