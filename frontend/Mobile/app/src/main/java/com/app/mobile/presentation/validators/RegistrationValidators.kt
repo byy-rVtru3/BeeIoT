@@ -43,7 +43,6 @@ val passwordField = formField {
 fun repeatPasswordField(originalPassword: String) = formField {
     +FilterPasswordCharacters()
     +FilterMaxLength(50)
-    +MinLengthValidator(8, PasswordTooShortError)
     +PasswordMatchValidator(originalPassword)
 }
 

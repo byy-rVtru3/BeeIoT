@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.app.mobile.R
-import com.app.mobile.presentation.models.RegistrationModelUi
 import com.app.mobile.presentation.models.TypeConfirmationUi
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationNavigationEvent
 import com.app.mobile.presentation.ui.components.ErrorMessage
@@ -25,6 +24,7 @@ import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.components.ValidatedTextField
 import com.app.mobile.presentation.ui.screens.registration.models.RegistrationActions
+import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationFormState
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationUiState
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationViewModel
 import com.app.mobile.presentation.validators.ValidationError
@@ -59,7 +59,7 @@ fun RegistrationScreen(
         is RegistrationUiState.Loading -> FullScreenProgressIndicator()
         is RegistrationUiState.Error -> ErrorMessage(message = state.message) {}
         is RegistrationUiState.Content -> {
-            val registrationModelUi = state.registrationModelUi
+            val formState = state.formState
 
             val actions = RegistrationActions(
                 onEmailChange = registrationViewModel::onEmailChange,
@@ -69,14 +69,14 @@ fun RegistrationScreen(
                 onRegisterClick = registrationViewModel::onRegisterClick
             )
 
-            RegistrationContent(registrationModelUi, actions)
+            RegistrationContent(formState, actions)
         }
     }
 }
 
 @Composable
 fun RegistrationContent(
-    registrationModelUi: RegistrationModelUi,
+    formState: RegistrationFormState,
     actions: RegistrationActions
 ) {
 
@@ -99,26 +99,26 @@ fun RegistrationContent(
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 RegistrationNameTextField(
-                    name = registrationModelUi.name,
-                    nameError = registrationModelUi.nameError,
+                    name = formState.name,
+                    nameError = formState.nameError,
                     onNameChange = actions.onNameChange
                 )
 
                 RegistrationEmailTextField(
-                    email = registrationModelUi.email,
-                    emailError = registrationModelUi.emailError,
+                    email = formState.email,
+                    emailError = formState.emailError,
                     onEmailChange = actions.onEmailChange
                 )
 
                 RegistrationPasswordTextField(
-                    password = registrationModelUi.password,
-                    passwordError = registrationModelUi.passwordError,
+                    password = formState.password,
+                    passwordError = formState.passwordError,
                     onPasswordChange = actions.onPasswordChange
                 )
 
                 RegistrationRepeatPasswordTextField(
-                    repeatPassword = registrationModelUi.repeatPassword,
-                    repeatPasswordError = registrationModelUi.repeatPasswordError,
+                    repeatPassword = formState.repeatPassword,
+                    repeatPasswordError = formState.repeatPasswordError,
                     onRepeatPasswordChange = actions.onRepeatPasswordChange
                 )
             }

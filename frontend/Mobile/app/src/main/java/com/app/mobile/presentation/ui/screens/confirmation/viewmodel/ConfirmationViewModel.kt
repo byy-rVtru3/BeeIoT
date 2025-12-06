@@ -8,16 +8,17 @@ import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.mappers.toDomain
 import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.ConfirmationUserUseCase
+import com.app.mobile.domain.usecase.ValidateConfirmationFormUseCase
 import com.app.mobile.presentation.models.ConfirmationModelUi
 import com.app.mobile.presentation.models.ConfirmationResultUi
 import com.app.mobile.presentation.models.TypeConfirmationUi
 import com.app.mobile.presentation.validators.ConfirmationValidator
-import com.app.mobile.presentation.validators.ValidationResult
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 
 class ConfirmationViewModel(
-    private val confirmationUserUseCase: ConfirmationUserUseCase
+    private val confirmationUserUseCase: ConfirmationUserUseCase,
+    private val validateFormUseCase: ValidateConfirmationFormUseCase
 ) : ViewModel() {
 
     private val _confirmationUiState = MutableLiveData<ConfirmationUiState>()
@@ -38,11 +39,13 @@ class ConfirmationViewModel(
         if (currentState is ConfirmationUiState.Content) {
             val validationResult = validator.validateCode(code)
 
-            val updatedModel = currentState.confirmationModelUi.copy(
+            // Обновляем formState
+            val updatedFormState = currentState.formState.copy(
                 code = validationResult.data,
                 codeError = null
             )
-            _confirmationUiState.value = ConfirmationUiState.Content(updatedModel)
+
+            _confirmationUiState.value = currentState.copy(formState = updatedFormState)
         }
     }
 
@@ -50,17 +53,19 @@ class ConfirmationViewModel(
         val currentState = _confirmationUiState.value
         if (currentState is ConfirmationUiState.Content) {
             _confirmationUiState.value = ConfirmationUiState.Loading
-            val model = currentState.confirmationModelUi
 
-            val codeResult = validator.validateCode(model.code)
-            val codeError =
-                if (codeResult is ValidationResult.Error) codeResult.errors.firstOrNull() else null
+            val validatedFormState = validateFormUseCase(currentState.formState)
 
-            if (codeError != null) {
-                val updatedModel = model.copy(codeError = codeError)
-                _confirmationUiState.value = ConfirmationUiState.Content(updatedModel)
+            if (validatedFormState.hasAnyError()) {
+                _confirmationUiState.value = currentState.copy(formState = validatedFormState)
+                Log.w("ConfirmationViewModel", "Form validation failed")
                 return
             }
+
+            // Создаем модель из формы для отправки
+            val model = currentState.confirmationModelUi.copy(
+                code = validatedFormState.code
+            )
 
             viewModelScope.launch(handler) {
                 val result = confirmationUserUseCase(
@@ -74,7 +79,6 @@ class ConfirmationViewModel(
 
                     is ConfirmationResultUi.Error -> {
                         _confirmationUiState.value = ConfirmationUiState.Error(result.message)
-                        // Добавить обработку ошибок
                     }
                 }
             }
@@ -82,8 +86,12 @@ class ConfirmationViewModel(
     }
 
     fun createConfirmationModelUi(email: String, type: TypeConfirmationUi) {
+        val model = ConfirmationModelUi(email = email, code = "", type = type)
+        val initialFormState = ConfirmationFormState(code = "")
+
         _confirmationUiState.value = ConfirmationUiState.Content(
-            confirmationModelUi = ConfirmationModelUi(email = email, code = "", type = type)
+            confirmationModelUi = model,
+            formState = initialFormState
         )
     }
 

@@ -7,5 +7,8 @@ sealed interface ConfirmationUiState {
 
     data class Error(val message: String) : ConfirmationUiState
 
-    data class Content(val confirmationModelUi: ConfirmationModelUi) : ConfirmationUiState
+    data class Content(
+        val confirmationModelUi: ConfirmationModelUi,
+        val formState: ConfirmationFormState = ConfirmationFormState()
+    ) : ConfirmationUiState
 }
