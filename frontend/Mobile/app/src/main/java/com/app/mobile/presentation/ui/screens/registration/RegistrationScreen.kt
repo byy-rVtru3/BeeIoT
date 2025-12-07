@@ -28,6 +28,7 @@ import com.app.mobile.presentation.ui.screens.registration.viewmodel.Registratio
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationUiState
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationViewModel
 import com.app.mobile.presentation.validators.ValidationError
+import com.app.mobile.ui.theme.Dimens
 
 @Composable
 fun RegistrationScreen(
@@ -84,19 +85,22 @@ fun RegistrationContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(36.dp, 48.dp),
+                .padding(
+                    horizontal = Dimens.OpenScreensPaddingHorizontal,
+                    vertical = Dimens.OpenScreensPaddingVertical
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Title(
                 text = stringResource(R.string.registration_title),
-                modifier = Modifier.padding(top = 24.dp)
+                modifier = Modifier.padding(top = Dimens.TitleTopPadding)
             )
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(Dimens.FieldsSpacing)
             ) {
                 RegistrationNameTextField(
                     name = formState.name,
@@ -191,6 +195,9 @@ fun RegistrationButton(onClick: () -> Unit) {
     PrimaryButton(
         text = stringResource(R.string.registration_button),
         onClick = onClick,
-        modifier = Modifier.padding(48.dp,32.dp)
+        modifier = Modifier.padding(
+            horizontal = 48.dp,
+            vertical = Dimens.ButtonSoloVerticalPadding
+        )
     )
 }

@@ -55,7 +55,7 @@ fun PrimaryButton(
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(8.dp)
         )
     }
@@ -64,32 +64,34 @@ fun PrimaryButton(
 fun LabelButton(
     text: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.92f else 1f,
+        targetValue = if (isPressed && enabled) 0.92f else 1f,
         animationSpec = tween(durationMillis = 100),
         label = "label_button_scale"
     )
 
     val alpha by animateFloatAsState(
-        targetValue = if (isPressed) 0.6f else 1f,
+        targetValue = if (!enabled) 0.4f else if (isPressed) 0.6f else 1f,
         animationSpec = tween(durationMillis = 100),
         label = "label_button_alpha"
     )
 
     Text(
         text = text,
-        style = MaterialTheme.typography.labelMedium,
+        style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onBackground.copy(alpha = alpha),
         modifier = modifier
             .scale(scale)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
+                enabled = enabled,
                 onClick = onClick
             )
     )

@@ -11,7 +11,7 @@ import androidx.compose.ui.text.style.TextAlign
 fun Title(
     text: String,
     modifier: Modifier = Modifier,
-    style: TextStyle = MaterialTheme.typography.titleLarge
+    style: TextStyle = MaterialTheme.typography.headlineLarge
 ) {
     Text(
         text = text,
@@ -21,4 +21,3 @@ fun Title(
         textAlign = TextAlign.Center
     )
 }
-

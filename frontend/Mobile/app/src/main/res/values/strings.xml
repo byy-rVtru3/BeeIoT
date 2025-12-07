@@ -10,6 +10,9 @@
     <string name="hide_password">Скрыть пароль</string>
     <string name="show_password">Показать пароль</string>
     <string name="resend_code">Отправить код повторно</string>
+    <string name="authorization_title">Авторизация</string>
+    <string name="authorization_button">Войти</string>
+    <string name="forgot_password">Забыли пароль?</string>
 
 
     <!-- Ошибки -->
