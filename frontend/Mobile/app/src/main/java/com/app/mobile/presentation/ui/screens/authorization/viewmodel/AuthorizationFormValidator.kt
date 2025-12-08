@@ -1,9 +1,9 @@
 package com.app.mobile.presentation.ui.screens.authorization.viewmodel
 
 import com.app.mobile.presentation.validators.AuthorizationValidator
-import com.app.mobile.presentation.validators.BaseFormValidator
 import com.app.mobile.presentation.validators.ValidationError
 import com.app.mobile.presentation.validators.ValidationResult
+import com.app.mobile.presentation.validators.firstErrorOrNull
 
 /**
  * Helper-класс для валидации формы авторизации
@@ -11,7 +11,7 @@ import com.app.mobile.presentation.validators.ValidationResult
  */
 class AuthorizationFormValidator(
     private val validator: AuthorizationValidator = AuthorizationValidator()
-) : BaseFormValidator() {
+) {
 
     /**
      * Результат валидации формы авторизации

@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.CreateUserAccountUseCase
 import com.app.mobile.domain.usecase.RegistrationAccountUseCase
-import com.app.mobile.presentation.mappers.toDomain as registrationModelToDomain
+import com.app.mobile.presentation.mappers.toDomain
 import com.app.mobile.presentation.models.RegistrationResultUi
 import com.app.mobile.presentation.models.TypeConfirmationUi
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -118,7 +118,7 @@ class RegistrationViewModel(
 
             viewModelScope.launch(handler) {
                 val response = registrationAccountUseCase(
-                    registrationModel.registrationModelToDomain()
+                    registrationModel.toDomain()
                 ).toUiModel()
 
                 when (response) {

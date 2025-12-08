@@ -1,9 +1,9 @@
 package com.app.mobile.presentation.ui.screens.registration.viewmodel
 
-import com.app.mobile.presentation.validators.BaseFormValidator
 import com.app.mobile.presentation.validators.RegistrationValidator
 import com.app.mobile.presentation.validators.ValidationError
 import com.app.mobile.presentation.validators.ValidationResult
+import com.app.mobile.presentation.validators.firstErrorOrNull
 
 /**
  * Helper-класс для валидации формы регистрации
@@ -11,7 +11,7 @@ import com.app.mobile.presentation.validators.ValidationResult
  */
 class RegistrationFormValidator(
     private val validator: RegistrationValidator = RegistrationValidator()
-) : BaseFormValidator() {
+) {
 
     /**
      * Результат валидации формы регистрации

@@ -1,9 +1,9 @@
 package com.app.mobile.presentation.ui.screens.confirmation.viewmodel
 
-import com.app.mobile.presentation.validators.BaseFormValidator
 import com.app.mobile.presentation.validators.ConfirmationValidator
 import com.app.mobile.presentation.validators.ValidationError
 import com.app.mobile.presentation.validators.ValidationResult
+import com.app.mobile.presentation.validators.firstErrorOrNull
 
 /**
  * Helper-класс для валидации формы подтверждения
@@ -11,7 +11,7 @@ import com.app.mobile.presentation.validators.ValidationResult
  */
 class ConfirmationFormValidator(
     private val validator: ConfirmationValidator = ConfirmationValidator()
-) : BaseFormValidator() {
+) {
 
     /**
      * Результат валидации формы подтверждения

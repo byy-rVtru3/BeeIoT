@@ -31,7 +31,6 @@ import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.Confirmatio
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationViewModel
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
-import java.util.Locale
 
 @Composable
 fun ConfirmationScreen(
@@ -139,7 +138,7 @@ private fun ConfirmationContent(
                     val minutes = resendTimerSeconds / 60
                     val seconds = resendTimerSeconds % 60
                     Text(
-                        text = String.format(Locale.ROOT, "%d:%02d", minutes, seconds),
+                        text = "$minutes:${seconds.toString().padStart(2, '0')}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )

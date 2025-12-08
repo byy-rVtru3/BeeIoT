@@ -248,7 +248,7 @@ fun OtpTextField(
         }
     )
 
-    LaunchedEffect(focusRequested.value) {
+    LaunchedEffect(Unit) {
         if (!focusRequested.value) {
             focusRequester.requestFocus()
             focusRequested.value = true
