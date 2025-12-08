@@ -8,18 +8,15 @@ import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.CreateUserAccountUseCase
 import com.app.mobile.domain.usecase.RegistrationAccountUseCase
-import com.app.mobile.domain.usecase.ValidateRegistrationFormUseCase
-import com.app.mobile.presentation.mappers.toDomain
+import com.app.mobile.presentation.mappers.toDomain as registrationModelToDomain
 import com.app.mobile.presentation.models.RegistrationResultUi
 import com.app.mobile.presentation.models.TypeConfirmationUi
-import com.app.mobile.presentation.validators.RegistrationValidator
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 
 class RegistrationViewModel(
     private val registrationAccountUseCase: RegistrationAccountUseCase,
-    private val createUserAccountUseCase: CreateUserAccountUseCase,
-    private val validateFormUseCase: ValidateRegistrationFormUseCase
+    private val createUserAccountUseCase: CreateUserAccountUseCase
 ) : ViewModel() {
 
     private val _registrationUiState = MutableLiveData<RegistrationUiState>()
@@ -28,7 +25,8 @@ class RegistrationViewModel(
     private val _navigationEvent = MutableLiveData<RegistrationNavigationEvent?>()
     val navigationEvent: LiveData<RegistrationNavigationEvent?> = _navigationEvent
 
-    private val validator = RegistrationValidator()
+    // Используем новый helper для валидации
+    private val formValidator = RegistrationFormValidator()
 
     private val handler = CoroutineExceptionHandler { _, exception ->
         _registrationUiState.value = RegistrationUiState.Error(exception.message ?: "Unknown error")
@@ -38,7 +36,7 @@ class RegistrationViewModel(
     fun onEmailChange(email: String) {
         val currentState = _registrationUiState.value
         if (currentState is RegistrationUiState.Content) {
-            val validationResult = validator.validateEmail(email)
+            val validationResult = formValidator.validateEmail(email)
 
             val updatedFormState = currentState.formState.copy(
                 email = validationResult.data,
@@ -52,7 +50,7 @@ class RegistrationViewModel(
     fun onNameChange(name: String) {
         val currentState = _registrationUiState.value
         if (currentState is RegistrationUiState.Content) {
-            val validationResult = validator.validateName(name)
+            val validationResult = formValidator.validateName(name)
 
             val updatedFormState = currentState.formState.copy(
                 name = validationResult.data,
@@ -66,7 +64,7 @@ class RegistrationViewModel(
     fun onPasswordChange(password: String) {
         val currentState = _registrationUiState.value
         if (currentState is RegistrationUiState.Content) {
-            val validationResult = validator.validatePassword(password)
+            val validationResult = formValidator.validatePassword(password)
 
             val updatedFormState = currentState.formState.copy(
                 password = validationResult.data,
@@ -80,7 +78,7 @@ class RegistrationViewModel(
     fun onRepeatPasswordChange(repeatPassword: String) {
         val currentState = _registrationUiState.value
         if (currentState is RegistrationUiState.Content) {
-            val validationResult = validator.validateRepeatPassword(
+            val validationResult = formValidator.validateRepeatPassword(
                 currentState.formState.password,
                 repeatPassword
             )
@@ -97,17 +95,20 @@ class RegistrationViewModel(
     fun onRegisterClick() {
         val currentState = _registrationUiState.value
         if (currentState is RegistrationUiState.Content) {
-            val validatedFormState = validateFormUseCase(currentState.formState)
+            // Валидируем форму через helper - чисто и просто!
+            val (validatedFormState, hasErrors) = formValidator.validateAndApply(currentState.formState)
 
-            if (validatedFormState.hasAnyError()) {
+            if (hasErrors) {
+                // Применяем ошибки к состоянию
                 _registrationUiState.value = currentState.copy(formState = validatedFormState)
                 Log.w("RegistrationViewModel", "Form validation failed")
                 return
             }
 
+            // Валидация прошла успешно - показываем Loading
             _registrationUiState.value = RegistrationUiState.Loading
 
-            // Создаем модель из формы для отправки
+            // Создаем модель для отправки из валидированной формы
             val registrationModel = currentState.registrationModelUi.copy(
                 name = validatedFormState.name,
                 email = validatedFormState.email,
@@ -117,7 +118,7 @@ class RegistrationViewModel(
 
             viewModelScope.launch(handler) {
                 val response = registrationAccountUseCase(
-                    registrationModel.toDomain()
+                    registrationModel.registrationModelToDomain()
                 ).toUiModel()
 
                 when (response) {

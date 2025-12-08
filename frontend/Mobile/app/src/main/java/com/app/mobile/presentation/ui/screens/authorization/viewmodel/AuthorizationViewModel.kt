@@ -8,16 +8,13 @@ import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.mappers.toDomain
 import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.AuthorizationAccountUseCase
-import com.app.mobile.domain.usecase.ValidateAuthorizationFormUseCase
 import com.app.mobile.presentation.models.AuthorizationModelUi
 import com.app.mobile.presentation.models.AuthorizationResultUi
-import com.app.mobile.presentation.validators.AuthorizationValidator
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 
 class AuthorizationViewModel(
-    private val authorizationAccountUseCase: AuthorizationAccountUseCase,
-    private val validateFormUseCase: ValidateAuthorizationFormUseCase
+    private val authorizationAccountUseCase: AuthorizationAccountUseCase
 ) : ViewModel() {
     private val _authorizationUiState = MutableLiveData<AuthorizationUiState>()
     val authorizationUiState: LiveData<AuthorizationUiState> = _authorizationUiState
@@ -25,7 +22,8 @@ class AuthorizationViewModel(
     private val _navigationEvent = MutableLiveData<AuthorizationNavigationEvent?>()
     val navigationEvent: LiveData<AuthorizationNavigationEvent?> = _navigationEvent
 
-    private val validator = AuthorizationValidator()
+    // Используем новый helper для валидации
+    private val formValidator = AuthorizationFormValidator()
 
     private val handler = CoroutineExceptionHandler { _, exception ->
         _authorizationUiState.value =
@@ -36,9 +34,10 @@ class AuthorizationViewModel(
     fun onAuthorizeClick() {
         val currentState = _authorizationUiState.value
         if (currentState is AuthorizationUiState.Content) {
-            val validatedFormState = validateFormUseCase(currentState.formState)
+            // Валидируем форму через helper - чисто и просто!
+            val (validatedFormState, hasErrors) = formValidator.validateAndApply(currentState.formState)
 
-            if (validatedFormState.hasAnyError()) {
+            if (hasErrors) {
                 _authorizationUiState.value = currentState.copy(formState = validatedFormState)
                 Log.w("AuthorizationViewModel", "Form validation failed")
                 return
@@ -70,7 +69,7 @@ class AuthorizationViewModel(
     fun onEmailChange(email: String) {
         val currentState = _authorizationUiState.value
         if (currentState is AuthorizationUiState.Content) {
-            val validationResult = validator.validateEmail(email)
+            val validationResult = formValidator.validateEmail(email)
 
             val updatedFormState = currentState.formState.copy(
                 email = validationResult.data,
@@ -91,7 +90,7 @@ class AuthorizationViewModel(
     fun onPasswordChange(password: String) {
         val currentState = _authorizationUiState.value
         if (currentState is AuthorizationUiState.Content) {
-            val validationResult = validator.validatePassword(password)
+            val validationResult = formValidator.validatePassword(password)
 
             val updatedFormState = currentState.formState.copy(
                 password = validationResult.data,
