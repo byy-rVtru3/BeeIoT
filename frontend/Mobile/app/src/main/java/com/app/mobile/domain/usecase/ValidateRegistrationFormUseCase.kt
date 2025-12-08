@@ -2,9 +2,7 @@ package com.app.mobile.domain.usecase
 
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationFormState
 import com.app.mobile.presentation.validators.RegistrationValidator
-import com.app.mobile.presentation.validators.ValidationError
-import com.app.mobile.presentation.validators.ValidationResult
-
+import com.app.mobile.presentation.validators.firstErrorOrNull
 
 class ValidateRegistrationFormUseCase(
     private val validator: RegistrationValidator
@@ -26,12 +24,4 @@ class ValidateRegistrationFormUseCase(
             repeatPasswordError = repeatPasswordResult.firstErrorOrNull()
         )
     }
-
-    private fun ValidationResult.firstErrorOrNull(): ValidationError? {
-        return when (this) {
-            is ValidationResult.Error -> errors.firstOrNull()
-            is ValidationResult.Valid -> null
-        }
-    }
 }
-

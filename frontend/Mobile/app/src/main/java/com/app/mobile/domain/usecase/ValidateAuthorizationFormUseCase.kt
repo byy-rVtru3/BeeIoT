@@ -2,8 +2,7 @@ package com.app.mobile.domain.usecase
 
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationFormState
 import com.app.mobile.presentation.validators.AuthorizationValidator
-import com.app.mobile.presentation.validators.ValidationError
-import com.app.mobile.presentation.validators.ValidationResult
+import com.app.mobile.presentation.validators.firstErrorOrNull
 
 class ValidateAuthorizationFormUseCase(
     private val validator: AuthorizationValidator
@@ -18,12 +17,4 @@ class ValidateAuthorizationFormUseCase(
             passwordError = passwordResult.firstErrorOrNull()
         )
     }
-
-    private fun ValidationResult.firstErrorOrNull(): ValidationError? {
-        return when (this) {
-            is ValidationResult.Error -> errors.firstOrNull()
-            is ValidationResult.Valid -> null
-        }
-    }
 }
-

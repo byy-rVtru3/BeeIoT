@@ -16,8 +16,8 @@ val nameField = formField {
     +FilterTrimSpaces
     +FilterMaxLength(50)
     +NameValidator
-    +MinLengthValidator(2, NameTooShortError)
-    +MaxLengthValidator(50, NameTooLongError)
+    +MinLengthValidator(2, ValidationError.NameTooShortError)
+    +MaxLengthValidator(50, ValidationError.NameTooLongError)
     +NameFormatter
 }
 
@@ -34,7 +34,7 @@ val emailField = formField {
 val passwordField = formField {
     +FilterPasswordCharacters()
     +FilterMaxLength(50)
-    +MinLengthValidator(8, PasswordTooShortError)
+    +MinLengthValidator(8, ValidationError.PasswordTooShortError)
     +PasswordStrengthValidator
 }
 

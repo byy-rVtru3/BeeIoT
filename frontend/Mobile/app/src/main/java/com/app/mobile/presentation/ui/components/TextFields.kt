@@ -200,6 +200,7 @@ fun OtpTextField(
     isError: Boolean = false
 ) {
     val focusRequester = remember { FocusRequester() }
+    val focusRequested = remember { mutableStateOf(false) }
     val borderColor = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline
 
     BasicTextField(
@@ -247,7 +248,10 @@ fun OtpTextField(
         }
     )
 
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
+    LaunchedEffect(focusRequested.value) {
+        if (!focusRequested.value) {
+            focusRequester.requestFocus()
+            focusRequested.value = true
+        }
     }
 }

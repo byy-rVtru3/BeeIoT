@@ -23,7 +23,7 @@ val authPasswordField = formField {
     +FilterPasswordCharacters()
     +FilterMaxLength(50)
     +NotEmptyValidator
-    +MinLengthValidator(8, PasswordTooShortError)
+    +MinLengthValidator(8, ValidationError.PasswordTooShortError)
 }
 
 /**
