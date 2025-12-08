@@ -97,8 +97,6 @@ class RegistrationViewModel(
     fun onRegisterClick() {
         val currentState = _registrationUiState.value
         if (currentState is RegistrationUiState.Content) {
-            _registrationUiState.value = RegistrationUiState.Loading
-
             val validatedFormState = validateFormUseCase(currentState.formState)
 
             if (validatedFormState.hasAnyError()) {
@@ -106,6 +104,8 @@ class RegistrationViewModel(
                 Log.w("RegistrationViewModel", "Form validation failed")
                 return
             }
+
+            _registrationUiState.value = RegistrationUiState.Loading
 
             // Создаем модель из формы для отправки
             val registrationModel = currentState.registrationModelUi.copy(

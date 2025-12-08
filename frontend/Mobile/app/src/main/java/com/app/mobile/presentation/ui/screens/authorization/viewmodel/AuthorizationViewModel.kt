@@ -36,8 +36,6 @@ class AuthorizationViewModel(
     fun onAuthorizeClick() {
         val currentState = _authorizationUiState.value
         if (currentState is AuthorizationUiState.Content) {
-            _authorizationUiState.value = AuthorizationUiState.Loading
-
             val validatedFormState = validateFormUseCase(currentState.formState)
 
             if (validatedFormState.hasAnyError()) {
@@ -45,6 +43,8 @@ class AuthorizationViewModel(
                 Log.w("AuthorizationViewModel", "Form validation failed")
                 return
             }
+
+            _authorizationUiState.value = AuthorizationUiState.Loading
 
             val model = currentState.authorizationModelUi.copy(
                 email = validatedFormState.email,

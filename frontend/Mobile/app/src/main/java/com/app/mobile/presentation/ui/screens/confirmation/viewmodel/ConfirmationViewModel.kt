@@ -52,8 +52,6 @@ class ConfirmationViewModel(
     fun onConfirmClick() {
         val currentState = _confirmationUiState.value
         if (currentState is ConfirmationUiState.Content) {
-            _confirmationUiState.value = ConfirmationUiState.Loading
-
             val validatedFormState = validateFormUseCase(currentState.formState)
 
             if (validatedFormState.hasAnyError()) {
@@ -61,6 +59,8 @@ class ConfirmationViewModel(
                 Log.w("ConfirmationViewModel", "Form validation failed")
                 return
             }
+
+            _confirmationUiState.value = ConfirmationUiState.Loading
 
             // Создаем модель из формы для отправки
             val model = currentState.confirmationModelUi.copy(
