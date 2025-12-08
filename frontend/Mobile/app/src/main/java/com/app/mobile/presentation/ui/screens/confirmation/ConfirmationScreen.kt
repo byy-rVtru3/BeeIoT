@@ -15,7 +15,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.app.mobile.R
 import com.app.mobile.presentation.models.TypeConfirmationUi
 import com.app.mobile.presentation.ui.components.ErrorMessage
@@ -30,6 +30,7 @@ import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.Confirmatio
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationUiState
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationViewModel
 import com.app.mobile.ui.theme.Dimens
+import com.app.mobile.ui.theme.MobileTheme
 
 @Composable
 fun ConfirmationScreen(
@@ -88,8 +89,8 @@ private fun ConfirmationContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(
-                horizontal = Dimens.OpenScreensPaddingHorizontal,
-                vertical = Dimens.OpenScreensPaddingVertical
+                horizontal = Dimens.OpenScreenPaddingHorizontal,
+                vertical = Dimens.OpenScreenPaddingVertical
             ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
@@ -108,7 +109,7 @@ private fun ConfirmationContent(
                 text = stringResource(R.string.enter_code),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = 20.dp)
+                modifier = Modifier.padding(bottom = Dimens.ItemsSpacingLarge)
             )
 
             OtpTextField(
@@ -120,7 +121,7 @@ private fun ConfirmationContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp),
+                    .padding(top = Dimens.OtpCellSpacing),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -148,9 +149,27 @@ private fun CodeConfirmButton(onClick: () -> Unit) {
     PrimaryButton(
         text = stringResource(R.string.confirm),
         onClick = onClick,
-        modifier = Modifier.padding(
-            horizontal = 76.dp,
-            vertical = Dimens.ButtonSoloVerticalPadding
-        )
+        modifier = Modifier
+            .padding(
+                horizontal = Dimens.ButtonHorizontalPaddingLarge
+            )
+            .padding(bottom = Dimens.ButtonSoloVerticalPadding)
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ConfirmationContentPreview() {
+    MobileTheme {
+        val formState = ConfirmationFormState()
+        val actions = ConfirmationActions(
+            onCodeChange = {},
+            onConfirmClick = {},
+            onResendCodeClick = {}
+        )
+        ConfirmationContent(
+            formState = formState,
+            actions = actions
+        )
+    }
 }

@@ -13,7 +13,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.app.mobile.R
 import com.app.mobile.presentation.models.TypeConfirmationUi
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationNavigationEvent
@@ -29,6 +29,7 @@ import com.app.mobile.presentation.ui.screens.registration.viewmodel.Registratio
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationViewModel
 import com.app.mobile.presentation.validators.ValidationError
 import com.app.mobile.ui.theme.Dimens
+import com.app.mobile.ui.theme.MobileTheme
 
 @Composable
 fun RegistrationScreen(
@@ -86,8 +87,8 @@ fun RegistrationContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
-                    horizontal = Dimens.OpenScreensPaddingHorizontal,
-                    vertical = Dimens.OpenScreensPaddingVertical
+                    horizontal = Dimens.OpenScreenPaddingHorizontal,
+                    vertical = Dimens.OpenScreenPaddingVertical
                 ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween,
@@ -100,7 +101,7 @@ fun RegistrationContent(
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Dimens.FieldsSpacing)
+                verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingSmall)
             ) {
                 RegistrationNameTextField(
                     name = formState.name,
@@ -195,9 +196,29 @@ fun RegistrationButton(onClick: () -> Unit) {
     PrimaryButton(
         text = stringResource(R.string.registration_button),
         onClick = onClick,
-        modifier = Modifier.padding(
-            horizontal = 48.dp,
-            vertical = Dimens.ButtonSoloVerticalPadding
-        )
+        modifier = Modifier
+            .padding(
+                horizontal = Dimens.ButtonHorizontalPadding
+            )
+            .padding(bottom = Dimens.ButtonSoloVerticalPadding)
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun RegistrationContentPreview() {
+    MobileTheme {
+        val formState = RegistrationFormState()
+        val actions = RegistrationActions(
+            onEmailChange = {},
+            onNameChange = {},
+            onPasswordChange = {},
+            onRepeatPasswordChange = {},
+            onRegisterClick = {}
+        )
+        RegistrationContent(
+            formState = formState,
+            actions = actions
+        )
+    }
 }

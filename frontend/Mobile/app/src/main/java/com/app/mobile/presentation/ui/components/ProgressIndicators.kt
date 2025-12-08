@@ -7,7 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.app.mobile.ui.theme.Dimens
 
 @Composable
 fun FullScreenProgressIndicator(modifier: Modifier = Modifier) {
@@ -16,7 +16,7 @@ fun FullScreenProgressIndicator(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center
     ) {
         CircularProgressIndicator(
-            strokeWidth = 4.dp,
+            strokeWidth = Dimens.ProgressIndicatorStrokeWidth,
             color = MaterialTheme.colorScheme.primary
         )
     }

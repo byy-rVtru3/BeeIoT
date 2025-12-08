@@ -14,7 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.app.mobile.presentation.models.UserInfoModel
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
@@ -24,6 +24,8 @@ import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoD
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoNavigationEvent
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoUiState
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoViewModel
+import com.app.mobile.ui.theme.Dimens
+import com.app.mobile.ui.theme.MobileTheme
 
 @Composable
 fun AccountInfoScreen(accountInfoViewModel: AccountInfoViewModel, onDeleteClick: () -> Unit) {
@@ -91,7 +93,7 @@ private fun AccountInfoContent(userInfo: UserInfoModel, actions: AccountInfoActi
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(Dimens.ScreenContentPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -114,7 +116,7 @@ private fun NameText(name: String, onNameClick: () -> Unit) {
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.onBackground,
         modifier = Modifier
-            .padding(bottom = 16.dp)
+            .padding(bottom = Dimens.ItemsSpacingMedium)
             .clickable(onClick = onNameClick)
     )
 }
@@ -126,7 +128,7 @@ private fun EmailText(email: String, onEmailClick: () -> Unit) {
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.onBackground,
         modifier = Modifier
-            .padding(bottom = 16.dp)
+            .padding(bottom = Dimens.ItemsSpacingMedium)
             .clickable(onClick = onEmailClick)
     )
 }
@@ -138,7 +140,7 @@ private fun PasswordText(password: String, onPasswordClick: () -> Unit) {
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.onBackground,
         modifier = Modifier
-            .padding(bottom = 16.dp)
+            .padding(bottom = Dimens.ItemsSpacingMedium)
             .clickable(onClick = onPasswordClick)
     )
 }
@@ -150,5 +152,24 @@ private fun DeleteButton(onDeleteClick: () -> Unit) {
         onClick = onDeleteClick
     ) {
         Text(text = "Удалить аккаунт")
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AccountInfoContentPreview() {
+    MobileTheme {
+        val userInfo = UserInfoModel(
+            name = "Иван Иванов",
+            email = "ivan@example.com",
+            password = "••••••••"
+        )
+        val actions = AccountInfoActions(
+            onNameClick = {},
+            onEmailClick = {},
+            onPasswordClick = {},
+            onDeleteClick = {}
+        )
+        AccountInfoContent(userInfo, actions)
     }
 }

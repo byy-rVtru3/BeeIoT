@@ -15,7 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.app.mobile.R
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
@@ -33,6 +33,7 @@ import com.app.mobile.data.mock.MockDataSourceImpl
 import com.app.mobile.presentation.validators.ValidationConfig
 import com.app.mobile.presentation.validators.ValidationError
 import com.app.mobile.ui.theme.Dimens
+import com.app.mobile.ui.theme.MobileTheme
 import org.koin.compose.koinInject
 
 @Composable
@@ -111,7 +112,7 @@ fun AuthorizationScreen(
                     isValidationEnabled = isValidationEnabled,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(16.dp)
+                        .padding(Dimens.ScreenContentPadding)
                 )
             }
         }
@@ -127,8 +128,8 @@ private fun AuthorizationContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(
-                horizontal = Dimens.OpenScreensPaddingHorizontal,
-                vertical = Dimens.OpenScreensPaddingVertical
+                horizontal = Dimens.OpenScreenPaddingHorizontal,
+                vertical = Dimens.OpenScreenPaddingVertical
             ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
@@ -141,7 +142,7 @@ private fun AuthorizationContent(
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Dimens.FieldsSpacing)
+            verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingSmall)
         ) {
             AuthorizationEmailTextField(
                 email = formState.email,
@@ -165,8 +166,12 @@ private fun AuthorizationContent(
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(vertical =Dimens.ButtonTwiceVerticalPadding, horizontal=48.dp)
+            verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingMedium),
+            modifier = Modifier
+                .padding(
+                    horizontal = Dimens.ButtonHorizontalPadding
+                )
+                .padding(bottom = Dimens.ButtonTwiceVerticalPadding)
         ) {
             AuthorizationButton(onClick = actions.onAuthorizeClick)
             RegistrationButton(onClick = actions.onRegistrationClick)
@@ -223,6 +228,24 @@ fun ForgotPasswordButton(onClick: () -> Unit) {
     LabelButton(
         text = stringResource(R.string.forgot_password),
         onClick = onClick,
-        modifier = Modifier.padding(top = 4.dp)
+        modifier = Modifier.padding(top = Dimens.TextFieldErrorTopPadding)
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AuthorizationContentPreview() {
+    MobileTheme {
+        val formState = AuthorizationFormState()
+        val actions = AuthorizationActions(
+            onEmailChange = {},
+            onPasswordChange = {},
+            onAuthorizeClick = {},
+            onRegistrationClick = {}
+        )
+        AuthorizationContent(
+            formState = formState,
+            actions = actions
+        )
+    }
 }

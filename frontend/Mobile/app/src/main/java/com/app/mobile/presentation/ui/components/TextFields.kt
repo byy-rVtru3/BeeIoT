@@ -32,10 +32,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
 import com.app.mobile.R
 import com.app.mobile.presentation.validators.ValidationError
 import com.app.mobile.presentation.validators.toErrorMessage
+import com.app.mobile.ui.theme.Dimens
 
 @Composable
 fun CustomTextField(
@@ -55,7 +55,7 @@ fun CustomTextField(
         modifier = modifier
             .fillMaxWidth()
             .drawBehind {
-                val strokeWidth = 3.dp.toPx()
+                val strokeWidth = Dimens.BorderWidthNormal.toPx()
                 val y = size.height - strokeWidth / 2
                 drawLine(
                     color = borderColor,
@@ -74,10 +74,10 @@ fun CustomTextField(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 8.dp),
+                    .padding(horizontal = Dimens.TextFieldPaddingHorizontal, vertical = Dimens.TextFieldPaddingVertical),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(modifier = Modifier.weight(1f).padding(end = 4.dp)) {
+                Box(modifier = Modifier.weight(1f).padding(end = Dimens.TextFieldIconEndPadding)) {
                     if (value.isEmpty()) {
                         Text(
                             text = placeholder,
@@ -90,13 +90,13 @@ fun CustomTextField(
 
                 if (trailingIcon != null) {
                     Box(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(Dimens.TextFieldIconSize),
                         contentAlignment = Alignment.Center
                     ) {
                         trailingIcon()
                     }
                 } else {
-                    Box(modifier = Modifier.size(24.dp))
+                    Box(modifier = Modifier.size(Dimens.TextFieldIconSize))
                 }
             }
         }
@@ -129,7 +129,7 @@ fun ValidatedTextField(
         // Шаблон для резервирования высоты: подсказка или пустая строка (для одной строки)
         val templateText = supportingText ?: " "
 
-        Box(modifier = Modifier.padding(start = 4.dp, top = 4.dp)) {
+        Box(modifier = Modifier.padding(start = Dimens.TextFieldPaddingHorizontal, top = Dimens.TextFieldErrorTopPadding)) {
             // Невидимый текст для резервирования высоты
             Text(
                 text = templateText,
@@ -184,7 +184,7 @@ fun PasswordTextField(
                 },
                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(Dimens.TextFieldIconSize)
                     .clickable { passwordVisible = !passwordVisible }
             )
         }
@@ -214,7 +214,7 @@ fun OtpTextField(
         singleLine = true,
         decorationBox = {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.OtpCellSpacing),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 repeat(otpLength) { index ->
@@ -224,7 +224,7 @@ fun OtpTextField(
                         modifier = Modifier
                             .weight(1f)
                             .drawBehind {
-                                val strokeWidth = 3.dp.toPx()
+                                val strokeWidth = Dimens.BorderWidthNormal.toPx()
                                 val y = size.height - strokeWidth / 2
                                 drawLine(
                                     color = borderColor,
@@ -233,7 +233,7 @@ fun OtpTextField(
                                     strokeWidth = strokeWidth
                                 )
                             }
-                            .padding(top = 8.dp, bottom = 4.dp),
+                            .padding(top = Dimens.OtpCellPaddingTop, bottom = Dimens.OtpCellPaddingBottom),
                         contentAlignment = Alignment.BottomCenter
                     ) {
                         Text(

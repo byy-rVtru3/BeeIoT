@@ -18,7 +18,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import com.app.mobile.ui.theme.Dimens
 
 @Composable
 fun PrimaryButton(
@@ -36,7 +37,7 @@ fun PrimaryButton(
     )
 
     val borderWidth by animateFloatAsState(
-        targetValue = if (isPressed) 2.dp.value else 3.dp.value,
+        targetValue = if (isPressed) Dimens.ButtonBorderWidthPressed.value else Dimens.ButtonBorderWidthNormal.value,
         animationSpec = tween(durationMillis = 100),
         label = "border_width"
     )
@@ -50,16 +51,17 @@ fun PrimaryButton(
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ),
-        border = BorderStroke(borderWidth.dp, MaterialTheme.colorScheme.outline),
+        border = BorderStroke(Dp(borderWidth), MaterialTheme.colorScheme.outline),
         interactionSource = interactionSource
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.padding(8.dp)
+            modifier = Modifier.padding(Dimens.ButtonTextPadding)
         )
     }
 }
+
 @Composable
 fun LabelButton(
     text: String,
