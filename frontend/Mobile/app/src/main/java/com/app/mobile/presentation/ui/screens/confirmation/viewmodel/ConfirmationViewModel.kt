@@ -12,6 +12,8 @@ import com.app.mobile.presentation.models.ConfirmationModelUi
 import com.app.mobile.presentation.models.ConfirmationResultUi
 import com.app.mobile.presentation.models.TypeConfirmationUi
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class ConfirmationViewModel(
@@ -31,6 +33,14 @@ class ConfirmationViewModel(
 
     // Используем новый helper для валидации
     private val formValidator = ConfirmationFormValidator()
+
+    // Job для управления таймером
+    private var timerJob: Job? = null
+
+    // Константа времени ожидания перед повторной отправкой (в секундах)
+    private companion object {
+        const val RESEND_TIMER_SECONDS = 60
+    }
 
     fun onCodeChange(code: String) {
         val currentState = _confirmationUiState.value
@@ -88,22 +98,67 @@ class ConfirmationViewModel(
 
         _confirmationUiState.value = ConfirmationUiState.Content(
             confirmationModelUi = model,
-            formState = initialFormState
+            formState = initialFormState,
+            resendTimerSeconds = 0,
+            canResendCode = true
         )
     }
 
     fun onResendCode() {
         val currentState = _confirmationUiState.value
-        if (currentState is ConfirmationUiState.Content) {
+        if (currentState is ConfirmationUiState.Content && currentState.canResendCode) {
             viewModelScope.launch(handler) {
                 confirmationUserUseCase(
                     currentState.confirmationModelUi.toDomain()
                 )
+
+                Log.i("ConfirmationViewModel", "Resend code request sent")
+            }
+
+            startResendTimer()
+        }
+    }
+
+
+    private fun startResendTimer() {
+        timerJob?.cancel()
+
+        timerJob = viewModelScope.launch {
+            val currentState = _confirmationUiState.value
+            if (currentState is ConfirmationUiState.Content) {
+                _confirmationUiState.value = currentState.copy(
+                    resendTimerSeconds = RESEND_TIMER_SECONDS,
+                    canResendCode = false
+                )
+
+                for (seconds in RESEND_TIMER_SECONDS downTo 1) {
+                    delay(1000)
+
+                    val state = _confirmationUiState.value
+                    if (state is ConfirmationUiState.Content) {
+                        _confirmationUiState.value = state.copy(
+                            resendTimerSeconds = seconds - 1
+                        )
+                    }
+                }
+
+                val finalState = _confirmationUiState.value
+                if (finalState is ConfirmationUiState.Content) {
+                    _confirmationUiState.value = finalState.copy(
+                        resendTimerSeconds = 0,
+                        canResendCode = true
+                    )
+                }
             }
         }
     }
 
     fun onNavigationHandled() {
         _navigationEvent.value = null
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        timerJob?.cancel()
     }
 }

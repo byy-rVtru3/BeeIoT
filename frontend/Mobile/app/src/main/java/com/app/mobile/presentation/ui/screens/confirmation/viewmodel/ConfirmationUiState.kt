@@ -9,6 +9,8 @@ sealed interface ConfirmationUiState {
 
     data class Content(
         val confirmationModelUi: ConfirmationModelUi,
-        val formState: ConfirmationFormState = ConfirmationFormState()
+        val formState: ConfirmationFormState = ConfirmationFormState(),
+        val resendTimerSeconds: Int = 0,
+        val canResendCode: Boolean = true
     ) : ConfirmationUiState
 }

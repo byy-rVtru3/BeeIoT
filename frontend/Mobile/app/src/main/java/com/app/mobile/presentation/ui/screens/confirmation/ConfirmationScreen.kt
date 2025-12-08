@@ -31,6 +31,7 @@ import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.Confirmatio
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationViewModel
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
+import java.util.Locale
 
 @Composable
 fun ConfirmationScreen(
@@ -64,7 +65,6 @@ fun ConfirmationScreen(
         is ConfirmationUiState.Loading -> FullScreenProgressIndicator()
         is ConfirmationUiState.Error -> ErrorMessage(message = state.message) {}
         is ConfirmationUiState.Content -> {
-            // Подписываемся на formState для отображения и валидации
             val formState = state.formState
 
             val actions = ConfirmationActions(
@@ -74,6 +74,8 @@ fun ConfirmationScreen(
             )
             ConfirmationContent(
                 formState = formState,
+                canResendCode = state.canResendCode,
+                resendTimerSeconds = state.resendTimerSeconds,
                 actions = actions
             )
         }
@@ -83,6 +85,8 @@ fun ConfirmationScreen(
 @Composable
 private fun ConfirmationContent(
     formState: ConfirmationFormState,
+    canResendCode: Boolean,
+    resendTimerSeconds: Int,
     actions: ConfirmationActions
 ) {
     Column(
@@ -127,15 +131,19 @@ private fun ConfirmationContent(
             ) {
                 LabelButton(
                     text = stringResource(R.string.resend_code),
-                    onClick = { actions.onResendCodeClick() }
+                    onClick = { actions.onResendCodeClick() },
+                    enabled = canResendCode
                 )
 
-                Text(
-                    /* TODO: real timer */
-                    text = "0:20",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                if (resendTimerSeconds > 0) {
+                    val minutes = resendTimerSeconds / 60
+                    val seconds = resendTimerSeconds % 60
+                    Text(
+                        text = String.format(Locale.ROOT, "%d:%02d", minutes, seconds),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
 
@@ -169,6 +177,8 @@ fun ConfirmationContentPreview() {
         )
         ConfirmationContent(
             formState = formState,
+            canResendCode = true,
+            resendTimerSeconds = 30,
             actions = actions
         )
     }
