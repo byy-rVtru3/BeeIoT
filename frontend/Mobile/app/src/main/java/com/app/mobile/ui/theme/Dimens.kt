@@ -57,7 +57,7 @@ object Dimens {
 
     // --- Отступы для экранов ---
     val OpenScreenPaddingHorizontal = Size36  // Для открытых экранов (авторизация, регистрация, подтверждение)
-    val OpenScreenPaddingVertical = Size36    // Для открытых экранів (авторизация, регистрация, подтверждение)
+    val OpenScreenPaddingVertical = Size36    // Для открытых экранов (авторизация, регистрация, подтверждение)
     val ScreenContentPadding = Size16         // Для обычных экранов (настройки, информация и т.д.)
 
     // --- Отступы для заголовков ---

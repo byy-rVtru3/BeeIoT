@@ -39,7 +39,7 @@ class ConfirmationViewModel(
 
     // Константа времени ожидания перед повторной отправкой (в секундах)
     private companion object {
-        const val RESEND_TIMER_SECONDS = 60
+        const val RESEND_TIMER_SECONDS = 10
     }
 
     fun onCodeChange(code: String) {
@@ -131,13 +131,13 @@ class ConfirmationViewModel(
                     canResendCode = false
                 )
 
-                for (seconds in RESEND_TIMER_SECONDS downTo 1) {
+                for (seconds in RESEND_TIMER_SECONDS - 1 downTo 0) {
                     delay(1000)
 
                     val state = _confirmationUiState.value
                     if (state is ConfirmationUiState.Content) {
                         _confirmationUiState.value = state.copy(
-                            resendTimerSeconds = seconds - 1
+                            resendTimerSeconds = seconds
                         )
                     }
                 }
