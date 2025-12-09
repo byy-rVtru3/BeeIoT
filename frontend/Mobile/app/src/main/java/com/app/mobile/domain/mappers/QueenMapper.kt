@@ -5,7 +5,8 @@ import com.app.mobile.data.database.entity.QueenStage
 import com.app.mobile.domain.models.hives.QueenDomain
 import com.app.mobile.domain.models.hives.QueenStageDomain
 import com.app.mobile.presentation.models.hive.QueenStageUi
-import com.app.mobile.presentation.models.hive.QueenUiState
+import com.app.mobile.presentation.models.hive.QueenUi
+import com.app.mobile.presentation.models.queen.QueenUiModel
 
 fun QueenEntity.toDomain() = QueenDomain(
     id = this.id,
@@ -16,13 +17,13 @@ fun QueenEntity.toDomain() = QueenDomain(
 
 private fun QueenStage.toDomain() = QueenStageDomain.valueOf(this.name)
 
-fun QueenDomain?.toUiState(): QueenUiState {
+fun QueenDomain?.toUiModel(): QueenUi {
     return this?.let { queen ->
-        QueenUiState.Present(
+        QueenUi.Present(
             name = queen.name,
             stage = queen.stage.toUiModel()
         )
-    } ?: QueenUiState.Absent
+    } ?: QueenUi.Absent
 }
 
 private fun QueenStageDomain.toUiModel() = when (this) {
@@ -36,3 +37,10 @@ private fun QueenStageDomain.toUiModel() = when (this) {
     QueenStageDomain.INSEMINATION -> QueenStageUi("Осеменение", "3 дня")
     QueenStageDomain.MASONRY_CONTROL -> QueenStageUi("Контроль кладки", "3 дня")
 }
+
+fun QueenDomain.toUiModel(hiveName: String) = QueenUiModel(
+    hiveId = this.hiveId,
+    hiveName = hiveName,
+    queenName = this.name,
+    stage = this.stage.toUiModel()
+)

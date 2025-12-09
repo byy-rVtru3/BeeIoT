@@ -2,7 +2,7 @@ package com.app.mobile.domain.mappers
 
 import com.app.mobile.data.database.entity.HubEntity
 import com.app.mobile.domain.models.hives.HubDomain
-import com.app.mobile.presentation.models.hive.HubUiState
+import com.app.mobile.presentation.models.hive.HubUi
 
 fun HubEntity.toDomain() = HubDomain(
     id = this.id,
@@ -12,12 +12,12 @@ fun HubEntity.toDomain() = HubDomain(
     port = this.port
 )
 
-fun HubDomain?.toUiState(): HubUiState {
+fun HubDomain?.toUiModel(): HubUi {
     return this?.let { hub ->
-        HubUiState.Present(
+        HubUi.Present(
             name = hub.name,
             ipAddress = hub.ipAddress,
             port = hub.port
         )
-    } ?: HubUiState.Absent
+    } ?: HubUi.Absent
 }

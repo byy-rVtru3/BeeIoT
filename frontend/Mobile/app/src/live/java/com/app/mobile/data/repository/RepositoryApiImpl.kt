@@ -45,16 +45,13 @@ class RepositoryApiImpl(
         }
     }
 
-    override suspend fun registrationAccount(
-        registrationModel: RegistrationModel
-    ): RegistrationRequestResult {
-        return executeRequest(
+    override suspend fun registrationAccount(registrationModel: RegistrationModel) =
+        executeRequest(
             apiCall = { publicApiClient.registrationAccount(registrationModel.toApiModel()) },
             converter = { registrationResponseConverter.convert(it) },
             errorResult = RegistrationRequestResult.UnknownError,
             logMessage = "Error during registrationAccount"
         )
-    }
 
     override suspend fun confirmationUserRegistration(confirmationModel: ConfirmationModel) =
         executeRequest(

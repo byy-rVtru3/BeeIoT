@@ -14,9 +14,9 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.app.mobile.presentation.models.hive.HiveUi
-import com.app.mobile.presentation.models.hive.HubUiState
+import com.app.mobile.presentation.models.hive.HubUi
 import com.app.mobile.presentation.models.hive.NotificationUi
-import com.app.mobile.presentation.models.hive.QueenUiState
+import com.app.mobile.presentation.models.hive.QueenUi
 import com.app.mobile.presentation.models.hive.WorkUi
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
@@ -99,7 +99,7 @@ private fun HiveContent(hive: HiveUi, actions: HiveActions) {
 
         MainInformation(hive)
 
-        if (hive.connectedHub is HubUiState.Present) {
+        if (hive.connectedHub is HubUi.Present) {
             HubInformation(
                 hive.connectedHub,
                 actions.onTemperatureClick,
@@ -108,7 +108,7 @@ private fun HiveContent(hive: HiveUi, actions: HiveActions) {
             )
         }
 
-        if (hive.queen is QueenUiState.Present) {
+        if (hive.queen is QueenUi.Present) {
             QueenInformation(hive.queen, actions.onQueenClick)
         }
 
@@ -130,7 +130,7 @@ private fun MainInformation(hive: HiveUi) {
         Row {
             Text(text = "Название: ${hive.name}")
 
-            if (hive.connectedHub is HubUiState.Present) {
+            if (hive.connectedHub is HubUi.Present) {
                 Text(
                     text = "Подключенный хаб: ${hive.connectedHub.name}",
                     style =
@@ -150,7 +150,7 @@ private fun MainInformation(hive: HiveUi) {
 
 @Composable
 private fun HubInformation(
-    hub: HubUiState.Present,
+    hub: HubUi.Present,
     onTemperatureClick: () -> Unit,
     onNoiseClick: () -> Unit,
     onWeightClick: () -> Unit
@@ -160,7 +160,7 @@ private fun HubInformation(
 
 @Composable
 private fun QueenInformation(
-    queen: QueenUiState.Present,
+    queen: QueenUi.Present,
     onQueenClick: () -> Unit
 ) {
     // пока заглушка

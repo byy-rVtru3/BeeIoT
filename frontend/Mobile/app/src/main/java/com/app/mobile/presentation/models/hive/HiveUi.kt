@@ -3,8 +3,8 @@ package com.app.mobile.presentation.models.hive
 data class HiveUi(
     val id: Int,
     val name: String,
-    val connectedHub: HubUiState,
+    val connectedHub: HubUi,
     val notifications: List<NotificationUi> = emptyList(),
-    val queen: QueenUiState,
+    val queen: QueenUi,
     val works: List<WorkUi> = emptyList()
 )
