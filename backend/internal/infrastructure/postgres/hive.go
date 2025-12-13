@@ -70,8 +70,7 @@ func (db *Postgres) UpdateHive(ctx context.Context, nameHive string, hive dbType
 func (db *Postgres) GetEmailHiveBySensorID(ctx context.Context, sensorID string) (string, string, error) {
 	text := `SELECT u.email, h.name FROM users u
 			 JOIN hives h ON h.user_id = u.id
-			 JOIN sensors s ON s.hive_id = h.id
-			 WHERE s.sensor_id = $1;`
+			 WHERE h.sensor_id = $1;`
 	row := db.conn.QueryRow(ctx, text, sensorID)
 	var email, hiveName string
 	err := row.Scan(&email, &hiveName)

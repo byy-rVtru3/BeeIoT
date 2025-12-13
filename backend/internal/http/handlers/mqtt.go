@@ -47,32 +47,32 @@ func (h *Handler) GetNoiseAndTemp(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
-	noise, err := h.db.GetTemperaturesSinceTimeById(r.Context(), hive.Id, hive.DateNoise)
+	noise, err := h.db.GetNoiseSinceTimeMap(r.Context(), hive.Id, hive.DateNoise)
 	if err != nil {
 		h.logger.Error().Err(err).Str("sensor", data.Sensor).Msg("failed to get noise data")
 		http.Error(w, "внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
-	temp, err := h.db.GetNoiseSinceTimeMap(r.Context(), hive.Id, hive.DateTemperature)
+	temp, err := h.db.GetTemperaturesSinceTimeById(r.Context(), hive.Id, hive.DateTemperature)
 	if err != nil {
 		h.logger.Error().Err(err).Str("sensor", data.Sensor).Msg("failed to get temperature data")
 		http.Error(w, "внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
 	resp := struct {
-		Noise []float64           `json:"noise"`
-		Temp  map[int64][]float64 `json:"temp"`
+		Noise map[int64][]float64 `json:"noise"`
+		Temp  []float64           `json:"temp"`
 	}{
-		Noise: make([]float64, len(noise)),
-		Temp:  make(map[int64][]float64, len(noise)),
+		Noise: make(map[int64][]float64),
+		Temp:  make([]float64, len(temp)),
 	}
-	for i, n := range noise {
-		resp.Noise[i] = n.Temperature
-	}
-	for t, v := range temp {
+	for t, v := range noise {
 		for _, val := range v {
-			resp.Temp[t.UnixNano()] = append(resp.Temp[t.UnixNano()], val.Level)
+			resp.Noise[t.UnixNano()] = append(resp.Noise[t.UnixNano()], val.Level)
 		}
+	}
+	for i, n := range temp {
+		resp.Temp[i] = n.Temperature
 	}
 	h.writeBodyJSON(w, "Data retrieved successfully", resp)
 }

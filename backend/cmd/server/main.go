@@ -17,8 +17,9 @@ import (
 
 func main() {
 	logger := zerolog.New(os.Stdout).With().Timestamp().Caller().Logger()
+	logger.Info().Msg("Starting application...")
 
-	// init postgres
+	logger.Info().Msg("Initializing Postgres...")
 	db, err := postgres.NewDB()
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to connect to the database")
@@ -28,14 +29,14 @@ func main() {
 		_ = db.CloseDB()
 	}()
 
-	// init smtp
+	logger.Info().Msg("Initializing SMTP...")
 	smtp, err := smtp2.NewSMTP()
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to connect to SMTP")
 		return
 	}
 
-	// init redis
+	logger.Info().Msg("Initializing Redis...")
 	redis, err := redis2.NewRedis()
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to connect to redis")
@@ -45,13 +46,13 @@ func main() {
 		_ = redis.Close()
 	}()
 
-	// start analyzers
+	logger.Info().Msg("Starting analyzers...")
 	analyzersCtx, cancel := context.WithCancel(context.WithValue(context.Background(), "logger", logger))
 	defer cancel()
-	temperature.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
-	noise.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
+	go temperature.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
+	go noise.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
 
-	// init mqtt server
+	logger.Info().Msg("Initializing MQTT...")
 	mqttServer, err := mqtt.NewMQTTClient(db, redis, logger)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to connect to mqtt server")
@@ -59,6 +60,6 @@ func main() {
 	}
 	defer mqttServer.Disconnect()
 
-	// start http server
+	logger.Info().Msg("Starting HTTP server...")
 	http.StartServer(db, smtp, redis, mqttServer, logger)
 }
