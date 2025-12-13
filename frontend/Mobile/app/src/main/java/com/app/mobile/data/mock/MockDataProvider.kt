@@ -14,28 +14,31 @@ object MockDataProvider {
         isLenient = true
     }
 
+    @Volatile
     private var cachedUser: MockUserData? = null
 
     private fun loadJsonFromAssets(context: Context, fileName: String): String {
         return try {
             context.assets.open("mock_data/$fileName").bufferedReader().use { it.readText() }
         } catch (e: IOException) {
-            "{}"
+            throw IOException("Failed to load mock data file: $fileName", e)
         }
     }
 
+    @Synchronized
     fun getUser(context: Context): MockUserData {
         if (cachedUser == null) {
             val jsonString = loadJsonFromAssets(context, "mock_user.json")
             cachedUser = json.decodeFromString<MockUserData>(jsonString)
         }
-        return cachedUser!!
+        return cachedUser ?: MockUserData(0, "", "", "", "")
     }
 
     fun getUserDomain(context: Context): UserDomain {
         return getUser(context).toDomain()
     }
 
+    @Synchronized
     fun clearCache() {
         cachedUser = null
     }
