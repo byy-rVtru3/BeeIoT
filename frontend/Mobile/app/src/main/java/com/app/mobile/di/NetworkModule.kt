@@ -2,7 +2,6 @@ package com.app.mobile.di
 
 import com.app.mobile.data.api.interceptor.AuthInterceptor
 import com.app.mobile.data.repository.AuthRepository
-import com.app.mobile.data.mock.MockDataSourceImpl
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -27,22 +26,16 @@ val authorizedRetrofit = named("authorizedRetrofit")
 
 val networkModule = module {
 
-    // MockDataSource
-    single { MockDataSourceImpl(get()) }
-
-    // JSON Converter Factory
     single {
         Json.asConverterFactory("application/json; charset=UTF8".toMediaType())
     }
 
-    // Logging Interceptor
     single<HttpLoggingInterceptor> {
         HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
     }
 
-    // Auth Interceptor
     single<AuthInterceptor> {
         val authRepository: AuthRepository = get()
         AuthInterceptor {
@@ -52,8 +45,7 @@ val networkModule = module {
         }
     }
 
-    // Public Client (без авторизации)
-    single(publicClient) {
+    factory(publicClient) {
         val loggingInterceptor = get<HttpLoggingInterceptor>()
 
         OkHttpClient.Builder().apply {
@@ -64,8 +56,7 @@ val networkModule = module {
         }.build()
     }
 
-    // Authorized Client
-    single(authorizedClient) {
+    factory(authorizedClient) {
         val loggingInterceptor = get<HttpLoggingInterceptor>()
         val authInterceptor = get<AuthInterceptor>()
 
@@ -78,8 +69,7 @@ val networkModule = module {
         }.build()
     }
 
-    // Public Retrofit
-    single(publicRetrofit) {
+    factory(publicRetrofit) {
         Retrofit.Builder().apply {
             client(get(publicClient))
             baseUrl(BASE_URL)
@@ -87,8 +77,7 @@ val networkModule = module {
         }.build()
     }
 
-    // Authorized Retrofit
-    single(authorizedRetrofit) {
+    factory(authorizedRetrofit) {
         Retrofit.Builder().apply {
             client(get(authorizedClient))
             baseUrl(BASE_URL)

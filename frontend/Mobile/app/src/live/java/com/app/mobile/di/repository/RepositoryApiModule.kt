@@ -21,3 +21,4 @@ val repositoryApiModule = module {
 
     factoryOf(::RepositoryApiImpl) bind RepositoryApi::class
 }
+
