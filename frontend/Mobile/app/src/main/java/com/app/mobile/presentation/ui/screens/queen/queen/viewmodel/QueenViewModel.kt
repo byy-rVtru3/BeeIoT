@@ -1,13 +1,13 @@
-package com.app.mobile.presentation.ui.screens.queen.viewmodel
+package com.app.mobile.presentation.ui.screens.queen.queen.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.hives.GetHivePreviewUseCase
 import com.app.mobile.domain.usecase.hives.GetQueenUseCase
+import com.app.mobile.presentation.mappers.toUiModel
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 
@@ -26,15 +26,18 @@ class QueenViewModel(
         Log.e("QueenViewModel", exception.message ?: "Unknown error")
     }
 
-    fun getQueen(hiveId: Int) {
+    fun getQueen(queenId: String) {
         _queenUiState.value = QueenUiState.Loading
+
         viewModelScope.launch(handler) {
-            val hive = getHivePreviewUseCase(hiveId)
-            hive?.let {
-                _queenUiState.value = getQueenUseCase(hiveId)
-                    ?.let { QueenUiState.Content(it.toUiModel(hive.name)) }
-                    ?: QueenUiState.Error("Матка не найдена")
-            } ?: QueenUiState.Error("Улей не найден")
+            val queen = getQueenUseCase(queenId)
+
+            _queenUiState.value = if (queen != null) {
+                val hive = queen.hiveId?.let { getHivePreviewUseCase(it) }
+                QueenUiState.Content(queen.toUiModel(hive))
+            } else {
+                QueenUiState.Error("Матка не найдена")
+            }
         }
     }
 
@@ -42,7 +45,7 @@ class QueenViewModel(
         val currentUiState = _queenUiState.value
         if (currentUiState is QueenUiState.Content) {
             _navigationEvent.value =
-                QueenNavigationEvent.NavigateToEditQueen(currentUiState.queen.hiveId)
+                QueenNavigationEvent.NavigateToEditQueen(currentUiState.queen.id)
         }
     }
 }

@@ -1,7 +1,7 @@
 package com.app.mobile.presentation.models.hive
 
 data class HiveUi(
-    val id: Int,
+    val id: String,
     val name: String,
     val connectedHub: HubUi,
     val notifications: List<NotificationUi> = emptyList(),

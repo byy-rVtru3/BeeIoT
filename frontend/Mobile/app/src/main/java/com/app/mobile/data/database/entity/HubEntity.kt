@@ -6,9 +6,9 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "hubs")
 data class HubEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
-    val hiveId: Int,
+    @PrimaryKey
+    val id: String,
+    val hiveId: String,
     val name: String,
     val ipAddress: String,
     val port: Int,

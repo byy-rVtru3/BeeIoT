@@ -9,12 +9,9 @@ class HivesLocalRepositoryImpl(private val hiveDao: HiveDao) : HivesLocalReposit
     override suspend fun getHives(): List<HiveDomainPreview> =
         hiveDao.getHives().map { it.toDomain() }
 
-    override suspend fun getHive(hiveId: Int) =
+    override suspend fun getHive(hiveId: String) =
         hiveDao.getHive(hiveId)?.toDomain()
 
-    override suspend fun getQueenByHiveId(hiveId: Int) =
-        hiveDao.getQueenByHiveId(hiveId)?.toDomain()
-
-    override suspend fun getHivePreview(hiveId: Int) =
+    override suspend fun getHivePreview(hiveId: String) =
         hiveDao.getHivePreview(hiveId)?.toDomain()
 }

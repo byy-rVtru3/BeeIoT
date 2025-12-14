@@ -6,9 +6,9 @@ import java.time.LocalDateTime
 
 @Entity(tableName = "works")
 data class WorkEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
-    val hiveId: Int,
+    @PrimaryKey
+    val id: String,
+    val hiveId: String,
     val title: String,
     val text: String,
     val dateTime: LocalDateTime

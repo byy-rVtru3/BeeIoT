@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.hives.GetHiveUseCase
+import com.app.mobile.presentation.models.hive.QueenUi
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 
@@ -24,7 +25,7 @@ class HiveViewModel(
         Log.e("HiveViewModel", "Error loading hive", exception)
     }
 
-    fun loadHive(hiveId: Int) {
+    fun loadHive(hiveId: String) {
         _hiveUiState.value = HiveUiState.Loading
         viewModelScope.launch(handler) {
             _hiveUiState.value = getHiveUseCase(hiveId)
@@ -45,8 +46,15 @@ class HiveViewModel(
     fun onNotificationsClick() =
         navigateWithId(HiveNavigationEvent::NavigateToNotificationByHive)
 
-    fun onQueenClick() =
-        navigateWithId(HiveNavigationEvent::NavigateToQueenByHive)
+    fun onQueenClick() {
+        val currentUiState = _hiveUiState.value
+        if (currentUiState is HiveUiState.Content) {
+            val queen = currentUiState.hive.queen
+            if (queen is QueenUi.Present) {
+                _navigationEvent.value = HiveNavigationEvent.NavigateToQueenByHive(queen.id)
+            }
+        }
+    }
 
     fun onWorksClick() =
         navigateWithId(HiveNavigationEvent::NavigateToWorkByHive)
@@ -62,7 +70,7 @@ class HiveViewModel(
         _navigationEvent.value = null
     }
 
-    private inline fun navigateWithId(navEvent: (Int) -> HiveNavigationEvent) {
+    private inline fun navigateWithId(navEvent: (String) -> HiveNavigationEvent) {
         (_hiveUiState.value as? HiveUiState.Content)?.let { content ->
             _navigationEvent.value = navEvent(content.hive.id)
         }

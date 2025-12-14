@@ -29,15 +29,15 @@ import com.app.mobile.presentation.ui.screens.hive.viewmodel.HiveViewModel
 @Composable
 fun HiveScreen(
     hiveViewModel: HiveViewModel,
-    hiveId: Int,
-    onQueenClick: (hiveId: Int) -> Unit,
-    onWorksClick: (hiveId: Int) -> Unit,
-    onNotificationsClick: (hiveId: Int) -> Unit,
-    onTemperatureClick: (hiveId: Int) -> Unit,
-    onNoiseClick: (hiveId: Int) -> Unit,
-    onWeightClick: (hiveId: Int) -> Unit,
+    hiveId: String,
+    onQueenClick: (queenId: String) -> Unit,
+    onWorksClick: (hiveId: String) -> Unit,
+    onNotificationsClick: (hiveId: String) -> Unit,
+    onTemperatureClick: (hiveId: String) -> Unit,
+    onNoiseClick: (hiveId: String) -> Unit,
+    onWeightClick: (hiveId: String) -> Unit,
     onHiveListClick: () -> Unit,
-    onHiveEditClick: (hiveId: Int) -> Unit
+    onHiveEditClick: (hiveId: String) -> Unit
 ) {
     val hiveUiState by hiveViewModel.hiveUiState.observeAsState(HiveUiState.Loading)
     val navigationEvent by hiveViewModel.navigationEvent.observeAsState()
@@ -50,7 +50,7 @@ fun HiveScreen(
         navigationEvent?.let { event ->
             when (event) {
                 is HiveNavigationEvent.NavigateToHiveList -> onHiveListClick()
-                is HiveNavigationEvent.NavigateToQueenByHive -> onQueenClick(event.hiveId)
+                is HiveNavigationEvent.NavigateToQueenByHive -> onQueenClick(event.queenId)
                 is HiveNavigationEvent.NavigateToWorkByHive -> onWorksClick(event.hiveId)
                 is HiveNavigationEvent.NavigateToNotificationByHive -> onNotificationsClick(event.hiveId)
                 is HiveNavigationEvent.NavigateToTemperatureByHive -> onTemperatureClick(event.hiveId)

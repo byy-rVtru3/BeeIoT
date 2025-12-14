@@ -1,26 +1,31 @@
 package com.app.mobile.data.database
 
-import android.os.Build
-import androidx.annotation.RequiresApi
+import androidx.room.ProvidedTypeConverter
 import androidx.room.TypeConverter
 import com.app.mobile.data.database.entity.NotificationType
-import com.app.mobile.data.database.entity.QueenStage
+import com.app.mobile.data.database.entity.QueenLifecycleDbModel
+import kotlinx.serialization.json.Json
 import java.time.LocalDateTime
 
-class AppConverters {
+@ProvidedTypeConverter
+class AppConverters(private val json: Json) {
 
     @TypeConverter
     fun fromDate(date: LocalDateTime?) = date.toString()
 
-    @RequiresApi(Build.VERSION_CODES.O)
     @TypeConverter
     fun toDate(dateString: String): LocalDateTime? = LocalDateTime.parse(dateString)
 
     @TypeConverter
-    fun fromQueenStage(stage: QueenStage) = stage.name
+    fun fromQueenLifecycle(queenLifecycle: QueenLifecycleDbModel?): String? {
+        return queenLifecycle?.let { json.encodeToString(it) }
+    }
 
     @TypeConverter
-    fun toQueenStage(stageName: String) = QueenStage.valueOf(stageName)
+    fun toQueenLifecycle(jsonString: String?): QueenLifecycleDbModel? {
+        if (jsonString.isNullOrBlank()) return null
+        return json.decodeFromString(jsonString)
+    }
 
     @TypeConverter
     fun toNotificationType(type: String) = NotificationType.valueOf(type)

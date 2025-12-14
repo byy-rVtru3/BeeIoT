@@ -6,12 +6,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.mappers.toHivePreview
-import com.app.mobile.domain.usecase.hives.LoadHivesUseCase
+import com.app.mobile.domain.usecase.hives.GetHivesPreviewUseCase
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 
 class HivesListViewModel(
-    private val loadHivesUseCase: LoadHivesUseCase
+    private val getHivesPreviewUseCase: GetHivesPreviewUseCase
 ) : ViewModel() {
 
     private val _hivesListUiState = MutableLiveData<HivesListUiState>()
@@ -28,7 +28,7 @@ class HivesListViewModel(
     fun loadHives() {
         _hivesListUiState.value = HivesListUiState.Loading
         viewModelScope.launch(handler) {
-            val hives = loadHivesUseCase().map { it.toHivePreview() }
+            val hives = getHivesPreviewUseCase().map { it.toHivePreview() }
             if (hives.isEmpty()) {
                 _hivesListUiState.value = HivesListUiState.Empty
             } else {
@@ -41,7 +41,7 @@ class HivesListViewModel(
         loadHives()
     }
 
-    fun onHiveClick(hiveId: Int) {
+    fun onHiveClick(hiveId: String) {
         val currentState = _hivesListUiState.value
         if (currentState is HivesListUiState.Content) {
             _hivesListUiState.value = HivesListUiState.Loading

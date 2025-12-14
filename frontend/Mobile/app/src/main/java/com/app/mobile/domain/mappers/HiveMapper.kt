@@ -2,8 +2,10 @@ package com.app.mobile.domain.mappers
 
 import com.app.mobile.data.database.entity.HiveEntity
 import com.app.mobile.data.database.entity.HiveWithDetails
+import com.app.mobile.data.database.mappers.toDomain
 import com.app.mobile.domain.models.hives.HiveDomain
 import com.app.mobile.domain.models.hives.HiveDomainPreview
+import com.app.mobile.presentation.mappers.toUiModel
 import com.app.mobile.presentation.models.hive.HivePreview
 import com.app.mobile.presentation.models.hive.HiveUi
 

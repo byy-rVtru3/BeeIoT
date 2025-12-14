@@ -5,9 +5,9 @@ import androidx.room.PrimaryKey
 
 @Entity("queens")
 data class QueenEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
-    val hiveId: Int,
+    @PrimaryKey
+    val id: String,
+    val hiveId: String?,
     val name: String,
-    val stage: QueenStage,
+    val stages: QueenLifecycleDbModel
 )

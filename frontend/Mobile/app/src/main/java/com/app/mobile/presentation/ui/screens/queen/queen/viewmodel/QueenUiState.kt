@@ -1,4 +1,4 @@
-package com.app.mobile.presentation.ui.screens.queen.viewmodel
+package com.app.mobile.presentation.ui.screens.queen.queen.viewmodel
 
 import com.app.mobile.presentation.models.queen.QueenUiModel
 

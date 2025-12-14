@@ -5,6 +5,8 @@ import com.app.mobile.domain.models.authorization.AuthorizationRequestResult
 import com.app.mobile.domain.models.confirmation.ConfirmationModel
 import com.app.mobile.domain.models.confirmation.ConfirmationRequestResult
 import com.app.mobile.domain.models.delete.DeleteRequestResult
+import com.app.mobile.domain.models.hives.queen.QueenCalendarRequestResult
+import com.app.mobile.domain.models.hives.queen.QueenRequestModel
 import com.app.mobile.domain.models.logout.LogoutRequestResult
 import com.app.mobile.domain.models.registration.RegistrationModel
 import com.app.mobile.domain.models.registration.RegistrationRequestResult
@@ -21,4 +23,6 @@ interface RepositoryApi {
     suspend fun logoutAccount(): LogoutRequestResult
 
     suspend fun deleteAccount(): DeleteRequestResult
+
+    suspend fun calcQueenCalendar(queenRequestModel: QueenRequestModel): QueenCalendarRequestResult
 }

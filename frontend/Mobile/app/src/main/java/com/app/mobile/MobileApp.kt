@@ -18,6 +18,11 @@ import com.app.mobile.di.screens.hivesListModule
 import com.app.mobile.di.screens.settingsModule
 import com.app.mobile.di.networkModules
 import com.app.mobile.di.sessionModule
+import com.app.mobile.di.jsonModule
+import com.app.mobile.di.repository.queenLocalRepositoryModule
+import com.app.mobile.di.screens.queenModule
+import com.app.mobile.di.screens.queenAddModule
+
 import com.app.mobile.di.repository.authRepository
 import com.app.mobile.di.repository.repositoryApiModule
 import com.app.mobile.di.repository.repositoryDatabaseModule
@@ -37,6 +42,7 @@ class MobileApp : Application() {
             androidContext(this@MobileApp)
 
             modules(
+                jsonModule,
                 registrationModule,
                 repositoryApiModule,
                 repositoryDatabaseModule,
@@ -51,8 +57,11 @@ class MobileApp : Application() {
                 aboutAppModule,
                 accountInfoModule,
                 hivesLocalRepositoryModule,
+                queenLocalRepositoryModule,
                 hivesListModule,
-                hiveModule
+                hiveModule,
+                queenModule,
+                queenAddModule
             )
         }
     }

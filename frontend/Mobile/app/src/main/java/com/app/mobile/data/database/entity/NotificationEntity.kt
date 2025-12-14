@@ -6,9 +6,9 @@ import java.time.LocalDateTime
 
 @Entity(tableName = "notifications")
 data class NotificationEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
-    val hiveId: Int,
+    @PrimaryKey
+    val id: String,
+    val hiveId: String,
     val notificationType: NotificationType,
     val message: String,
     val dateTime: LocalDateTime,

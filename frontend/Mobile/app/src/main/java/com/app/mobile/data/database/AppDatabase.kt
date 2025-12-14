@@ -21,7 +21,7 @@ import com.app.mobile.data.database.entity.WorkEntity
         WorkEntity::class,
         NotificationEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(AppConverters::class)

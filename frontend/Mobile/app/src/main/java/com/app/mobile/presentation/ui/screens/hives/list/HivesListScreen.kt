@@ -35,7 +35,7 @@ import com.app.mobile.presentation.ui.screens.hives.list.vewmodel.HivesListViewM
 @Composable
 fun HivesListScreen(
     hivesListViewModel: HivesListViewModel,
-    onHiveClick: (Int) -> Unit,
+    onHiveClick: (String) -> Unit,
     onCreateHiveClick: () -> Unit
 ) {
     val hivesListUiState by hivesListViewModel.hivesListUiState.observeAsState(
@@ -116,7 +116,7 @@ private fun HivesList(hives: List<HivePreview>, actions: HivesListActions) {
 }
 
 @Composable
-private fun HiveItem(hive: HivePreview, onHiveClick: (Int) -> Unit) {
+private fun HiveItem(hive: HivePreview, onHiveClick: (String) -> Unit) {
     Card(
         modifier = Modifier.padding(5.dp),
         onClick = { onHiveClick(hive.id) })
