@@ -25,9 +25,7 @@ import com.app.mobile.presentation.ui.screens.authorization.models.Authorization
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationNavigationEvent
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationUiState
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationViewModel
-import com.app.mobile.data.mock.MockDataSourceImpl
 import com.app.mobile.presentation.validators.ValidationConfig
-import org.koin.compose.koinInject
 
 @Composable
 fun AuthorizationScreen(
@@ -60,22 +58,7 @@ fun AuthorizationScreen(
         }
     }
 
-    // Получаем MockDataSource - он всегда доступен
-    val mockDataSource: MockDataSourceImpl = koinInject()
-
-    // Создаём state один раз
-    val isMockEnabled = remember { mutableStateOf(false) }
-    val isValidationEnabled = remember { mutableStateOf(false) }
-
-    // Синхронизируем состояние при каждом появлении экрана
-    // LaunchedEffect с ключом Unit выполняется каждый раз при входе на экран
-    LaunchedEffect(Unit) {
-        // Читаем актуальные значения из SharedPreferences
-        isMockEnabled.value = mockDataSource.isMock()
-        isValidationEnabled.value = mockDataSource.isValidationEnabled()
-        // Инициализируем ValidationConfig
-        ValidationConfig.init(mockDataSource)
-    }
+    val isValidationEnabled = remember { mutableStateOf(ValidationConfig.isValidationEnabled) }
 
     when (val state = authorizationUiState) {
         is AuthorizationUiState.Loading -> {
@@ -101,10 +84,7 @@ fun AuthorizationScreen(
                     actions = actions
                 )
 
-                // Панель разработчика - в develop показывает FAB, в live пустая
                 DeveloperPanel(
-                    mockDataSource = mockDataSource,
-                    isMockEnabled = isMockEnabled,
                     isValidationEnabled = isValidationEnabled,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)

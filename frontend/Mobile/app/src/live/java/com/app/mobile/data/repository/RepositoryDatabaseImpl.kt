@@ -32,3 +32,4 @@ class RepositoryDatabaseImpl(private val userDao: UserDao) : RepositoryDatabase 
     override suspend fun deleteTokenFromUser(userId: Int) = userDao.deleteTokenFromUser(userId)
 
 }
+
