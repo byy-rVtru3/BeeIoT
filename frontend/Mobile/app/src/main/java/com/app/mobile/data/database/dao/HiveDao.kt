@@ -26,4 +26,7 @@ interface HiveDao {
 
     @Upsert
     suspend fun saveQueen(queen: QueenEntity)
+
+    @Query("SELECT * FROM queens")
+    suspend fun getQueens(): List<QueenEntity>
 }

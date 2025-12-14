@@ -27,6 +27,15 @@ import com.app.mobile.presentation.ui.screens.hive.viewmodel.HiveViewModel
 import com.app.mobile.presentation.ui.screens.hives.list.HivesListRoute
 import com.app.mobile.presentation.ui.screens.hives.list.HivesListScreen
 import com.app.mobile.presentation.ui.screens.hives.list.vewmodel.HivesListViewModel
+import com.app.mobile.presentation.ui.screens.queen.details.QueenRoute
+import com.app.mobile.presentation.ui.screens.queen.details.QueenScreen
+import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenViewModel
+import com.app.mobile.presentation.ui.screens.queen.editor.QueenEditorRoute
+import com.app.mobile.presentation.ui.screens.queen.editor.QueenEditorScreen
+import com.app.mobile.presentation.ui.screens.queen.editor.viewmodel.QueenEditorViewModel
+import com.app.mobile.presentation.ui.screens.queen.list.QueenListRoute
+import com.app.mobile.presentation.ui.screens.queen.list.QueenListScreen
+import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListViewModel
 import com.app.mobile.presentation.ui.screens.registration.RegistrationRoute
 import com.app.mobile.presentation.ui.screens.registration.RegistrationScreen
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationViewModel
@@ -73,7 +82,7 @@ fun AppNavigation(
             val authorizationViewModel: AuthorizationViewModel = koinViewModel()
             AuthorizationScreen(
                 authorizationViewModel,
-                onAuthorizeClick = { navController.navigate(HivesListRoute) },
+                onAuthorizeClick = { navController.navigate(QueenListRoute) },
                 onRegistrationClick = { navController.navigate(RegistrationRoute) }
             )
         }
@@ -104,7 +113,7 @@ fun AppNavigation(
             HivesListScreen(
                 hivesListViewModel,
                 onHiveClick = { navController.navigate(HiveRoute(it)) },
-                onCreateHiveClick = {TODO("HiveCreateRoute")}
+                onCreateHiveClick = { TODO("HiveCreateRoute") }
             )
         }
 
@@ -114,18 +123,46 @@ fun AppNavigation(
             HiveScreen(
                 hiveViewModel,
                 destination.hiveId,
-                onQueenClick = { TODO("QueenRoute") },
+                onQueenClick = { navController.navigate(QueenRoute) },
                 onWorksClick = { TODO("WorksRoute") },
-                onNotificationsClick = {TODO("NotificationsRoute")},
-                onTemperatureClick = {TODO("TemperatureRoute") },
-                onNoiseClick = {TODO("NoiseRoute") },
-                onWeightClick = {TODO("WeightRoute") },
+                onNotificationsClick = { TODO("NotificationsRoute") },
+                onTemperatureClick = { TODO("TemperatureRoute") },
+                onNoiseClick = { TODO("NoiseRoute") },
+                onWeightClick = { TODO("WeightRoute") },
                 onHiveListClick = { navController.navigate(HivesListRoute) },
-                onHiveEditClick = {TODO("HiveEditRoute")}
+                onHiveEditClick = { TODO("HiveEditRoute") }
             )
         }
 
+        animatedComposable<QueenRoute> {
+            val destination = it.toRoute<QueenRoute>()
+            val queenViewModel: QueenViewModel = koinViewModel()
+            QueenScreen(
+                queenViewModel,
+                queenId = destination.queenId,
+                onEditClick = {},
+                onHiveClick = {}
+            )
+        }
 
+        animatedComposable<QueenEditorRoute> {
+            val destination = it.toRoute<QueenEditorRoute>()
+            val queenEditorViewModel: QueenEditorViewModel = koinViewModel()
+            QueenEditorScreen(
+                queenEditorViewModel,
+                queenId = destination.queenId,
+                onBackClick = { navController.navigateUp() }
+            )
+        }
+
+        animatedComposable<QueenListRoute> {
+            val queenListViewModel: QueenListViewModel = koinViewModel()
+            QueenListScreen(
+                queenListViewModel,
+                onQueenClick = { navController.navigate(QueenRoute(it)) },
+                onAddClick = { navController.navigate(QueenEditorRoute(null)) }
+            )
+        }
 
     }
 }

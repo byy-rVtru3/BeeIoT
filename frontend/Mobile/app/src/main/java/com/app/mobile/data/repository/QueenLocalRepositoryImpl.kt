@@ -13,4 +13,7 @@ class QueenLocalRepositoryImpl(private val hiveDao: HiveDao) : QueenLocalReposit
     override suspend fun saveQueen(queen: QueenDomain) {
         hiveDao.saveQueen(queen.toEntity())
     }
+
+    override suspend fun getQueens() =
+        hiveDao.getQueens().map { it.toDomain() }
 }

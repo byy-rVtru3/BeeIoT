@@ -51,7 +51,7 @@ class HiveViewModel(
         if (currentUiState is HiveUiState.Content) {
             val queen = currentUiState.hive.queen
             if (queen is QueenUi.Present) {
-                _navigationEvent.value = HiveNavigationEvent.NavigateToQueenByHive(queen.id)
+                _navigationEvent.value = HiveNavigationEvent.NavigateToQueenByHive(queen.queen.id)
             }
         }
     }

@@ -7,4 +7,6 @@ interface QueenLocalRepository {
     suspend fun saveQueen(queen: QueenDomain)
 
     suspend fun getQueenById(queenId: String): QueenDomain?
+
+    suspend fun getQueens(): List<QueenDomain>
 }

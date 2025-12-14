@@ -1,4 +1,4 @@
-package com.app.mobile.presentation.ui.screens.queen.queen.viewmodel
+package com.app.mobile.presentation.ui.screens.queen.details.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.LiveData
@@ -47,5 +47,19 @@ class QueenViewModel(
             _navigationEvent.value =
                 QueenNavigationEvent.NavigateToEditQueen(currentUiState.queen.id)
         }
+    }
+
+    fun onHiveClick() {
+        val currentUiState = _queenUiState.value
+        if (currentUiState is QueenUiState.Content) {
+            if (currentUiState.queen.hive?.id != null) {
+                _navigationEvent.value =
+                    QueenNavigationEvent.NavigateToHive(currentUiState.queen.hive.id)
+            }
+        }
+    }
+
+    fun onNavigationHandled() {
+        _navigationEvent.value = null
     }
 }

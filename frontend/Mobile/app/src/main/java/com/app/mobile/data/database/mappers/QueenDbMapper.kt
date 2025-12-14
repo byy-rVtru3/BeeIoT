@@ -31,6 +31,7 @@ fun QueenDomain.toEntity() = QueenEntity(
 )
 
 private fun QueenLifecycleDbModel.toDomain() = QueenLifecycle(
+    birthDate = this.birthDate.toLocalDate(),
     egg = egg.toDomain(),
     larva = larva.toDomain(),
     pupa = pupa.toDomain(),
@@ -38,6 +39,7 @@ private fun QueenLifecycleDbModel.toDomain() = QueenLifecycle(
 )
 
 fun QueenLifecycle.toEntity() = QueenLifecycleDbModel(
+    birthDate = this.birthDate.toDatabaseValue(),
     egg = egg.toEntity(),
     larva = larva.toEntity(),
     pupa = pupa.toEntity(),

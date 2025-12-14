@@ -20,6 +20,7 @@ fun QueenRequestModel.toApiModel() = CalcQueenRequest(
 )
 
 fun QueenCalendarDto.toDomain() = QueenLifecycle(
+    birthDate = this.startDate.toLocalDate(),
     egg = this.eggPhase.toDomain(),
     larva = this.larvaPhase.toDomain(),
     pupa = this.pupaPhase.toDomain(),

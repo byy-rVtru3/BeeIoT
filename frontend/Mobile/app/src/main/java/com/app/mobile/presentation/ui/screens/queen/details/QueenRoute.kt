@@ -1,4 +1,4 @@
-package com.app.mobile.presentation.ui.screens.queen.queen
+package com.app.mobile.presentation.ui.screens.queen.details
 
 import kotlinx.serialization.Serializable
 

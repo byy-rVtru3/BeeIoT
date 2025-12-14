@@ -21,7 +21,8 @@ import com.app.mobile.di.sessionModule
 import com.app.mobile.di.jsonModule
 import com.app.mobile.di.repository.queenLocalRepositoryModule
 import com.app.mobile.di.screens.queenModule
-import com.app.mobile.di.screens.queenAddModule
+import com.app.mobile.di.screens.queenEditorModule
+import com.app.mobile.di.screens.queenListModule
 
 import com.app.mobile.di.repository.authRepository
 import com.app.mobile.di.repository.repositoryApiModule
@@ -61,7 +62,8 @@ class MobileApp : Application() {
                 hivesListModule,
                 hiveModule,
                 queenModule,
-                queenAddModule
+                queenEditorModule,
+                queenListModule
             )
         }
     }
