@@ -30,7 +30,9 @@ import com.app.mobile.presentation.ui.screens.authorization.viewmodel.Authorizat
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationUiState
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationViewModel
 import com.app.mobile.presentation.validators.ValidationConfig
-
+import com.app.mobile.presentation.validators.ValidationError
+import com.app.mobile.ui.theme.Dimens
+import com.app.mobile.ui.theme.MobileTheme
 @Composable
 fun AuthorizationScreen(
     authorizationViewModel: AuthorizationViewModel,
