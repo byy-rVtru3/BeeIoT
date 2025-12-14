@@ -96,3 +96,4 @@ class RepositoryApiImpl(
             logMessage = "Error during deleteAccount"
         )
 }
+

@@ -29,12 +29,7 @@ import com.app.mobile.presentation.ui.screens.authorization.viewmodel.Authorizat
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationNavigationEvent
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationUiState
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationViewModel
-import com.app.mobile.data.mock.MockDataSourceImpl
 import com.app.mobile.presentation.validators.ValidationConfig
-import com.app.mobile.presentation.validators.ValidationError
-import com.app.mobile.ui.theme.Dimens
-import com.app.mobile.ui.theme.MobileTheme
-import org.koin.compose.koinInject
 
 @Composable
 fun AuthorizationScreen(
@@ -67,19 +62,7 @@ fun AuthorizationScreen(
         }
     }
 
-    // Получаем MockDataSource - он всегда доступен
-    val mockDataSource: MockDataSourceImpl = koinInject()
-
-    // Создаём state один раз
-    val isMockEnabled = remember { mutableStateOf(false) }
-    val isValidationEnabled = remember { mutableStateOf(false) }
-
-    // Синхронизируем состояние при каждом появлении экрана
-    LaunchedEffect(Unit) {
-        isMockEnabled.value = mockDataSource.isMock()
-        isValidationEnabled.value = mockDataSource.isValidationEnabled()
-        ValidationConfig.init(mockDataSource)
-    }
+    val isValidationEnabled = remember { mutableStateOf(ValidationConfig.isValidationEnabled) }
 
     when (val state = authorizationUiState) {
         is AuthorizationUiState.Loading -> {
@@ -107,8 +90,6 @@ fun AuthorizationScreen(
                 )
 
                 DeveloperPanel(
-                    mockDataSource = mockDataSource,
-                    isMockEnabled = isMockEnabled,
                     isValidationEnabled = isValidationEnabled,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
