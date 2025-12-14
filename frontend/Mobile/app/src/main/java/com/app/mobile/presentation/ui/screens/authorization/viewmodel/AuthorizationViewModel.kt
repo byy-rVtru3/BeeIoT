@@ -22,19 +22,36 @@ class AuthorizationViewModel(
     private val _navigationEvent = MutableLiveData<AuthorizationNavigationEvent?>()
     val navigationEvent: LiveData<AuthorizationNavigationEvent?> = _navigationEvent
 
+    // Используем новый helper для валидации
+    private val formValidator = AuthorizationFormValidator()
+
     private val handler = CoroutineExceptionHandler { _, exception ->
         _authorizationUiState.value =
             AuthorizationUiState.Error(exception.message ?: "Unknown error")
-        Log.e("RegistrationViewModel", exception.message.toString())
+        Log.e("AuthorizationViewModel", exception.message.toString())
     }
 
     fun onAuthorizeClick() {
         val currentState = _authorizationUiState.value
         if (currentState is AuthorizationUiState.Content) {
+            // Валидируем форму через helper - чисто и просто!
+            val (validatedFormState, hasErrors) = formValidator.validateAndApply(currentState.formState)
+
+            if (hasErrors) {
+                _authorizationUiState.value = currentState.copy(formState = validatedFormState)
+                Log.w("AuthorizationViewModel", "Form validation failed")
+                return
+            }
+
             _authorizationUiState.value = AuthorizationUiState.Loading
-            val model = currentState.authorizationModelUi
+
+            val model = currentState.authorizationModelUi.copy(
+                email = validatedFormState.email,
+                password = validatedFormState.password
+            )
+
             viewModelScope.launch(handler) {
-                when (val codeResult = authorizationAccountUseCase(model.toDomain()).toUiModel()) {
+                when (val result = authorizationAccountUseCase(model.toDomain()).toUiModel()) {
                     is AuthorizationResultUi.Success -> {
                         _navigationEvent.value =
                             AuthorizationNavigationEvent.NavigateToMainScreen
@@ -42,38 +59,60 @@ class AuthorizationViewModel(
 
                     is AuthorizationResultUi.Error -> {
                         _authorizationUiState.value =
-                            AuthorizationUiState.Error(codeResult.message)
-                        // Добавить обработку ошибок
-
+                            AuthorizationUiState.Error(result.message)
                     }
                 }
             }
-
         }
     }
 
     fun onEmailChange(email: String) {
         val currentState = _authorizationUiState.value
         if (currentState is AuthorizationUiState.Content) {
-            val updatedModel = currentState.authorizationModelUi.copy(
-                email = email
+            val validationResult = formValidator.validateEmail(email)
+
+            val updatedFormState = currentState.formState.copy(
+                email = validationResult.data,
+                emailError = null
             )
-            _authorizationUiState.value = AuthorizationUiState.Content(updatedModel)
+
+            val updatedModel = currentState.authorizationModelUi.copy(
+                email = validationResult.data
+            )
+
+            _authorizationUiState.value = currentState.copy(
+                authorizationModelUi = updatedModel,
+                formState = updatedFormState
+            )
         }
     }
 
     fun onPasswordChange(password: String) {
         val currentState = _authorizationUiState.value
         if (currentState is AuthorizationUiState.Content) {
-            val updatedModel = currentState.authorizationModelUi.copy(
-                password = password
+            val validationResult = formValidator.validatePassword(password)
+
+            val updatedFormState = currentState.formState.copy(
+                password = validationResult.data,
+                passwordError = null
             )
-            _authorizationUiState.value = AuthorizationUiState.Content(updatedModel)
+
+            val updatedModel = currentState.authorizationModelUi.copy(
+                password = validationResult.data
+            )
+
+            _authorizationUiState.value = currentState.copy(
+                authorizationModelUi = updatedModel,
+                formState = updatedFormState
+            )
         }
     }
 
     fun createAuthorizationModel() {
-        _authorizationUiState.value = AuthorizationUiState.Content(AuthorizationModelUi("", ""))
+        _authorizationUiState.value = AuthorizationUiState.Content(
+            authorizationModelUi = AuthorizationModelUi("", ""),
+            formState = AuthorizationFormState()
+        )
     }
 
     fun onRegistrationClick() {

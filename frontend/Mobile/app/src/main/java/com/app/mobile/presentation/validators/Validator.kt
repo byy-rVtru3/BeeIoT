@@ -1,18 +1,19 @@
 package com.app.mobile.presentation.validators
 
 // Базовый интерфейс для ошибок валидации
-interface ValidationError
+sealed interface ValidationError {
+    // Конкретные типы ошибок
+    object EmptyFieldError : ValidationError
+    object InvalidEmailError : ValidationError
+    object PasswordTooShortError : ValidationError
+    object PasswordTooWeakError : ValidationError
+    object PasswordsNotMatchError : ValidationError
+    object InvalidCodeFormatError : ValidationError
+    object InvalidNameError : ValidationError
+    object NameTooShortError : ValidationError
+    object NameTooLongError : ValidationError
+}
 
-// Конкретные типы ошибок
-object EmptyFieldError : ValidationError
-object InvalidEmailError : ValidationError
-object PasswordTooShortError : ValidationError
-object PasswordTooWeakError : ValidationError
-object PasswordsNotMatchError : ValidationError
-object InvalidCodeFormatError : ValidationError
-object InvalidNameError : ValidationError
-object NameTooShortError : ValidationError
-object NameTooLongError : ValidationError
 
 // Результат валидации
 sealed class ValidationResult {
@@ -66,6 +67,17 @@ sealed class ValidationResult {
 // Extension функция для создания Valid результата
 fun String.asValid(): ValidationResult = ValidationResult.valid(this)
 
+/**
+ * Extension функция для извлечения первой ошибки из результата валидации
+ * Используется в Validate*FormUseCase для упрощения кода
+ */
+fun ValidationResult.firstErrorOrNull(): ValidationError? {
+    return when (this) {
+        is ValidationResult.Error -> errors.firstOrNull()
+        is ValidationResult.Valid -> null
+    }
+}
+
 //
 // Базовый интерфейс валидатора - функциональный интерфейс
 fun interface Validator {
@@ -73,7 +85,8 @@ fun interface Validator {
 }
 
 // Комплексный валидатор - цепочка валидаторов
-open class ComplexValidator private constructor(private val validators: List<Validator>) : Validator {
+open class ComplexValidator private constructor(private val validators: List<Validator>) :
+    Validator {
     override fun validate(data: String) =
         validators.fold(ValidationResult.valid(data)) { res, validator -> res.andThen(validator) }
 
@@ -103,7 +116,7 @@ class ComplexValidatorBuilder {
 // Валидатор - не пустое значение
 val NotEmptyValidator = Validator { data ->
     if (data.isEmpty()) {
-        ValidationResult.invalid(data, EmptyFieldError)
+        ValidationResult.invalid(data, ValidationError.EmptyFieldError)
     } else {
         data.asValid()
     }
@@ -113,7 +126,7 @@ val NotEmptyValidator = Validator { data ->
 class ExactLengthValidator(private val length: Int) : Validator {
     override fun validate(data: String): ValidationResult {
         return if (data.length != length) {
-            ValidationResult.invalid(data, InvalidCodeFormatError)
+            ValidationResult.invalid(data, ValidationError.InvalidCodeFormatError)
         } else {
             data.asValid()
         }
@@ -121,7 +134,10 @@ class ExactLengthValidator(private val length: Int) : Validator {
 }
 
 // Валидатор - минимальная длина
-class MinLengthValidator(private val minLength: Int, private val error: ValidationError = PasswordTooShortError) : Validator {
+class MinLengthValidator(
+    private val minLength: Int,
+    private val error: ValidationError = ValidationError.PasswordTooShortError
+) : Validator {
     override fun validate(data: String): ValidationResult {
         return if (data.length < minLength) {
             ValidationResult.invalid(data, error)
@@ -132,7 +148,10 @@ class MinLengthValidator(private val minLength: Int, private val error: Validati
 }
 
 // Валидатор - максимальная длина
-class MaxLengthValidator(private val maxLength: Int, private val error: ValidationError = InvalidNameError) : Validator {
+class MaxLengthValidator(
+    private val maxLength: Int,
+    private val error: ValidationError = ValidationError.InvalidNameError
+) : Validator {
     override fun validate(data: String): ValidationResult {
         return if (data.length > maxLength) {
             ValidationResult.invalid(data, error)
@@ -147,7 +166,7 @@ val OnlyDigitsValidator = Validator { data ->
     if (data.all { it.isDigit() }) {
         data.asValid()
     } else {
-        ValidationResult.invalid(data, InvalidCodeFormatError)
+        ValidationResult.invalid(data, ValidationError.InvalidCodeFormatError)
     }
 }
 
@@ -157,7 +176,7 @@ val EmailValidator = Validator { data ->
     if (emailRegex.matches(data)) {
         data.asValid()
     } else {
-        ValidationResult.invalid(data, InvalidEmailError)
+        ValidationResult.invalid(data, ValidationError.InvalidEmailError)
     }
 }
 
@@ -166,7 +185,7 @@ val NameValidator = Validator { data ->
     if (data.all { it.isLetter() || it.isWhitespace() } && data.isNotBlank()) {
         data.asValid()
     } else {
-        ValidationResult.invalid(data, InvalidNameError)
+        ValidationResult.invalid(data, ValidationError.InvalidNameError)
     }
 }
 
@@ -179,7 +198,7 @@ val PasswordStrengthValidator = Validator { data ->
     if (hasUpperCase && hasLowerCase && hasDigit) {
         data.asValid()
     } else {
-        ValidationResult.invalid(data, PasswordTooWeakError)
+        ValidationResult.invalid(data, ValidationError.PasswordTooWeakError)
     }
 }
 
@@ -189,7 +208,7 @@ class PasswordMatchValidator(private val originalPassword: String) : Validator {
         return if (data == originalPassword) {
             data.asValid()
         } else {
-            ValidationResult.invalid(data, PasswordsNotMatchError)
+            ValidationResult.invalid(data, ValidationError.PasswordsNotMatchError)
         }
     }
 }

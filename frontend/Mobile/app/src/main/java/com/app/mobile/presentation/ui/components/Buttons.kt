@@ -18,7 +18,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import com.app.mobile.ui.theme.Dimens
 
 @Composable
 fun PrimaryButton(
@@ -36,7 +37,7 @@ fun PrimaryButton(
     )
 
     val borderWidth by animateFloatAsState(
-        targetValue = if (isPressed) 2.dp.value else 4.dp.value,
+        targetValue = if (isPressed) Dimens.ButtonBorderWidthPressed.value else Dimens.ButtonBorderWidthNormal.value,
         animationSpec = tween(durationMillis = 100),
         label = "border_width"
     )
@@ -50,13 +51,13 @@ fun PrimaryButton(
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ),
-        border = BorderStroke(borderWidth.dp, MaterialTheme.colorScheme.outline),
+        border = BorderStroke(Dp(borderWidth), MaterialTheme.colorScheme.outline),
         interactionSource = interactionSource
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.labelMedium,
-            modifier = Modifier.padding(8.dp)
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(Dimens.ButtonTextPadding)
         )
     }
 }
@@ -65,32 +66,34 @@ fun PrimaryButton(
 fun LabelButton(
     text: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.92f else 1f,
+        targetValue = if (isPressed && enabled) 0.92f else 1f,
         animationSpec = tween(durationMillis = 100),
         label = "label_button_scale"
     )
 
     val alpha by animateFloatAsState(
-        targetValue = if (isPressed) 0.6f else 1f,
+        targetValue = if (!enabled) 0.4f else if (isPressed) 0.6f else 1f,
         animationSpec = tween(durationMillis = 100),
         label = "label_button_alpha"
     )
 
     Text(
         text = text,
-        style = MaterialTheme.typography.labelSmall,
+        style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onBackground.copy(alpha = alpha),
         modifier = modifier
             .scale(scale)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
+                enabled = enabled,
                 onClick = onClick
             )
     )

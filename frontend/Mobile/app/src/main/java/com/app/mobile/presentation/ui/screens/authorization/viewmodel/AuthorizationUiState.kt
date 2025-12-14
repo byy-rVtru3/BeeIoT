@@ -7,5 +7,8 @@ sealed interface AuthorizationUiState {
 
     data class Error(val message: String) : AuthorizationUiState
 
-    data class Content(val authorizationModelUi: AuthorizationModelUi) : AuthorizationUiState
+    data class Content(
+        val authorizationModelUi: AuthorizationModelUi,
+        val formState: AuthorizationFormState = AuthorizationFormState()
+    ) : AuthorizationUiState
 }

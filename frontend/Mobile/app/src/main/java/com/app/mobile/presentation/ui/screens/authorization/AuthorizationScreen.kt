@@ -4,10 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -16,12 +14,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.app.mobile.presentation.models.AuthorizationModelUi
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import com.app.mobile.R
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.LabelButton
+import com.app.mobile.presentation.ui.components.PasswordTextField
+import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.components.Title
+import com.app.mobile.presentation.ui.components.ValidatedTextField
 import com.app.mobile.presentation.ui.screens.authorization.models.AuthorizationActions
+import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationFormState
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationNavigationEvent
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationUiState
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationViewModel
@@ -70,6 +74,8 @@ fun AuthorizationScreen(
         }
 
         is AuthorizationUiState.Content -> {
+            val formState = state.formState
+
             val actions = AuthorizationActions(
                 onEmailChange = authorizationViewModel::onEmailChange,
                 onPasswordChange = authorizationViewModel::onPasswordChange,
@@ -77,10 +83,9 @@ fun AuthorizationScreen(
                 onRegistrationClick = authorizationViewModel::onRegistrationClick
             )
 
-            // Оборачиваем контент в Box чтобы разместить FloatingActionButton поверх
             Box(modifier = Modifier.fillMaxSize()) {
                 AuthorizationContent(
-                    authorizationModelUi = state.authorizationModelUi,
+                    formState = formState,
                     actions = actions
                 )
 
@@ -88,7 +93,7 @@ fun AuthorizationScreen(
                     isValidationEnabled = isValidationEnabled,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(16.dp)
+                        .padding(Dimens.ScreenContentPadding)
                 )
             }
         }
@@ -97,42 +102,131 @@ fun AuthorizationScreen(
 
 @Composable
 private fun AuthorizationContent(
-    authorizationModelUi: AuthorizationModelUi,
+    formState: AuthorizationFormState,
     actions: AuthorizationActions
 ) {
-
     Column(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .padding(
+                horizontal = Dimens.OpenScreenPaddingHorizontal,
+                vertical = Dimens.OpenScreenPaddingVertical
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Title("Авторизация")
-
-        OutlinedTextField(
-            modifier = Modifier.padding(16.dp),
-            value = authorizationModelUi.email,
-            onValueChange = { actions.onEmailChange(it) },
-            label = { Text(text = "Email") }
+        Title(
+            text = stringResource(R.string.authorization_title),
+            modifier = Modifier.padding(top = Dimens.TitleTopPadding)
         )
 
-        OutlinedTextField(
-            value = authorizationModelUi.password,
-            onValueChange = { actions.onPasswordChange(it) },
-            label = { Text(text = "Пароль") }
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingSmall)
+        ) {
+            AuthorizationEmailTextField(
+                email = formState.email,
+                emailError = formState.emailError,
+                onEmailChange = actions.onEmailChange
+            )
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.End
+            ) {
+                AuthorizationPasswordTextField(
+                    password = formState.password,
+                    passwordError = formState.passwordError,
+                    onPasswordChange = actions.onPasswordChange
+                )
+
+                ForgotPasswordButton(onClick = { /* TODO */ })
+            }
+        }
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingMedium),
+            modifier = Modifier
+                .padding(
+                    horizontal = Dimens.ButtonHorizontalPadding
+                )
+                .padding(bottom = Dimens.ButtonTwiceVerticalPadding)
+        ) {
+            AuthorizationButton(onClick = actions.onAuthorizeClick)
+            RegistrationButton(onClick = actions.onRegistrationClick)
+        }
+    }
+}
+
+@Composable
+fun AuthorizationEmailTextField(
+    email: String,
+    emailError: ValidationError?,
+    onEmailChange: (String) -> Unit
+) {
+    ValidatedTextField(
+        value = email,
+        onValueChange = onEmailChange,
+        placeholder = stringResource(R.string.email),
+        error = emailError
+    )
+}
+
+@Composable
+fun AuthorizationPasswordTextField(
+    password: String,
+    passwordError: ValidationError?,
+    onPasswordChange: (String) -> Unit
+) {
+    PasswordTextField(
+        value = password,
+        onValueChange = onPasswordChange,
+        placeholder = stringResource(R.string.password),
+        error = passwordError
+    )
+}
+
+@Composable
+fun AuthorizationButton(onClick: () -> Unit) {
+    PrimaryButton(
+        text = stringResource(R.string.authorization_button),
+        onClick = onClick
+    )
+}
+
+@Composable
+fun RegistrationButton(onClick: () -> Unit) {
+    PrimaryButton(
+        text = stringResource(R.string.registration_button),
+        onClick = onClick
+    )
+}
+
+@Composable
+fun ForgotPasswordButton(onClick: () -> Unit) {
+    LabelButton(
+        text = stringResource(R.string.forgot_password),
+        onClick = onClick,
+        modifier = Modifier.padding(top = Dimens.TextFieldErrorTopPadding)
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AuthorizationContentPreview() {
+    MobileTheme {
+        val formState = AuthorizationFormState()
+        val actions = AuthorizationActions(
+            onEmailChange = {},
+            onPasswordChange = {},
+            onAuthorizeClick = {},
+            onRegistrationClick = {}
         )
-
-        Button(
-            modifier = Modifier.padding(16.dp),
-            onClick = { actions.onAuthorizeClick() }
-        ) {
-            Text(text = "Авторизация")
-        }
-
-        Button(
-            onClick = { actions.onRegistrationClick() }
-        ) {
-            Text(text = "Регистрация")
-        }
+        AuthorizationContent(
+            formState = formState,
+            actions = actions
+        )
     }
 }

@@ -13,9 +13,8 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.app.mobile.R
-import com.app.mobile.presentation.models.RegistrationModelUi
 import com.app.mobile.presentation.models.TypeConfirmationUi
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationNavigationEvent
 import com.app.mobile.presentation.ui.components.ErrorMessage
@@ -25,9 +24,12 @@ import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.components.ValidatedTextField
 import com.app.mobile.presentation.ui.screens.registration.models.RegistrationActions
+import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationFormState
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationUiState
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationViewModel
 import com.app.mobile.presentation.validators.ValidationError
+import com.app.mobile.ui.theme.Dimens
+import com.app.mobile.ui.theme.MobileTheme
 
 @Composable
 fun RegistrationScreen(
@@ -59,7 +61,7 @@ fun RegistrationScreen(
         is RegistrationUiState.Loading -> FullScreenProgressIndicator()
         is RegistrationUiState.Error -> ErrorMessage(message = state.message) {}
         is RegistrationUiState.Content -> {
-            val registrationModelUi = state.registrationModelUi
+            val formState = state.formState
 
             val actions = RegistrationActions(
                 onEmailChange = registrationViewModel::onEmailChange,
@@ -69,14 +71,14 @@ fun RegistrationScreen(
                 onRegisterClick = registrationViewModel::onRegisterClick
             )
 
-            RegistrationContent(registrationModelUi, actions)
+            RegistrationContent(formState, actions)
         }
     }
 }
 
 @Composable
 fun RegistrationContent(
-    registrationModelUi: RegistrationModelUi,
+    formState: RegistrationFormState,
     actions: RegistrationActions
 ) {
 
@@ -84,41 +86,44 @@ fun RegistrationContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(36.dp, 56.dp),
+                .padding(
+                    horizontal = Dimens.OpenScreenPaddingHorizontal,
+                    vertical = Dimens.OpenScreenPaddingVertical
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Title(
                 text = stringResource(R.string.registration_title),
-                modifier = Modifier.padding(top = 52.dp)
+                modifier = Modifier.padding(top = Dimens.TitleTopPadding)
             )
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(20.dp)
+                verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingSmall)
             ) {
                 RegistrationNameTextField(
-                    name = registrationModelUi.name,
-                    nameError = registrationModelUi.nameError,
+                    name = formState.name,
+                    nameError = formState.nameError,
                     onNameChange = actions.onNameChange
                 )
 
                 RegistrationEmailTextField(
-                    email = registrationModelUi.email,
-                    emailError = registrationModelUi.emailError,
+                    email = formState.email,
+                    emailError = formState.emailError,
                     onEmailChange = actions.onEmailChange
                 )
 
                 RegistrationPasswordTextField(
-                    password = registrationModelUi.password,
-                    passwordError = registrationModelUi.passwordError,
+                    password = formState.password,
+                    passwordError = formState.passwordError,
                     onPasswordChange = actions.onPasswordChange
                 )
 
                 RegistrationRepeatPasswordTextField(
-                    repeatPassword = registrationModelUi.repeatPassword,
-                    repeatPasswordError = registrationModelUi.repeatPasswordError,
+                    repeatPassword = formState.repeatPassword,
+                    repeatPasswordError = formState.repeatPasswordError,
                     onRepeatPasswordChange = actions.onRepeatPasswordChange
                 )
             }
@@ -167,6 +172,7 @@ fun RegistrationPasswordTextField(
         onValueChange = onPasswordChange,
         placeholder = stringResource(R.string.password),
         error = passwordError
+
     )
 }
 
@@ -180,7 +186,8 @@ fun RegistrationRepeatPasswordTextField(
         value = repeatPassword,
         onValueChange = onRepeatPasswordChange,
         placeholder = stringResource(R.string.repeat_password),
-        error = repeatPasswordError
+        error = repeatPasswordError,
+        supportingText = stringResource(R.string.password_requirements)
     )
 }
 
@@ -189,6 +196,29 @@ fun RegistrationButton(onClick: () -> Unit) {
     PrimaryButton(
         text = stringResource(R.string.registration_button),
         onClick = onClick,
-        modifier = Modifier.padding(20.dp)
+        modifier = Modifier
+            .padding(
+                horizontal = Dimens.ButtonHorizontalPadding
+            )
+            .padding(bottom = Dimens.ButtonSoloVerticalPadding)
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun RegistrationContentPreview() {
+    MobileTheme {
+        val formState = RegistrationFormState()
+        val actions = RegistrationActions(
+            onEmailChange = {},
+            onNameChange = {},
+            onPasswordChange = {},
+            onRepeatPasswordChange = {},
+            onRegisterClick = {}
+        )
+        RegistrationContent(
+            formState = formState,
+            actions = actions
+        )
+    }
 }

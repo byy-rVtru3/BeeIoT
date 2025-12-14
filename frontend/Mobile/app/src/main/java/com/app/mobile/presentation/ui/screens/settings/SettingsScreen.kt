@@ -12,7 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.Title
@@ -20,6 +20,8 @@ import com.app.mobile.presentation.ui.screens.settings.models.SettingsActions
 import com.app.mobile.presentation.ui.screens.settings.viewmodel.SettingsNavigationEvent
 import com.app.mobile.presentation.ui.screens.settings.viewmodel.SettingsUiState
 import com.app.mobile.presentation.ui.screens.settings.viewmodel.SettingsViewModel
+import com.app.mobile.ui.theme.Dimens
+import com.app.mobile.ui.theme.MobileTheme
 
 @Composable
 fun SettingsScreen(
@@ -74,7 +76,7 @@ private fun SettingsContent(actions: SettingsActions) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(Dimens.ScreenContentPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
 
@@ -92,7 +94,7 @@ private fun SettingsContent(actions: SettingsActions) {
 @Composable
 private fun AccountInfoButton(onAccountInfoClick: () -> Unit) {
     Button(
-        modifier = Modifier.padding(bottom = 16.dp),
+        modifier = Modifier.padding(bottom = Dimens.ItemsSpacingMedium),
         onClick = onAccountInfoClick
     ) {
         Text(text = "Учетная запись")
@@ -102,7 +104,7 @@ private fun AccountInfoButton(onAccountInfoClick: () -> Unit) {
 @Composable
 private fun AboutAppButton(onAboutAppClick: () -> Unit) {
     Button(
-        modifier = Modifier.padding(bottom = 16.dp),
+        modifier = Modifier.padding(bottom = Dimens.ItemsSpacingMedium),
         onClick = onAboutAppClick
     ) {
         Text(text = " О приложении")
@@ -116,5 +118,18 @@ private fun LogoutButton(onLogoutClick: () -> Unit) {
         onClick = onLogoutClick
     ) {
         Text(text = "Выйти")
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SettingsContentPreview() {
+    MobileTheme {
+        val actions = SettingsActions(
+            onAccountInfoClick = {},
+            onAboutAppClick = {},
+            onLogoutClick = {}
+        )
+        SettingsContent(actions)
     }
 }
