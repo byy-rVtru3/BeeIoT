@@ -5,8 +5,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.mobile.domain.usecase.hives.GetHivesPreviewUseCase
-import com.app.mobile.domain.usecase.hives.GetQueenUseCase
+import com.app.mobile.domain.mappers.toDomain
+import com.app.mobile.domain.models.hives.queen.QueenCalendarRequestResult
+import com.app.mobile.domain.usecase.hives.hive.GetHivesPreviewUseCase
+import com.app.mobile.domain.usecase.hives.queen.CalcQueenCalendarUseCase
+import com.app.mobile.domain.usecase.hives.queen.GetQueenUseCase
 import com.app.mobile.domain.usecase.hives.queen.CreateQueenUseCase
 import com.app.mobile.domain.usecase.hives.queen.SaveQueenUseCase
 import com.app.mobile.presentation.mappers.toDomain
@@ -21,9 +24,11 @@ class QueenEditorViewModel(
     private val createQueenUseCase: CreateQueenUseCase,
     private val getQueenUseCase: GetQueenUseCase,
     private val getHivesPreviewUseCase: GetHivesPreviewUseCase,
+    private val calcQueenCalendarUseCase: CalcQueenCalendarUseCase,
     private val saveQueenUseCase: SaveQueenUseCase
 ) : ViewModel() {
-    private val _queenEditorUiState = MutableLiveData<QueenEditorUiState>(QueenEditorUiState.Loading)
+    private val _queenEditorUiState =
+        MutableLiveData<QueenEditorUiState>(QueenEditorUiState.Loading)
     val queenEditorUiState: LiveData<QueenEditorUiState> = _queenEditorUiState
 
     private val _navigationEvent = MutableLiveData<QueenEditorNavigationEvent?>()
@@ -48,7 +53,8 @@ class QueenEditorViewModel(
                 val hives = hivesDeferred.await()
                 val foundQueen = queenDeferred.await()
 
-                val uiModel = foundQueen?.toEditor(hives) ?: createQueenUseCase().toPresentation(hives)
+                val uiModel =
+                    foundQueen?.toEditor(hives) ?: createQueenUseCase().toPresentation(hives)
 
                 _queenEditorUiState.value = QueenEditorUiState.Content(uiModel)
             }
@@ -83,15 +89,22 @@ class QueenEditorViewModel(
         val currentState = _queenEditorUiState.value
         if (currentState is QueenEditorUiState.Content) {
             viewModelScope.launch(handler) {
-                val result = saveQueenUseCase(currentState.queenEditorModel.toDomain())
-                result
-                    .onSuccess {
+                val result = calcQueenCalendarUseCase(currentState.queenEditorModel.toDomain())
+                when (result) {
+                    is QueenCalendarRequestResult.Success -> {
+                        saveQueenUseCase(
+                            currentState.queenEditorModel
+                                .toDomain() // так себе но пойдет
+                                .toDomain(result.queenLifecycle)
+                        )
                         _navigationEvent.value = QueenEditorNavigationEvent.NavigateBack
                     }
-                    .onFailure { exception ->
-                        _queenEditorUiState.value =
-                            QueenEditorUiState.Error(exception.message ?: "Unknown error")
+
+                    is QueenCalendarRequestResult.Error -> {
+                        _queenEditorUiState.value = QueenEditorUiState.Error(result.message)
                     }
+                }
+
             }
         }
     }

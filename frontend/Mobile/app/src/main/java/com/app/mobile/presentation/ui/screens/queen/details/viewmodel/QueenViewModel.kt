@@ -5,8 +5,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.mobile.domain.usecase.hives.GetHivePreviewUseCase
-import com.app.mobile.domain.usecase.hives.GetQueenUseCase
+import com.app.mobile.domain.usecase.hives.hive.GetHivePreviewUseCase
+import com.app.mobile.domain.usecase.hives.queen.GetQueenUseCase
 import com.app.mobile.presentation.mappers.toUiModel
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch

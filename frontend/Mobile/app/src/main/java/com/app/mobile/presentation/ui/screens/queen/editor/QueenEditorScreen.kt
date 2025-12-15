@@ -12,6 +12,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -72,7 +73,7 @@ fun QueenEditorScreen(
                 queenEditorModel = state.queenEditorModel,
                 onNameChange = queenEditorViewModel::onNameChange,
                 onDateChange = queenEditorViewModel::onDateChange,
-                onHiveChange = queenEditorViewModel::addHive,
+                onHiveAdd = queenEditorViewModel::addHive,
                 onSaveClick = queenEditorViewModel::onSaveClick
             )
         }
@@ -85,7 +86,7 @@ private fun QueenEditorContent(
     queenEditorModel: QueenEditorModel,
     onNameChange: (String) -> Unit,
     onDateChange: (Long) -> Unit,
-    onHiveChange: (String) -> Unit,
+    onHiveAdd: (String) -> Unit,
     onSaveClick: () -> Unit
 ) {
     Column(
@@ -128,12 +129,12 @@ private fun QueenEditorContent(
                         datePickerState.selectedDateMillis?.let { onDateChange(it) }
                         showDatePicker = false
                     }) {
-                        Text("OK")
+                        Text("OK", color = MaterialTheme.colorScheme.primary)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showDatePicker = false }) {
-                        Text("Cancel")
+                        Text("Cancel", color = MaterialTheme.colorScheme.primary)
                     }
                 }
             ) {
@@ -165,9 +166,15 @@ private fun QueenEditorContent(
             ) {
                 queenEditorModel.hives.forEach { hive ->
                     DropdownMenuItem(
-                        text = { Text(hive.name) },
+                        text = {
+                            Text(
+                                text = hive.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        },
                         onClick = {
-                            onHiveChange(hive.id)
+                            onHiveAdd(hive.id)
                             expanded = false
                         }
                     )

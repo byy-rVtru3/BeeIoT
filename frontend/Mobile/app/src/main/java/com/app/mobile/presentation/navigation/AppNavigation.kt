@@ -21,12 +21,15 @@ import com.app.mobile.presentation.ui.screens.authorization.viewmodel.Authorizat
 import com.app.mobile.presentation.ui.screens.confirmation.ConfirmationRoute
 import com.app.mobile.presentation.ui.screens.confirmation.ConfirmationScreen
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationViewModel
-import com.app.mobile.presentation.ui.screens.hive.HiveRoute
-import com.app.mobile.presentation.ui.screens.hive.HiveScreen
-import com.app.mobile.presentation.ui.screens.hive.viewmodel.HiveViewModel
-import com.app.mobile.presentation.ui.screens.hives.list.HivesListRoute
-import com.app.mobile.presentation.ui.screens.hives.list.HivesListScreen
-import com.app.mobile.presentation.ui.screens.hives.list.vewmodel.HivesListViewModel
+import com.app.mobile.presentation.ui.screens.hive.details.HiveRoute
+import com.app.mobile.presentation.ui.screens.hive.details.HiveScreen
+import com.app.mobile.presentation.ui.screens.hive.details.viewmodel.HiveViewModel
+import com.app.mobile.presentation.ui.screens.hive.editor.HiveEditorRoute
+import com.app.mobile.presentation.ui.screens.hive.editor.HiveEditorScreen
+import com.app.mobile.presentation.ui.screens.hive.editor.viewmodel.HiveEditorViewModel
+import com.app.mobile.presentation.ui.screens.hive.list.HivesListRoute
+import com.app.mobile.presentation.ui.screens.hive.list.HivesListScreen
+import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListViewModel
 import com.app.mobile.presentation.ui.screens.queen.details.QueenRoute
 import com.app.mobile.presentation.ui.screens.queen.details.QueenScreen
 import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenViewModel
@@ -82,7 +85,7 @@ fun AppNavigation(
             val authorizationViewModel: AuthorizationViewModel = koinViewModel()
             AuthorizationScreen(
                 authorizationViewModel,
-                onAuthorizeClick = { navController.navigate(QueenListRoute) },
+                onAuthorizeClick = { navController.navigate(HivesListRoute) },
                 onRegistrationClick = { navController.navigate(RegistrationRoute) }
             )
         }
@@ -113,7 +116,7 @@ fun AppNavigation(
             HivesListScreen(
                 hivesListViewModel,
                 onHiveClick = { navController.navigate(HiveRoute(it)) },
-                onCreateHiveClick = { TODO("HiveCreateRoute") }
+                onCreateHiveClick = { navController.navigate(HiveEditorRoute(null)) }
             )
         }
 
@@ -130,7 +133,7 @@ fun AppNavigation(
                 onNoiseClick = { TODO("NoiseRoute") },
                 onWeightClick = { TODO("WeightRoute") },
                 onHiveListClick = { navController.navigate(HivesListRoute) },
-                onHiveEditClick = { TODO("HiveEditRoute") }
+                onHiveEditClick = { navController.navigate(HiveEditorRoute) }
             )
         }
 
@@ -151,7 +154,7 @@ fun AppNavigation(
             QueenEditorScreen(
                 queenEditorViewModel,
                 queenId = destination.queenId,
-                onBackClick = { navController.navigateUp() }
+                onBackClick = { navController.navigate(QueenListRoute) }
             )
         }
 
@@ -164,6 +167,17 @@ fun AppNavigation(
             )
         }
 
+        animatedComposable<HiveEditorRoute> {
+            val destination = it.toRoute<HiveEditorRoute>()
+            val hiveEditorViewModel: HiveEditorViewModel = koinViewModel()
+            HiveEditorScreen(
+                hiveEditorViewModel,
+                hiveId = destination.hiveId,
+                onBackClick = { navController.navigate(HivesListRoute) },
+                onCreateQueenClick = { navController.navigate(QueenEditorRoute(null)) },
+                onCreateHubClick = { TODO("HiveCreateHubRoute") }
+            )
+        }
     }
 }
 

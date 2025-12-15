@@ -9,4 +9,6 @@ interface QueenLocalRepository {
     suspend fun getQueenById(queenId: String): QueenDomain?
 
     suspend fun getQueens(): List<QueenDomain>
+
+    suspend fun addHiveToQueen(queenId: String, hiveId: String)
 }

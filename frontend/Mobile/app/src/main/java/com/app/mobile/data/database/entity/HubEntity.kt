@@ -8,7 +8,7 @@ import androidx.room.PrimaryKey
 data class HubEntity(
     @PrimaryKey
     val id: String,
-    val hiveId: String,
+    val hiveId: String?,
     val name: String,
     val ipAddress: String,
     val port: Int,

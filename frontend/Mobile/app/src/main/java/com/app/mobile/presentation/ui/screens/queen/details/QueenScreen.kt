@@ -1,6 +1,7 @@
 package com.app.mobile.presentation.ui.screens.queen.details
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -67,7 +68,8 @@ fun QueenScreen(
         is QueenUiState.Content -> {
             QueenContent(
                 queen = state.queen,
-                onEditClick = queenViewModel::onEditQueenClick
+                onEditClick = queenViewModel::onEditQueenClick,
+                onHiveClick = queenViewModel::onHiveClick
             )
         }
     }
@@ -76,7 +78,8 @@ fun QueenScreen(
 @Composable
 private fun QueenContent(
     queen: QueenUiModel,
-    onEditClick: () -> Unit
+    onEditClick: () -> Unit,
+    onHiveClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -103,12 +106,16 @@ private fun QueenContent(
                     Text(
                         text = queen.name,
                         style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                     IconButton(onClick = onEditClick) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Редактировать"
+                            contentDescription = "Редактировать",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }
@@ -116,13 +123,15 @@ private fun QueenContent(
                 if (queen.hive != null) {
                     Text(
                         text = "Улей: ${queen.hive.name}",
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.clickable { onHiveClick() }
                     )
                 } else {
                     Text(
                         text = "Улей не назначен",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
             }
@@ -131,7 +140,8 @@ private fun QueenContent(
         Text(
             text = "График развития",
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 8.dp),
+            color = MaterialTheme.colorScheme.onBackground
         )
 
         // Timeline

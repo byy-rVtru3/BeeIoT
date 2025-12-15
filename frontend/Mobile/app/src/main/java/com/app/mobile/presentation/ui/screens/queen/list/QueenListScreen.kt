@@ -117,13 +117,17 @@ fun QueenCard(queen: QueenPreviewModel, onClick: () -> Unit) {
             ) {
                 Text(
                     text = queen.name,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
                 if (queen.stage.isActionRequired) {
                     Text(
                         text = "!",
                         color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                     )
                 }
             }
@@ -132,7 +136,8 @@ fun QueenCard(queen: QueenPreviewModel, onClick: () -> Unit) {
 
             Text(
                 text = queen.stage.title,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = queen.stage.description,
@@ -155,7 +160,8 @@ fun QueenCard(queen: QueenPreviewModel, onClick: () -> Unit) {
             ) {
                 Text(
                     text = queen.stage.remainingDays,
-                    style = MaterialTheme.typography.labelSmall
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

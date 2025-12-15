@@ -9,7 +9,6 @@ import com.app.mobile.presentation.models.queen.QueenEditorModel
 import com.app.mobile.presentation.models.queen.QueenPreviewModel
 import com.app.mobile.presentation.models.queen.QueenUiModel
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneId
 
 
@@ -40,25 +39,28 @@ fun QueenDomain.toPreviewModel() = QueenPreviewModel(
     stage = this.stages.toCurrentStageUi()
 )
 
-fun QueenEditorDomain.toPresentation(hives: List<HiveDomainPreview>?) = QueenEditorModel(
+fun QueenEditorDomain.toPresentation(hives: List<HiveDomainPreview>) = QueenEditorModel(
     id = this.id,
     name = this.name,
     birthDate = this.birthDate.atStartOfDay(UTC_ZONE).toInstant().toEpochMilli(),
-    hives = hives?.map { it.toHivePreview() } ?: emptyList(),
+    hives = hives.map { it.toHivePreview() },
     hiveId = this.hiveId
 )
 
-fun QueenDomain.toEditor(hives: List<HiveDomainPreview>?) = QueenEditorModel(
+fun QueenDomain.toEditor(hives: List<HiveDomainPreview>) = QueenEditorModel(
     id = this.id,
     hiveId = this.hiveId,
     name = this.name,
     birthDate = this.stages.birthDate.atStartOfDay(UTC_ZONE).toInstant().toEpochMilli(),
-    hives = hives?.map { it.toHivePreview() } ?: emptyList()
+    hives = hives.map { it.toHivePreview() }
 )
 
 fun QueenEditorModel.toDomain() = QueenEditorDomain(
     id = this.id,
     name = this.name,
     hiveId = this.hiveId,
-    birthDate = LocalDate.ofInstant(Instant.ofEpochMilli(this.birthDate), UTC_ZONE)
+    birthDate = Instant
+        .ofEpochMilli(this.birthDate)
+        .atZone(UTC_ZONE)
+        .toLocalDate()
 )

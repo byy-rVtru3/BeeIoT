@@ -23,6 +23,8 @@ import com.app.mobile.di.repository.queenLocalRepositoryModule
 import com.app.mobile.di.screens.queenModule
 import com.app.mobile.di.screens.queenEditorModule
 import com.app.mobile.di.screens.queenListModule
+import com.app.mobile.di.repository.hubLocalRepositoryModule
+import com.app.mobile.di.screens.hiveEditorModule
 
 import com.app.mobile.di.repository.authRepository
 import com.app.mobile.di.repository.repositoryApiModule
@@ -59,8 +61,10 @@ class MobileApp : Application() {
                 accountInfoModule,
                 hivesLocalRepositoryModule,
                 queenLocalRepositoryModule,
+                hubLocalRepositoryModule,
                 hivesListModule,
                 hiveModule,
+                hiveEditorModule,
                 queenModule,
                 queenEditorModule,
                 queenListModule

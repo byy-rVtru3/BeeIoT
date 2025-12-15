@@ -4,6 +4,8 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.app.mobile.data.database.dao.HiveDao
+import com.app.mobile.data.database.dao.HubDao
+import com.app.mobile.data.database.dao.QueenDao
 import com.app.mobile.data.database.dao.UserDao
 import com.app.mobile.data.database.entity.HiveEntity
 import com.app.mobile.data.database.entity.HubEntity
@@ -21,7 +23,7 @@ import com.app.mobile.data.database.entity.WorkEntity
         WorkEntity::class,
         NotificationEntity::class
     ],
-    version = 3,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(AppConverters::class)
@@ -29,4 +31,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
 
     abstract fun hiveDao(): HiveDao
+
+    abstract fun queenDao(): QueenDao
+
+    abstract fun hubDao(): HubDao
+
 }

@@ -11,24 +11,24 @@ data class HiveWithDetails(
         parentColumn = "id",
         entityColumn = "hiveId"
     )
-    val connectedHub: HubEntity,
+    val connectedHub: HubEntity?,
 
     @Relation(
         parentColumn = "id",
         entityColumn = "hiveId"
     )
-    val notifications: List<NotificationEntity>,
+    val notifications: List<NotificationEntity>?,
 
     @Relation(
         parentColumn = "id",
         entityColumn = "hiveId"
     )
-    val works: List<WorkEntity>,
+    val works: List<WorkEntity>?,
 
     @Relation(
         parentColumn = "id",
         entityColumn = "hiveId"
     )
-    val queen: QueenEntity
+    val queen: QueenEntity?
 
 )
