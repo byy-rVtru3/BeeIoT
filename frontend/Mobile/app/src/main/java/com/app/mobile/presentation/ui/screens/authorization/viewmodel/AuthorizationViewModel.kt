@@ -7,9 +7,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.mappers.toDomain
 import com.app.mobile.domain.mappers.toUiModel
-import com.app.mobile.domain.usecase.AuthorizationAccountUseCase
-import com.app.mobile.presentation.models.AuthorizationModelUi
-import com.app.mobile.presentation.models.AuthorizationResultUi
+import com.app.mobile.domain.usecase.account.AuthorizationAccountUseCase
+import com.app.mobile.presentation.models.account.AuthorizationModelUi
+import com.app.mobile.presentation.models.account.AuthorizationResultUi
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 

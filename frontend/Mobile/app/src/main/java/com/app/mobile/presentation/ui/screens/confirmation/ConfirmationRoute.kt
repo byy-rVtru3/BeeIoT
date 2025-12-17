@@ -1,6 +1,6 @@
 package com.app.mobile.presentation.ui.screens.confirmation
 
-import com.app.mobile.presentation.models.TypeConfirmationUi
+import com.app.mobile.presentation.models.account.TypeConfirmationUi
 import kotlinx.serialization.Serializable
 
 @Serializable

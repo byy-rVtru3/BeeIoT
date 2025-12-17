@@ -2,8 +2,8 @@ package com.app.mobile.domain.mappers
 
 import com.app.mobile.domain.models.confirmation.ConfirmationModel
 import com.app.mobile.domain.models.confirmation.ConfirmationRequestResult
-import com.app.mobile.presentation.models.ConfirmationModelUi
-import com.app.mobile.presentation.models.ConfirmationResultUi
+import com.app.mobile.presentation.models.account.ConfirmationModelUi
+import com.app.mobile.presentation.models.account.ConfirmationResultUi
 
 
 fun ConfirmationModelUi.toDomain() = ConfirmationModel(

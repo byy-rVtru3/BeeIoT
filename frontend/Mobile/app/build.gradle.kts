@@ -25,7 +25,7 @@ android {
 
     defaultConfig {
         applicationId = "com.app.mobile"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -117,6 +117,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.runtime.livedata)
+    implementation(libs.androidx.material.icons.extended.android)
 
     // Инструменты для отладки и тестирования (Debug & Test).
     debugImplementation(libs.androidx.ui.tooling)

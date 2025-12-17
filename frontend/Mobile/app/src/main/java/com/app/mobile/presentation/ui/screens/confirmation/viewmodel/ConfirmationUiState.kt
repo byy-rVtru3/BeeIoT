@@ -1,6 +1,6 @@
 package com.app.mobile.presentation.ui.screens.confirmation.viewmodel
 
-import com.app.mobile.presentation.models.ConfirmationModelUi
+import com.app.mobile.presentation.models.account.ConfirmationModelUi
 
 sealed interface ConfirmationUiState {
     data object Loading : ConfirmationUiState

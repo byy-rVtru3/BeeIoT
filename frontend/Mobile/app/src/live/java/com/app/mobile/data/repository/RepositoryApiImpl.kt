@@ -5,6 +5,7 @@ import com.app.mobile.data.api.AuthApiClient
 import com.app.mobile.data.api.PublicApiClient
 import com.app.mobile.data.api.mappers.toApiModel
 import com.app.mobile.data.converter.AuthorizationResponseConverter
+import com.app.mobile.data.converter.CalcQueenCalendarConverter
 import com.app.mobile.data.converter.ConfirmationResponseConverter
 import com.app.mobile.data.converter.DeleteResponseConverter
 import com.app.mobile.data.converter.LogoutResponseConverter
@@ -14,6 +15,8 @@ import com.app.mobile.domain.models.authorization.AuthorizationRequestResult
 import com.app.mobile.domain.models.confirmation.ConfirmationModel
 import com.app.mobile.domain.models.confirmation.ConfirmationRequestResult
 import com.app.mobile.domain.models.delete.DeleteRequestResult
+import com.app.mobile.domain.models.hives.queen.QueenCalendarRequestResult
+import com.app.mobile.domain.models.hives.queen.QueenRequestModel
 import com.app.mobile.domain.models.logout.LogoutRequestResult
 import com.app.mobile.domain.models.registration.RegistrationModel
 import com.app.mobile.domain.models.registration.RegistrationRequestResult
@@ -27,7 +30,8 @@ class RepositoryApiImpl(
     private val confirmationResponseConverter: ConfirmationResponseConverter,
     private val authorizationResponseConverter: AuthorizationResponseConverter,
     private val logoutResponseConverter: LogoutResponseConverter,
-    private val deleteResponseConverter: DeleteResponseConverter
+    private val deleteResponseConverter: DeleteResponseConverter,
+    private val calcQueenCalendarConverter: CalcQueenCalendarConverter
 ) : RepositoryApi {
 
     private suspend fun <T, R> executeRequest(
@@ -45,16 +49,13 @@ class RepositoryApiImpl(
         }
     }
 
-    override suspend fun registrationAccount(
-        registrationModel: RegistrationModel
-    ): RegistrationRequestResult {
-        return executeRequest(
+    override suspend fun registrationAccount(registrationModel: RegistrationModel) =
+        executeRequest(
             apiCall = { publicApiClient.registrationAccount(registrationModel.toApiModel()) },
             converter = { registrationResponseConverter.convert(it) },
             errorResult = RegistrationRequestResult.UnknownError,
             logMessage = "Error during registrationAccount"
         )
-    }
 
     override suspend fun confirmationUserRegistration(confirmationModel: ConfirmationModel) =
         executeRequest(
@@ -95,5 +96,12 @@ class RepositoryApiImpl(
             errorResult = DeleteRequestResult.UnknownError,
             logMessage = "Error during deleteAccount"
         )
+
+    override suspend fun calcQueenCalendar(queenRequestModel: QueenRequestModel) = executeRequest(
+        apiCall = { authApiClient.calcQueen(queenRequestModel.toApiModel()) },
+        converter = { calcQueenCalendarConverter.convert(it) },
+        errorResult = QueenCalendarRequestResult.Error("Unknown error"),
+        logMessage = "Error during calcQueenCalendar"
+    )
 }
 

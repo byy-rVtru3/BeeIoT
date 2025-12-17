@@ -7,10 +7,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.mappers.toDomain
 import com.app.mobile.domain.mappers.toUiModel
-import com.app.mobile.domain.usecase.ConfirmationUserUseCase
-import com.app.mobile.presentation.models.ConfirmationModelUi
-import com.app.mobile.presentation.models.ConfirmationResultUi
-import com.app.mobile.presentation.models.TypeConfirmationUi
+import com.app.mobile.domain.usecase.account.ConfirmationUserUseCase
+import com.app.mobile.presentation.models.account.ConfirmationModelUi
+import com.app.mobile.presentation.models.account.ConfirmationResultUi
+import com.app.mobile.presentation.models.account.TypeConfirmationUi
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

@@ -7,9 +7,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.mappers.toPresentation
 import com.app.mobile.domain.mappers.toUiModel
-import com.app.mobile.domain.usecase.DeleteAccountUseCase
-import com.app.mobile.domain.usecase.GetAccountInfoUseCase
-import com.app.mobile.presentation.models.DeleteResultUi
+import com.app.mobile.domain.usecase.account.DeleteAccountUseCase
+import com.app.mobile.domain.usecase.account.GetAccountInfoUseCase
+import com.app.mobile.presentation.models.account.DeleteResultUi
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 

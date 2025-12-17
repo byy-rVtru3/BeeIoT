@@ -6,11 +6,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.mappers.toUiModel
-import com.app.mobile.domain.usecase.CreateUserAccountUseCase
-import com.app.mobile.domain.usecase.RegistrationAccountUseCase
+import com.app.mobile.domain.usecase.account.CreateUserAccountUseCase
+import com.app.mobile.domain.usecase.account.RegistrationAccountUseCase
 import com.app.mobile.presentation.mappers.toDomain
-import com.app.mobile.presentation.models.RegistrationResultUi
-import com.app.mobile.presentation.models.TypeConfirmationUi
+import com.app.mobile.presentation.models.account.RegistrationResultUi
+import com.app.mobile.presentation.models.account.TypeConfirmationUi
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 

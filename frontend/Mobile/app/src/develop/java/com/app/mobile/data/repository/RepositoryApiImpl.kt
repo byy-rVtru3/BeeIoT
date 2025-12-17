@@ -7,6 +7,8 @@ import com.app.mobile.domain.models.authorization.AuthorizationRequestResult
 import com.app.mobile.domain.models.confirmation.ConfirmationModel
 import com.app.mobile.domain.models.confirmation.ConfirmationRequestResult
 import com.app.mobile.domain.models.delete.DeleteRequestResult
+import com.app.mobile.domain.models.hives.queen.QueenCalendarRequestResult
+import com.app.mobile.domain.models.hives.queen.QueenRequestModel
 import com.app.mobile.domain.models.logout.LogoutRequestResult
 import com.app.mobile.domain.models.registration.RegistrationModel
 import com.app.mobile.domain.models.registration.RegistrationRequestResult
@@ -52,6 +54,12 @@ class RepositoryApiImpl(private val context: Context) : RepositoryApi {
     override suspend fun deleteAccount(): DeleteRequestResult {
         delay(100)
         return DeleteRequestResult.Success
+    }
+
+    override suspend fun calcQueenCalendar(queenRequestModel: QueenRequestModel): QueenCalendarRequestResult {
+        delay(100)
+        val queenLifecycle = MockDataProvider.getQueenLifecycle(context)
+        return QueenCalendarRequestResult.Success(queenLifecycle)
     }
 }
 
