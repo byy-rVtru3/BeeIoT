@@ -3,9 +3,9 @@ package com.app.mobile.data.repository
 import android.content.Context
 import com.app.mobile.data.mock.MockDataProvider
 import com.app.mobile.domain.models.UserDomain
-import com.app.mobile.domain.repository.RepositoryDatabase
+import com.app.mobile.domain.repository.UserLocalRepository
 
-class RepositoryDatabaseImpl(private val context: Context) : RepositoryDatabase {
+class UserMockRepositoryImpl(private val context: Context) : UserLocalRepository {
 
     private val mockUsers = mutableMapOf<Int, UserDomain>()
 

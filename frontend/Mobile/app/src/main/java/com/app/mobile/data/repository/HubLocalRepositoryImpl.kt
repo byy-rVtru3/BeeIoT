@@ -6,7 +6,7 @@ import com.app.mobile.domain.mappers.toEntity
 import com.app.mobile.domain.models.hives.HubDomain
 import com.app.mobile.domain.repository.HubLocalRepository
 
-class HubLocalRepositorImpl(private val hubDao: HubDao) : HubLocalRepository {
+class HubLocalRepositoryImpl(private val hubDao: HubDao) : HubLocalRepository {
     override suspend fun saveHub(hub: HubDomain) = hubDao.saveHub(hub.toEntity())
 
     override suspend fun getHubs() = hubDao.getHubs().map { it.toDomain() }
