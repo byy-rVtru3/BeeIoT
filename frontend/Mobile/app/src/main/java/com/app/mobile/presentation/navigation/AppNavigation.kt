@@ -45,6 +45,12 @@ import com.app.mobile.presentation.ui.screens.registration.viewmodel.Registratio
 import com.app.mobile.presentation.ui.screens.settings.SettingsRoute
 import com.app.mobile.presentation.ui.screens.settings.SettingsScreen
 import com.app.mobile.presentation.ui.screens.settings.viewmodel.SettingsViewModel
+import com.app.mobile.presentation.ui.screens.works.editor.WorkEditorRoute
+import com.app.mobile.presentation.ui.screens.works.editor.WorksEditorScreen
+import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorViewModel
+import com.app.mobile.presentation.ui.screens.works.list.WorksListRoute
+import com.app.mobile.presentation.ui.screens.works.list.WorksListScreen
+import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListViewModel
 import org.koin.androidx.compose.koinViewModel
 
 
@@ -127,7 +133,7 @@ fun AppNavigation(
                 hiveViewModel,
                 destination.hiveId,
                 onQueenClick = { navController.navigate(QueenRoute) },
-                onWorksClick = { TODO("WorksRoute") },
+                onWorksClick = { navController.navigate(WorksListRoute(destination.hiveId)) },
                 onNotificationsClick = { TODO("NotificationsRoute") },
                 onTemperatureClick = { TODO("TemperatureRoute") },
                 onNoiseClick = { TODO("NoiseRoute") },
@@ -154,7 +160,7 @@ fun AppNavigation(
             QueenEditorScreen(
                 queenEditorViewModel,
                 queenId = destination.queenId,
-                onBackClick = { navController.navigate(QueenListRoute) }
+                onBackClick = { navController.popBackStack() }
             )
         }
 
@@ -176,6 +182,43 @@ fun AppNavigation(
                 onBackClick = { navController.navigate(HivesListRoute) },
                 onCreateQueenClick = { navController.navigate(QueenEditorRoute(null)) },
                 onCreateHubClick = { TODO("HiveCreateHubRoute") }
+            )
+        }
+
+        animatedComposable<WorksListRoute> {
+            val destination = it.toRoute<WorksListRoute>()
+            val worksListViewModel: WorksListViewModel = koinViewModel()
+            WorksListScreen(
+                worksListViewModel,
+                hiveId = destination.hiveId,
+                onWorkClick = { workId ->
+                    navController.navigate(
+                        WorkEditorRoute(
+                            workId = workId,
+                            hiveId = destination.hiveId
+                        )
+                    )
+                },
+                onCreateClick = {
+                    navController.navigate(
+                        WorkEditorRoute(
+                            workId = null,
+                            hiveId = destination.hiveId
+                        )
+                    )
+                },
+                onBackClick = { navController.navigate(HiveRoute(destination.hiveId)) }
+            )
+        }
+
+        animatedComposable<WorkEditorRoute> {
+            val destination = it.toRoute<WorkEditorRoute>()
+            val worksEditorViewModel: WorksEditorViewModel = koinViewModel()
+            WorksEditorScreen(
+                worksEditorViewModel,
+                workId = destination.workId,
+                hiveId = destination.hiveId,
+                onBackClick = { navController.navigate(WorksListRoute(destination.hiveId)) }
             )
         }
     }
