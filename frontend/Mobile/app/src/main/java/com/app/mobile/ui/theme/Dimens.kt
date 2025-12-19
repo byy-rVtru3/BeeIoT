@@ -36,6 +36,11 @@ object Dimens {
     // Специфичные для компонентов и контекста
     // ============================================
 
+
+    // --- Размеры статичных элементов ---
+    val IconCircleSize = Size120
+    val IconCircleIconSize = Size60
+
     // --- Ноль отступ ---
     val Null = 0.dp
 
@@ -94,7 +99,7 @@ object Dimens {
 
     // --- Отступы между элементами ---
     val ItemsSpacingSmall = Size4          // Между полями формы
-    
+
     val ItemSpacingSmallMedium = Size8   // Между иконкой и текстом в кнопке
     val ItemsSpacingMedium = Size16        // Между кнопками, элементами списка
     val ItemsSpacingLarge = Size20         // Между секциями
