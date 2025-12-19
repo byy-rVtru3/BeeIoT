@@ -13,14 +13,21 @@
     <string name="authorization_title">Авторизация</string>
     <string name="authorization_button">Войти</string>
     <string name="forgot_password">Забыли пароль?</string>
+    <string name="settings">Настройки</string>
+    <string name="logout_button">Выйти</string>
+    <string name="account_button">Профиль</string>
+    <string name="about_button">О приложении</string>
+    <string name="app_info">BeeIoT — это мобильное приложение, предназначенное для пчеловодов любого уровня. Оно помогает организовать работу на пасеке, отслеживать состояние ульев и пчелиных семей, планировать мероприятия и вести журнал операций без необходимости подключения к интернету.\n\nПриложение создаёт единое цифровое пространство для управления пасекой, собирая и систематизируя данные о каждом улье.</string>
+    <string name="confirm">Подтвердить</string>
+    <string name="enter_code">Код подтверждения</string>
+
+
 
 
     <!-- Ошибки -->
     <string name="error_unknown">Неизвестная ошибка</string>
     <string name="error_dialog_title">Произошла ошибка</string>
     <string name="error_retry_button">Попробуйте еще раз</string>
-    <string name="enter_code">Код подтверждения</string>
-    <string name="confirm">Подтвердить</string>
     <string name="error_empty_field">Поле не должно быть пустым</string>
     <string name="error_invalid_email">Неверный формат email</string>
     <string name="error_password_too_short">Пароль слишком короткий (минимум 8 символов)</string>
@@ -31,7 +38,6 @@
     <string name="error_name_too_short">Имя слишком короткое (минимум 2 символа)</string>
     <string name="error_name_too_long">Имя слишком длинное (максимум 50 символов)</string>
     <string name="password_requirements">Пароль должен быть длиной 8 и более символов, состоящий из букв, цифр и других символов</string>
-    <string name="app_info">BeeIoT — это мобильное приложение, предназначенное для пчеловодов любого уровня. Оно помогает организовать работу на пасеке, отслеживать состояние ульев и пчелиных семей, планировать мероприятия и вести журнал операций без необходимости подключения к интернету.\n\nПриложение создаёт единое цифровое пространство для управления пасекой, собирая и систематизируя данные о каждом улье.</string>
 
     <string name="empty_hives_list_screen">Пока нету ульев, чтобы добавить улей нажмите на кнопку "Добавить улей"</string>
 </resources>

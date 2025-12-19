@@ -85,7 +85,7 @@ fun AppNavigation(
             val authorizationViewModel: AuthorizationViewModel = koinViewModel()
             AuthorizationScreen(
                 authorizationViewModel,
-                onAuthorizeClick = { navController.navigate(HivesListRoute) },
+                onAuthorizeClick = { navController.navigate(SettingsRoute) },
                 onRegistrationClick = { navController.navigate(RegistrationRoute) }
             )
         }
