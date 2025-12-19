@@ -24,7 +24,8 @@ import com.app.mobile.presentation.ui.screens.settings.viewmodel.SettingsViewMod
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
 import androidx.compose.material3.MaterialTheme
-import com.app.mobile.presentation.ui.components.IconCircle
+import androidx.compose.material3.Surface
+import com.app.mobile.presentation.ui.components.LogoCircle
 
 @Composable
 fun SettingsScreen(
@@ -76,43 +77,45 @@ fun SettingsScreen(
 
 @Composable
 private fun SettingsContent(actions: SettingsActions) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(Dimens.ScreenContentPadding),
-        horizontalAlignment = Alignment.CenterHorizontally,
-
-        ) {
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
-            modifier = Modifier.padding(top = Dimens.TitleTopPadding),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingSmallMedium)
-        ) {
-            IconCircle()
-            Title(
-                text = stringResource(R.string.settings),
-                modifier = Modifier.padding(
-
-                    bottom = Dimens.SettingsTitleBottomPadding
-                ),
-                style = MaterialTheme.typography.headlineSmall
-            )
-        }
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingMedium),
             modifier = Modifier
                 .fillMaxSize()
+                .padding(Dimens.ScreenContentPadding),
+            horizontalAlignment = Alignment.CenterHorizontally,
 
-        ) {
-            AccountInfoButton(actions.onAccountInfoClick)
+            ) {
+            Column(
+                modifier = Modifier.padding(top = Dimens.TitleTopPadding),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingSmallMedium)
+            ) {
+                LogoCircle()
+                Title(
+                    text = stringResource(R.string.settings),
+                    modifier = Modifier.padding(
 
-            AboutAppButton(actions.onAboutAppClick)
+                        bottom = Dimens.SettingsTitleBottomPadding
+                    ),
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
 
-            LogoutButton(actions.onLogoutClick)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingMedium),
+                modifier = Modifier
+                    .fillMaxSize()
+
+            ) {
+                AccountInfoButton(actions.onAccountInfoClick)
+
+                AboutAppButton(actions.onAboutAppClick)
+
+                LogoutButton(actions.onLogoutClick)
+            }
+
+
         }
-
-
     }
 }
 

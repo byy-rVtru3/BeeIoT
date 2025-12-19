@@ -38,8 +38,8 @@ object Dimens {
 
 
     // --- Размеры статичных элементов ---
-    val IconCircleSize = Size120
-    val IconCircleIconSize = Size60
+    val LogoCircleSize = Size120
+    val LogoCircleLogoSize = LogoCircleSize.minus(12.dp)
 
     // --- Границы и разделители ---
     val BorderWidthThin = Size2.minus(1.dp)

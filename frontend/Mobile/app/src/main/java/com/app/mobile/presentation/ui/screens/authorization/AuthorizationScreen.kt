@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -107,61 +109,62 @@ private fun AuthorizationContent(
     formState: AuthorizationFormState,
     actions: AuthorizationActions
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(
-                horizontal = Dimens.OpenScreenPaddingHorizontal,
-                vertical = Dimens.OpenScreenPaddingVertical
-            ),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Title(
-            text = stringResource(R.string.authorization_title),
-            modifier = Modifier.padding(top = Dimens.TitleTopPadding)
-        )
-
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    horizontal = Dimens.OpenScreenPaddingHorizontal,
+                    vertical = Dimens.OpenScreenPaddingVertical
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingSmall)
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            AuthorizationEmailTextField(
-                email = formState.email,
-                emailError = formState.emailError,
-                onEmailChange = actions.onEmailChange
+            Title(
+                text = stringResource(R.string.authorization_title),
+                modifier = Modifier.padding(top = Dimens.TitleTopPadding)
             )
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.End
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingSmall)
             ) {
-                AuthorizationPasswordTextField(
-                    password = formState.password,
-                    passwordError = formState.passwordError,
-                    onPasswordChange = actions.onPasswordChange
+                AuthorizationEmailTextField(
+                    email = formState.email,
+                    emailError = formState.emailError,
+                    onEmailChange = actions.onEmailChange
                 )
 
-                ForgotPasswordButton(onClick = { /* TODO */ })
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    AuthorizationPasswordTextField(
+                        password = formState.password,
+                        passwordError = formState.passwordError,
+                        onPasswordChange = actions.onPasswordChange
+                    )
+
+                    ForgotPasswordButton(onClick = { /* TODO */ })
+                }
             }
-        }
 
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingMedium),
-            modifier = Modifier
-                .padding(
-                    horizontal = Dimens.ButtonHorizontalPadding
-                )
-                .padding(bottom = Dimens.ButtonTwiceVerticalPadding)
-        ) {
-            AuthorizationButton(onClick = actions.onAuthorizeClick)
-            RegistrationButton(onClick = actions.onRegistrationClick)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingMedium),
+                modifier = Modifier
+                    .padding(
+                        horizontal = Dimens.ButtonHorizontalPadding
+                    )
+                    .padding(bottom = Dimens.ButtonTwiceVerticalPadding)
+            ) {
+                AuthorizationButton(onClick = actions.onAuthorizeClick)
+                RegistrationButton(onClick = actions.onRegistrationClick)
+            }
         }
     }
 }
-
 @Composable
 fun AuthorizationEmailTextField(
     email: String,

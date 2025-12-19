@@ -1,6 +1,12 @@
 package com.app.mobile.presentation.navigation
 
 import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavBackStackEntry
@@ -182,13 +188,22 @@ fun AppNavigation(
 }
 
 inline fun <reified T : Any> NavGraphBuilder.animatedComposable(
+    noinline enterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition?)? = {
+        fadeIn(animationSpec = tween(300))
+    },
+    noinline exitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition?)? = {
+        fadeOut(animationSpec = tween(300))
+    },
+    noinline popEnterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition?)? = enterTransition,
+    noinline popExitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition?)? = exitTransition,
+
     noinline block: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
 ) {
     composable<T>(
-        enterTransition = ENTER_TRANSITION,
-        exitTransition = EXIT_TRANSITION,
-        popEnterTransition = POP_ENTER_TRANSITION,
-        popExitTransition = POP_EXIT_TRANSITION,
+        enterTransition = enterTransition,
+        exitTransition = exitTransition,
+        popEnterTransition = popEnterTransition,
+        popExitTransition = popExitTransition,
         content = block
     )
 }

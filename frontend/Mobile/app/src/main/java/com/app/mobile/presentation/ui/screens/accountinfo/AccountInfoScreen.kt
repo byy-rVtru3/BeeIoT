@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -90,22 +91,24 @@ fun AccountInfoScreen(accountInfoViewModel: AccountInfoViewModel, onDeleteClick:
 
 @Composable
 private fun AccountInfoContent(userInfo: UserInfoModel, actions: AccountInfoActions) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(Dimens.ScreenContentPadding),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Title("Информация о пользователе")
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(Dimens.ScreenContentPadding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Title("Информация о пользователе")
 
-        NameText(userInfo.name, actions.onNameClick)
+            NameText(userInfo.name, actions.onNameClick)
 
-        EmailText(userInfo.email, actions.onEmailClick)
+            EmailText(userInfo.email, actions.onEmailClick)
 
-        PasswordText(userInfo.password, actions.onPasswordClick)
+            PasswordText(userInfo.password, actions.onPasswordClick)
 
-        DeleteButton(actions.onDeleteClick)
+            DeleteButton(actions.onDeleteClick)
+        }
     }
 }
 
