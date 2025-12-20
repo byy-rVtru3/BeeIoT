@@ -65,12 +65,22 @@ object Dimens {
     // --- Закругления углов ---
     val BorderRadiusMedium = Size16
 
+    // --- Top Bar ---
+    val TopBarHeight = Size64
+    val TopbarIconSize = Size40
+    val TopBarHorizontalPadding = Size8
+
+    val SelectTopBarLineWidth = Size40
+    val SelectTopBarLineHeight = BorderWidthNormal
+
     // --- Отступы для текстовых полей ---
     val TextFieldPaddingHorizontal = Size4
     val TextFieldPaddingVertical = Size8
     val TextFieldIconSize = Size24
     val TextFieldIconEndPadding = Size4
     val TextFieldErrorTopPadding = Size4
+    val ClickableProfileFieldTextPaddingVertical = Size2
+    val ClickableProfileFieldLabelPadding = Size4
 
     // --- Отступы для OTP поля ---
     val OtpCellSpacing = Size12
@@ -87,6 +97,8 @@ object Dimens {
     val OpenScreenPaddingHorizontal = Size36  // Для открытых экранов (авторизация, регистрация, подтверждение)
     val OpenScreenPaddingVertical = Size36    // Для открытых экранов (авторизация, регистрация, подтверждение)
     val ScreenContentPadding = Size16         // Для обычных экранов (настройки, информация и т.д.)
+
+    val AccountInfoTextFieldsHorizontalPadding = Size12
 
     // --- Отступы для заголовков ---
     val TitleTopPadding = Size44

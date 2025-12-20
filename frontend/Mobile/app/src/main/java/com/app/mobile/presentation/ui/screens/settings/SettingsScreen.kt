@@ -134,7 +134,7 @@ private fun SettingsContent(actions: SettingsActions) {
 private fun AccountInfoButton(onAccountInfoClick: () -> Unit) {
     SettingsButton(
         onClick = onAccountInfoClick,
-        text = stringResource(R.string.account_button),
+        text = stringResource(R.string.account),
 
 
         )
@@ -144,7 +144,7 @@ private fun AccountInfoButton(onAccountInfoClick: () -> Unit) {
 private fun AboutAppButton(onAboutAppClick: () -> Unit) {
     SettingsButton(
         onClick = onAboutAppClick,
-        text = stringResource(R.string.about_button),
+        text = stringResource(R.string.about),
 
         )
 }
@@ -153,7 +153,7 @@ private fun AboutAppButton(onAboutAppClick: () -> Unit) {
 private fun LogoutButton(onLogoutClick: () -> Unit) {
     SettingsButton(
         onClick = onLogoutClick,
-        text = stringResource(R.string.logout_button),
+        text = stringResource(R.string.logout),
         exit = true,
     )
 }
