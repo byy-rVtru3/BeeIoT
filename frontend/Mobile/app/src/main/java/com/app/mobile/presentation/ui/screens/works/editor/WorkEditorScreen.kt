@@ -19,7 +19,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -34,7 +33,6 @@ import com.app.mobile.presentation.ui.screens.works.editor.models.WorksEditorAct
 import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorNavigationEvent
 import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorUiState
 import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorViewModel
-import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListNavigationEvent
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
