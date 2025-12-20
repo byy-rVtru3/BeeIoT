@@ -55,24 +55,6 @@ object Dimens {
     val LogoCircleSize = Size120
     val LogoCircleLogoSize = LogoCircleSize.minus(12.dp)
 
-    // --- Ноль отступ ---
-    val Null = 0.dp
-
-    // --- Bottom App Bar ---
-    val BottomAppBarTextPadding = Size4
-    val BottomAppBarVerticalButtonPadding = Null
-    val BottomAppBarHorizontalButtonPadding = Size12
-    val BottomAppBarIconSize = Size44
-    val BottomAppBarHeight = Size80
-    var BottomAppBarHorizontalPadding = Size8
-
-    // --- Shadow ---
-    val ShadowBlur = Size16
-
-    // --- Размеры статичных элементов ---
-
-    val LogoCircleSize = Size120
-    val LogoCircleLogoSize = LogoCircleSize.minus(12.dp)
 
     // --- Границы и разделители ---
     val BorderWidthThin = Size2.minus(1.dp)
