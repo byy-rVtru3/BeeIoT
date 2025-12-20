@@ -34,7 +34,11 @@ private val LightColorScheme = lightColorScheme(
     onBackground = Color.Black,
     surface = Color.White,
     onSurface = Color.Black,
-    outline = Yellow
+    outline = Yellow,
+    primaryContainer = Yellow,
+    onPrimaryContainer = Color.Black,
+    surfaceVariant = SpecialGray,
+    onSurfaceVariant = Color.Black,
 
     /* Other default colors to override
     background = Color(0xFFFFFBFE),

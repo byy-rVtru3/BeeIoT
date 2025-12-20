@@ -27,6 +27,12 @@
     <string name="logo_description">Логотип пчела</string>
     <string name="hint_account_info">Нажмите, чтобы изменить данные</string>
     <string name="back">Вернуться назад</string>
+    <string name="archive">Архив</string>
+    <string name="active_hives">Мои ульи</string>
+    <string name="add_hive">Добавить улей</string>
+    <string name="hive_name">Название улья</string>
+    <string name="add">Добавить</string>
+    <string name="cancel">Отмена</string>
 
 
 

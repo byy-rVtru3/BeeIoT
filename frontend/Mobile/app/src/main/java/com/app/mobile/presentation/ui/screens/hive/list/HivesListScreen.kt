@@ -27,6 +27,7 @@ import com.app.mobile.R
 import com.app.mobile.presentation.models.hive.HivePreview
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.SelectorTopBar
 import com.app.mobile.presentation.ui.screens.hive.list.models.HivesListActions
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListNavigationEvent
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListUiState
@@ -41,6 +42,8 @@ fun HivesListScreen(
     onCreateHiveClick: () -> Unit
 ) {
     val hivesListUiState by hivesListViewModel.hivesListUiState.collectAsStateWithLifecycle()
+
+    val selectedTab by hivesListViewModel.selectedTab.collectAsStateWithLifecycle()
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -86,7 +89,11 @@ fun HivesListScreen(
                 onHiveClick = hivesListViewModel::onHiveClick,
                 onCreateHiveClick = hivesListViewModel::onCreateHiveClick
             )
-            HivesListContent(state.hives, actions)
+            HivesListContent(
+                state.hives, actions,
+                selectedTab = selectedTab,
+                onTabSelected = hivesListViewModel::onTabSelected
+            )
         }
     }
 
@@ -94,43 +101,70 @@ fun HivesListScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HivesListContent(hives: List<HivePreview>, actions: HivesListActions) {
-    Surface(modifier = Modifier.fillMaxSize().padding(bottom = Dimens.BottomAppBarHeight), color = MaterialTheme.colorScheme.background) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = "Список ульев",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background,
-                        titleContentColor = MaterialTheme.colorScheme.onBackground
-                    )
-                )
-            },
-            floatingActionButton = {
+private fun HivesListContent(
+    hives: List<HivePreview>, actions: HivesListActions, selectedTab: Int,
+    onTabSelected: (Int) -> Unit
+) {
+    val tabs = listOf(stringResource(R.string.active_hives),stringResource(R.string.archive))
+
+    Scaffold(
+        topBar = {
+            SelectorTopBar(
+                tabs = tabs,
+                selectedTabIndex = selectedTab,
+                onTabSelected = onTabSelected
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        floatingActionButton = {
+            if (selectedTab == 0) {
                 FloatingActionButton(
                     onClick = actions.onCreateHiveClick,
+                    modifier = Modifier.padding(bottom = Dimens.BottomAppBarHeight),
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ) {
-                    Icon(Icons.Filled.Add, contentDescription = "Добавить улей")
+                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_hive))
                 }
             }
-        ) { innerPadding ->
-            HivesList(
-                hives = hives,
-                actions = actions,
-                modifier = Modifier.padding(innerPadding)
-            )
+        }
+    ) { innerPadding ->
+        Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            when (selectedTab) {
+                0 -> {
+                    // Вкладка 1: Список ульев
+                    if (hives.isNotEmpty()) {
+                        HivesList(
+                            hives = hives,
+                            actions = actions
+                        )
+                    } else {
+                        // Если список пуст, показываем заглушку внутри таба
+                        EmptyStub(text = stringResource(R.string.empty_hives_list_screen))
+                    }
+                }
+                1 -> {
+                    // Вкладка 2: ЗАГЛУШКА ДЛЯ АРХИВА
+                    EmptyStub(text = "В архиве пока пусто")
+                }
+            }
         }
     }
 }
 
+@Composable
+private fun EmptyStub(text: String) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+        )
+    }
+}
 @Composable
 private fun HivesList(
     hives: List<HivePreview>,
@@ -140,9 +174,9 @@ private fun HivesList(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = Dimens.ScreenContentPadding),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(vertical = 16.dp)
+        contentPadding = PaddingValues(vertical = Dimens.ScreenContentPadding)
     ) {
         items(hives) { hive ->
             HiveItem(hive, actions.onHiveClick)

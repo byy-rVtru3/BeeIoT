@@ -16,6 +16,9 @@ class HivesListViewModel(
     private val getHivesPreviewUseCase: GetHivesPreviewUseCase
 ) : ViewModel() {
 
+    private val _selectedTab = MutableStateFlow(0)
+    val selectedTab = _selectedTab.asStateFlow()
+
     private val _hivesListUiState = MutableStateFlow<HivesListUiState>(HivesListUiState.Loading)
     val hivesListUiState = _hivesListUiState.asStateFlow()
 
@@ -26,6 +29,15 @@ class HivesListViewModel(
     val handler = CoroutineExceptionHandler { _, exception ->
         _hivesListUiState.value = HivesListUiState.Error(exception.message ?: "Unknown error")
         Log.e("HivesListViewModel", exception.message.toString())
+    }
+
+    // Метод для переключения вкладки
+    fun onTabSelected(index: Int) {
+        _selectedTab.value = index
+
+        // В будущем, когда будет реальный бэкенд для архива,
+        // здесь можно добавить логику:
+        // if (index == 0) loadActiveHives() else loadArchivedHives()
     }
 
     fun loadHives() {

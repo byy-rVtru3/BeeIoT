@@ -3,7 +3,7 @@ package com.app.mobile.ui.theme
 import androidx.compose.ui.graphics.Color
 
 val Yellow = Color(0xFFFCBB2A)
-
+val SpecialGray = Color(0xFFF4F4F4)
 
 val DeveloperPanelPrimary = Color(0xFF673AB7)
 val ValidationEnabled = Color(0xFF2196F3)

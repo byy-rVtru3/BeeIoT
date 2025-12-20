@@ -28,6 +28,7 @@ object Dimens {
     val Size72 = 72.dp
     val Size76 = 76.dp
     val Size80 = 80.dp
+    val Size100 = 100.dp
 
     val Size120 = 120.dp
 
@@ -70,8 +71,11 @@ object Dimens {
     val TopbarIconSize = Size40
     val TopBarHorizontalPadding = Size8
 
-    val SelectTopBarLineWidth = Size40
+    val SelectTopBarLineWidth = Size100
     val SelectTopBarLineHeight = BorderWidthNormal
+    val SelectTopBarHorizontalPadding = Size16
+    val SelectTopBarVerticalPadding = Size8
+    val SelectTopBarPaddingBetweenLine = Size4
 
     // --- Отступы для текстовых полей ---
     val TextFieldPaddingHorizontal = Size4
