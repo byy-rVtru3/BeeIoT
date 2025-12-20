@@ -27,45 +27,62 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.presentation.models.hive.WorkUi
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListViewModel
 import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListNavigationEvent
 import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListUiState
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun WorksListScreen(
     worksListViewModel: WorksListViewModel,
-    hiveId: String,
-    onWorkClick: (String) -> Unit,
-    onCreateClick: (String) -> Unit,
+    onWorkClick: (workId: String, hiveId: String) -> Unit,
+    onCreateClick: (hiveId: String) -> Unit,
     onBackClick: () -> Unit
 ) {
-    val worksUiState by worksListViewModel.worksListUiState.observeAsState(WorksListUiState.Loading)
+    val worksUiState by worksListViewModel.worksListUiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(key1 = Unit) {
-        worksListViewModel.loadWorks(hiveId)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                worksListViewModel.loadWorks()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
-    val navigationEvent by worksListViewModel.navigationEvent.observeAsState()
+    LaunchedEffect(worksListViewModel.navigationEvent) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            worksListViewModel.navigationEvent.collectLatest { event ->
+                when (event) {
+                    is WorksListNavigationEvent.NavigateToWorkEditor -> onWorkClick(
+                        event.workId,
+                        event.hiveId
+                    )
 
-    LaunchedEffect(navigationEvent) {
-        navigationEvent?.let { event ->
-            when (event) {
-                is WorksListNavigationEvent.NavigateToWorkEditor -> onWorkClick(event.workId)
+                    is WorksListNavigationEvent.NavigateToWorkCreate -> onCreateClick(event.hiveId)
 
-                is WorksListNavigationEvent.NavigateToWorkCreate -> onCreateClick(event.hiveId)
-
-                is WorksListNavigationEvent.NavigateBack -> onBackClick()
+                    is WorksListNavigationEvent.NavigateBack -> onBackClick()
+                }
             }
         }
     }
@@ -76,8 +93,8 @@ fun WorksListScreen(
         is WorksListUiState.Content -> WorksListContent(
             state.works,
             worksListViewModel::onWorkClick,
-            { worksListViewModel.onCreateClick(hiveId) },
-            onBackClick
+            worksListViewModel::onCreateClick,
+            onNavigateBack = onBackClick
         )
     }
 }
@@ -129,7 +146,10 @@ fun WorksListContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(vertical = 16.dp)
         ) {
-            items(works) { work ->
+            items(
+                works,
+                key = { work -> work.id }
+            ) { work ->
                 WorkItem(work, onWorkClick)
             }
         }

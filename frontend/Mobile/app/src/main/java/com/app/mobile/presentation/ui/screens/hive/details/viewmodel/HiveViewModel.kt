@@ -1,31 +1,41 @@
 package com.app.mobile.presentation.ui.screens.hive.details.viewmodel
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.hives.hive.GetHiveUseCase
 import com.app.mobile.presentation.models.hive.QueenUi
+import com.app.mobile.presentation.ui.screens.hive.details.HiveRoute
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class HiveViewModel(
+    savedStateHandle: SavedStateHandle,
     private val getHiveUseCase: GetHiveUseCase
 ) : ViewModel() {
-    private val _hiveUiState = MutableLiveData<HiveUiState>()
-    val hiveUiState: LiveData<HiveUiState> = _hiveUiState
+    private val route = savedStateHandle.toRoute<HiveRoute>()
 
-    private val _navigationEvent = MutableLiveData<HiveNavigationEvent?>()
-    val navigationEvent: LiveData<HiveNavigationEvent?> = _navigationEvent
+    private val hiveId = route.hiveId
+
+    private val _hiveUiState = MutableStateFlow<HiveUiState>(HiveUiState.Loading)
+    val hiveUiState = _hiveUiState.asStateFlow()
+
+    private val _navigationEvent = Channel<HiveNavigationEvent>()
+    val navigationEvent = _navigationEvent.receiveAsFlow()
 
     val handler = CoroutineExceptionHandler { _, exception ->
         _hiveUiState.value = HiveUiState.Error(exception.message ?: "Unknown error")
         Log.e("HiveViewModel", "Error loading hive", exception)
     }
 
-    fun loadHive(hiveId: String) {
+    fun loadHive() {
         _hiveUiState.value = HiveUiState.Loading
         viewModelScope.launch(handler) {
             _hiveUiState.value = getHiveUseCase(hiveId)
@@ -51,7 +61,9 @@ class HiveViewModel(
         if (currentUiState is HiveUiState.Content) {
             val queen = currentUiState.hive.queen
             if (queen is QueenUi.Present) {
-                _navigationEvent.value = HiveNavigationEvent.NavigateToQueenByHive(queen.queen.id)
+                viewModelScope.launch(handler) {
+                    _navigationEvent.send(HiveNavigationEvent.NavigateToQueenByHive(queen.queen.id))
+                }
             }
         }
     }
@@ -60,19 +72,19 @@ class HiveViewModel(
         navigateWithId(HiveNavigationEvent::NavigateToWorkByHive)
 
     fun onHiveListClick() {
-        _navigationEvent.value = HiveNavigationEvent.NavigateToHiveList
+        viewModelScope.launch(handler) {
+            _navigationEvent.send(HiveNavigationEvent.NavigateToHiveList)
+        }
     }
 
     fun onHiveEditClick() =
         navigateWithId(HiveNavigationEvent::NavigateToHiveEdit)
 
-    fun onNavigationHandled() {
-        _navigationEvent.value = null
-    }
-
-    private inline fun navigateWithId(navEvent: (String) -> HiveNavigationEvent) {
-        (_hiveUiState.value as? HiveUiState.Content)?.let { content ->
-            _navigationEvent.value = navEvent(content.hive.id)
+    private inline fun navigateWithId(crossinline navEvent: (String) -> HiveNavigationEvent) {
+        (_hiveUiState.value as? HiveUiState.Content)?.let {
+            viewModelScope.launch(handler) {
+                _navigationEvent.send(navEvent(hiveId))
+            }
         }
     }
 }

@@ -1,10 +1,10 @@
 package com.app.mobile.presentation.ui.screens.hive.editor.viewmodel
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.app.mobile.domain.mappers.toDomain
 import com.app.mobile.domain.mappers.toEditor
 import com.app.mobile.domain.mappers.toPresentation
@@ -15,12 +15,18 @@ import com.app.mobile.domain.usecase.hives.hub.AddHiveToHubUseCase
 import com.app.mobile.domain.usecase.hives.hub.GetHubsUseCase
 import com.app.mobile.domain.usecase.hives.queen.AddHiveToQueenUseCase
 import com.app.mobile.domain.usecase.hives.queen.GetQueensUseCase
+import com.app.mobile.presentation.ui.screens.hive.editor.HiveEditorRoute
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class HiveEditorViewModel(
+    savedStateHandle: SavedStateHandle,
     private val getHiveUseCase: GetHiveUseCase,
     private val getQueensUseCase: GetQueensUseCase,
     private val getHubsUseCase: GetHubsUseCase,
@@ -30,18 +36,21 @@ class HiveEditorViewModel(
     private val addHiveToHubUseCase: AddHiveToHubUseCase
 ) : ViewModel() {
 
-    private val _hiveEditorUiState = MutableLiveData<HiveEditorUiState>(HiveEditorUiState.Loading)
-    val hiveEditorUiState: LiveData<HiveEditorUiState> = _hiveEditorUiState
+    private val route = savedStateHandle.toRoute<HiveEditorRoute>()
+    private val hiveId = route.hiveId
 
-    private val _navigationEvent = MutableLiveData<HiveEditorNavigationEvent?>()
-    val navigationEvent: LiveData<HiveEditorNavigationEvent?> = _navigationEvent
+    private val _hiveEditorUiState = MutableStateFlow<HiveEditorUiState>(HiveEditorUiState.Loading)
+    val hiveEditorUiState = _hiveEditorUiState.asStateFlow()
+
+    private val _navigationEvent = Channel<HiveEditorNavigationEvent>()
+    val navigationEvent = _navigationEvent.receiveAsFlow()
 
     val handler = CoroutineExceptionHandler { _, exception ->
         _hiveEditorUiState.value = HiveEditorUiState.Error(exception.message ?: "Unknown error")
         Log.e("HivesEditorViewModel", exception.message.toString())
     }
 
-    fun loadHive(hiveId: String?) {
+    fun loadHive() {
         _hiveEditorUiState.value = HiveEditorUiState.Loading
         viewModelScope.launch(handler) {
             coroutineScope {
@@ -99,16 +108,22 @@ class HiveEditorViewModel(
     fun onCreateQueenClick() {
         val currentState = _hiveEditorUiState.value
         if (currentState is HiveEditorUiState.Content) {
-            _navigationEvent.value =
-                HiveEditorNavigationEvent.NavigateToCreateQueen
+            viewModelScope.launch(handler) {
+                _navigationEvent.send(
+                    HiveEditorNavigationEvent.NavigateToCreateQueen
+                )
+            }
         }
     }
 
     fun onCreateHubClick() {
         val currentState = _hiveEditorUiState.value
         if (currentState is HiveEditorUiState.Content) {
-            _navigationEvent.value =
-                HiveEditorNavigationEvent.NavigateToCreateHub
+            viewModelScope.launch(handler) {
+                _navigationEvent.send(
+                    HiveEditorNavigationEvent.NavigateToCreateHub
+                )
+            }
         }
     }
 
@@ -118,12 +133,8 @@ class HiveEditorViewModel(
             viewModelScope.launch(handler) {
                 _hiveEditorUiState.value = HiveEditorUiState.Loading
                 saveHiveUseCase(currentState.hiveEditorModel.toDomain())
-                _navigationEvent.value = HiveEditorNavigationEvent.NavigateBack
+                _navigationEvent.send(HiveEditorNavigationEvent.NavigateBack)
             }
         }
-    }
-
-    fun onNavigationHandled() {
-        _navigationEvent.value = null
     }
 }

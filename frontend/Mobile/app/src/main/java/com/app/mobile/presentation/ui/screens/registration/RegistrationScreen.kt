@@ -7,16 +7,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.R
 import com.app.mobile.presentation.models.account.TypeConfirmationUi
-import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationNavigationEvent
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.PasswordTextField
@@ -25,33 +29,42 @@ import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.components.ValidatedTextField
 import com.app.mobile.presentation.ui.screens.registration.models.RegistrationActions
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationFormState
+import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationNavigationEvent
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationUiState
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationViewModel
 import com.app.mobile.presentation.validators.ValidationError
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun RegistrationScreen(
     registrationViewModel: RegistrationViewModel,
     onRegisterClick: (String, TypeConfirmationUi) -> Unit
 ) {
-    val registrationUiState by registrationViewModel.registrationUiState.observeAsState(
-        RegistrationUiState.Loading
-    )
+    val registrationUiState by registrationViewModel.registrationUiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(key1 = Unit) {
-        registrationViewModel.createUserAccount()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                registrationViewModel.createUserAccount()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
-    val navigationEvent by registrationViewModel.navigationEvent.observeAsState()
-
-    LaunchedEffect(navigationEvent) {
-        navigationEvent?.let { event ->
-            when (event) {
-                is RegistrationNavigationEvent.NavigateToConfirmation -> {
-                    onRegisterClick(event.email, event.type)
-                    registrationViewModel.onNavigationHandled()
+    LaunchedEffect(registrationViewModel.navigationEvent) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            registrationViewModel.navigationEvent.collectLatest { event ->
+                when (event) {
+                    is RegistrationNavigationEvent.NavigateToConfirmation -> onRegisterClick(
+                        event.email,
+                        event.type
+                    )
                 }
             }
         }
