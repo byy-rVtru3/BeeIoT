@@ -13,6 +13,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -102,107 +103,109 @@ private fun QueenEditorContent(
     onHiveAdd: (String) -> Unit,
     onSaveClick: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        CustomTextField(
-            value = queenEditorModel.name,
-            onValueChange = onNameChange,
-            placeholder = "Имя матки"
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Date Picker Logic
-        var showDatePicker by remember { mutableStateOf(false) }
-        val datePickerState =
-            rememberDatePickerState(initialSelectedDateMillis = queenEditorModel.birthDate)
-
-        val dateFormatter = remember { SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()) }
-
-        Box {
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
             CustomTextField(
-                value = dateFormatter.format(Date(queenEditorModel.birthDate)),
-                onValueChange = {},
-                placeholder = "Дата рождения"
+                value = queenEditorModel.name,
+                onValueChange = onNameChange,
+                placeholder = "Имя матки"
             )
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .clickable { showDatePicker = true }
-            )
-        }
 
-        if (showDatePicker) {
-            DatePickerDialog(
-                onDismissRequest = { showDatePicker = false },
-                confirmButton = {
-                    TextButton(onClick = {
-                        datePickerState.selectedDateMillis?.let { onDateChange(it) }
-                        showDatePicker = false
-                    }) {
-                        Text("OK", color = MaterialTheme.colorScheme.primary)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDatePicker = false }) {
-                        Text("Cancel", color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-            ) {
-                DatePicker(state = datePickerState)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Date Picker Logic
+            var showDatePicker by remember { mutableStateOf(false) }
+            val datePickerState =
+                rememberDatePickerState(initialSelectedDateMillis = queenEditorModel.birthDate)
+
+            val dateFormatter = remember { SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()) }
+
+            Box {
+                CustomTextField(
+                    value = dateFormatter.format(Date(queenEditorModel.birthDate)),
+                    onValueChange = {},
+                    placeholder = "Дата рождения"
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { showDatePicker = true }
+                )
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Hive Selection
-        var expanded by remember { mutableStateOf(false) }
-        val selectedHiveName =
-            queenEditorModel.hives.find { it.id == queenEditorModel.hiveId }?.name
-                ?: "Выберите улей"
-
-        Box {
-            CustomTextField(
-                value = selectedHiveName,
-                onValueChange = {},
-                placeholder = "Улей"
-            )
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .clickable { expanded = true }
-            )
-
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                queenEditorModel.hives.forEach { hive ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = hive.name,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        },
-                        onClick = {
-                            onHiveAdd(hive.id)
-                            expanded = false
+            if (showDatePicker) {
+                DatePickerDialog(
+                    onDismissRequest = { showDatePicker = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            datePickerState.selectedDateMillis?.let { onDateChange(it) }
+                            showDatePicker = false
+                        }) {
+                            Text("OK", color = MaterialTheme.colorScheme.primary)
                         }
-                    )
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDatePicker = false }) {
+                            Text("Cancel", color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                ) {
+                    DatePicker(state = datePickerState)
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Hive Selection
+            var expanded by remember { mutableStateOf(false) }
+            val selectedHiveName =
+                queenEditorModel.hives.find { it.id == queenEditorModel.hiveId }?.name
+                    ?: "Выберите улей"
+
+            Box {
+                CustomTextField(
+                    value = selectedHiveName,
+                    onValueChange = {},
+                    placeholder = "Улей"
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { expanded = true }
+                )
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    queenEditorModel.hives.forEach { hive ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = hive.name,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            },
+                            onClick = {
+                                onHiveAdd(hive.id)
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            PrimaryButton(
+                text = "Сохранить",
+                onClick = onSaveClick
+            )
         }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        PrimaryButton(
-            text = "Сохранить",
-            onClick = onSaveClick
-        )
     }
 }

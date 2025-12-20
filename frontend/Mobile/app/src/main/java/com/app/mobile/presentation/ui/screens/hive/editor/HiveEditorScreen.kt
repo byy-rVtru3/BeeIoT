@@ -16,6 +16,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -95,42 +96,44 @@ fun HiveEditorScreen(
 
 @Composable
 fun HiveEditorContent(hiveEditorModel: HiveEditorModel, actions: HiveEditorActions) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
-    ) {
-        CustomTextField(
-            value = hiveEditorModel.name,
-            onValueChange = actions.onNameChange,
-            placeholder = "Hive Name"
-        )
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            CustomTextField(
+                value = hiveEditorModel.name,
+                onValueChange = actions.onNameChange,
+                placeholder = "Hive Name"
+            )
 
-        SelectionSection(
-            title = "Hub",
-            items = hiveEditorModel.hubs.map { it.id to it.name },
-            selectedId = hiveEditorModel.connectedHubId,
-            onItemSelected = actions.onAddHubClick,
-            onCreateClick = actions.onCreateHubClick,
-            createLabel = "Create new Hub"
-        )
+            SelectionSection(
+                title = "Hub",
+                items = hiveEditorModel.hubs.map { it.id to it.name },
+                selectedId = hiveEditorModel.connectedHubId,
+                onItemSelected = actions.onAddHubClick,
+                onCreateClick = actions.onCreateHubClick,
+                createLabel = "Create new Hub"
+            )
 
-        SelectionSection(
-            title = "Queen",
-            items = hiveEditorModel.queens.map { it.id to it.name },
-            selectedId = hiveEditorModel.connectedQueenId,
-            onItemSelected = actions.onAddQueenClick,
-            onCreateClick = actions.onCreateQueenClick,
-            createLabel = "Create new Queen"
-        )
+            SelectionSection(
+                title = "Queen",
+                items = hiveEditorModel.queens.map { it.id to it.name },
+                selectedId = hiveEditorModel.connectedQueenId,
+                onItemSelected = actions.onAddQueenClick,
+                onCreateClick = actions.onCreateQueenClick,
+                createLabel = "Create new Queen"
+            )
 
-        PrimaryButton(
-            text = "Сохранить",
-            onClick = actions.onSaveClick,
-            modifier = Modifier.fillMaxWidth()
-        )
+            PrimaryButton(
+                text = "Сохранить",
+                onClick = actions.onSaveClick,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }
 

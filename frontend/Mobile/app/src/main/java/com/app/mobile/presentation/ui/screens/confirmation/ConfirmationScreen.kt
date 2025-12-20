@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -95,65 +96,67 @@ private fun ConfirmationContent(
     resendTimerSeconds: Int,
     actions: ConfirmationActions
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(
-                horizontal = Dimens.OpenScreenPaddingHorizontal,
-                vertical = Dimens.OpenScreenPaddingVertical
-            ),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Title(
-            text = stringResource(R.string.confirm_registration_title),
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(top = Dimens.TitleTopPadding)
-        )
-
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    horizontal = Dimens.OpenScreenPaddingHorizontal,
+                    vertical = Dimens.OpenScreenPaddingVertical
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(
-                text = stringResource(R.string.enter_code),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = Dimens.ItemsSpacingLarge)
+            Title(
+                text = stringResource(R.string.confirm_registration_title),
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(top = Dimens.TitleTopPadding)
             )
 
-            OtpTextField(
-                value = formState.code,
-                onValueChange = actions.onCodeChange,
-                isError = formState.codeError != null
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = Dimens.OtpCellSpacing),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                LabelButton(
-                    text = stringResource(R.string.resend_code),
-                    onClick = { actions.onResendCodeClick() },
-                    enabled = canResendCode
+                Text(
+                    text = stringResource(R.string.enter_code),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = Dimens.ItemsSpacingLarge)
                 )
 
-                if (resendTimerSeconds > 0) {
-                    val minutes = resendTimerSeconds / 60
-                    val seconds = resendTimerSeconds % 60
-                    Text(
-                        text = "$minutes:${seconds.toString().padStart(2, '0')}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                OtpTextField(
+                    value = formState.code,
+                    onValueChange = actions.onCodeChange,
+                    isError = formState.codeError != null
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = Dimens.OtpCellSpacing),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    LabelButton(
+                        text = stringResource(R.string.resend_code),
+                        onClick = { actions.onResendCodeClick() },
+                        enabled = canResendCode
                     )
+
+                    if (resendTimerSeconds > 0) {
+                        val minutes = resendTimerSeconds / 60
+                        val seconds = resendTimerSeconds % 60
+                        Text(
+                            text = "$minutes:${seconds.toString().padStart(2, '0')}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
-        }
 
-        CodeConfirmButton(onClick = actions.onConfirmClick)
+            CodeConfirmButton(onClick = actions.onConfirmClick)
+        }
     }
 }
 

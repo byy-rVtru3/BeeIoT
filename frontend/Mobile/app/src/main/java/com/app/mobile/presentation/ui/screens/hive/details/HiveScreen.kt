@@ -17,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -123,34 +124,36 @@ fun HiveScreen(
 
 @Composable
 private fun HiveContent(hive: HiveUi, actions: HiveActions) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.Start
-    ) {
-        Title("Улей")
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Title("Улей")
 
-        MainInformation(hive)
+            MainInformation(hive)
 
-        if (hive.connectedHub is HubUi.Present) {
-            HubInformation(
-                hive.connectedHub,
-                actions.onTemperatureClick,
-                actions.onNoiseClick,
-                actions.onWeightClick
-            )
+            if (hive.connectedHub is HubUi.Present) {
+                HubInformation(
+                    hive.connectedHub,
+                    actions.onTemperatureClick,
+                    actions.onNoiseClick,
+                    actions.onWeightClick
+                )
+            }
+
+            if (hive.queen is QueenUi.Present) {
+                QueenInformation(hive.queen, actions.onQueenClick)
+            }
+
+            NotificationsInformation(hive.notifications, actions.onNotificationClick)
+
+            WorksInformation(hive.works, actions.onWorkClick)
         }
-
-        if (hive.queen is QueenUi.Present) {
-            QueenInformation(hive.queen, actions.onQueenClick)
-        }
-
-        NotificationsInformation(hive.notifications, actions.onNotificationClick)
-
-        WorksInformation(hive.works, actions.onWorkClick)
     }
 }
 

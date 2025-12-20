@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults.buttonColors
@@ -27,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign.Companion.Start
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.app.mobile.ui.theme.Dimens
@@ -71,6 +73,57 @@ fun PrimaryButton(
         )
     }
 }
+
+@Composable
+fun SettingsButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    exit: Boolean = false
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.95f else 1f,
+        animationSpec = tween(durationMillis = 100),
+        label = "button_scale"
+    )
+
+    val borderWidth by animateFloatAsState(
+        targetValue = if (isPressed) Dimens.ButtonBorderWidthPressed.value else Dimens.ButtonBorderWidthNormal.value,
+        animationSpec = tween(durationMillis = 100),
+        label = "border_width"
+    )
+
+    Button(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .scale(scale),
+        shape = RoundedCornerShape(Dimens.BorderRadiusMedium),
+        colors = buttonColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
+        border = BorderStroke(
+            Dp(borderWidth), if (exit) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.outline
+            }
+        ),
+        interactionSource = interactionSource
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.weight(1f).padding(vertical = Dimens.ButtonTextPadding),
+            textAlign = Start
+        )
+    }
+}
+
 
 @Composable
 fun LabelButton(

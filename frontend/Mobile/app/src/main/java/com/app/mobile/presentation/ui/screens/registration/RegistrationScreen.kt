@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -94,54 +96,55 @@ fun RegistrationContent(
     formState: RegistrationFormState,
     actions: RegistrationActions
 ) {
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    horizontal = Dimens.OpenScreenPaddingHorizontal,
-                    vertical = Dimens.OpenScreenPaddingVertical
-                ),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Title(
-                text = stringResource(R.string.registration_title),
-                modifier = Modifier.padding(top = Dimens.TitleTopPadding)
-            )
-
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Box(modifier = Modifier.fillMaxSize()) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        horizontal = Dimens.OpenScreenPaddingHorizontal,
+                        vertical = Dimens.OpenScreenPaddingVertical
+                    ),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingSmall)
+                verticalArrangement = Arrangement.SpaceBetween,
             ) {
-                RegistrationNameTextField(
-                    name = formState.name,
-                    nameError = formState.nameError,
-                    onNameChange = actions.onNameChange
+                Title(
+                    text = stringResource(R.string.registration_title),
+                    modifier = Modifier.padding(top = Dimens.TitleTopPadding)
                 )
 
-                RegistrationEmailTextField(
-                    email = formState.email,
-                    emailError = formState.emailError,
-                    onEmailChange = actions.onEmailChange
-                )
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingSmall)
+                ) {
+                    RegistrationNameTextField(
+                        name = formState.name,
+                        nameError = formState.nameError,
+                        onNameChange = actions.onNameChange
+                    )
 
-                RegistrationPasswordTextField(
-                    password = formState.password,
-                    passwordError = formState.passwordError,
-                    onPasswordChange = actions.onPasswordChange
-                )
+                    RegistrationEmailTextField(
+                        email = formState.email,
+                        emailError = formState.emailError,
+                        onEmailChange = actions.onEmailChange
+                    )
 
-                RegistrationRepeatPasswordTextField(
-                    repeatPassword = formState.repeatPassword,
-                    repeatPasswordError = formState.repeatPasswordError,
-                    onRepeatPasswordChange = actions.onRepeatPasswordChange
-                )
+                    RegistrationPasswordTextField(
+                        password = formState.password,
+                        passwordError = formState.passwordError,
+                        onPasswordChange = actions.onPasswordChange
+                    )
+
+                    RegistrationRepeatPasswordTextField(
+                        repeatPassword = formState.repeatPassword,
+                        repeatPasswordError = formState.repeatPasswordError,
+                        onRepeatPasswordChange = actions.onRepeatPasswordChange
+                    )
+                }
+
+                RegistrationButton(onClick = actions.onRegisterClick)
             }
-
-            RegistrationButton(onClick = actions.onRegisterClick)
         }
     }
 }

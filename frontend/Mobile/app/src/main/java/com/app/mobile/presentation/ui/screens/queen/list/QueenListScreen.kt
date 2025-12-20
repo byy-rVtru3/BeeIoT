@@ -12,6 +12,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -32,6 +33,7 @@ import com.app.mobile.presentation.ui.screens.queen.list.models.QueenListActions
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListNavigationEvent
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListUiState
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListViewModel
+import com.app.mobile.ui.theme.Dimens
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -83,23 +85,25 @@ fun QueenListScreen(
 
 @Composable
 fun QueenListContent(queens: List<QueenPreviewModel>, actions: QueenListActions) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(queens) { queen ->
-                QueenCard(queen = queen, onClick = { actions.onQueenClick(queen.id) })
+    Surface(modifier = Modifier.fillMaxSize().padding(bottom = Dimens.BottomAppBarHeight), color = MaterialTheme.colorScheme.background) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(queens) { queen ->
+                    QueenCard(queen = queen, onClick = { actions.onQueenClick(queen.id) })
+                }
             }
-        }
 
-        FloatingActionButton(
-            onClick = actions.onAddClick,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        ) {
-            Icon(Icons.Default.Add, contentDescription = "Add Queen")
+            FloatingActionButton(
+                onClick = actions.onAddClick,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Queen")
+            }
         }
     }
 }

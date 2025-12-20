@@ -31,6 +31,7 @@ import com.app.mobile.presentation.ui.screens.hive.list.models.HivesListActions
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListNavigationEvent
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListUiState
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListViewModel
+import com.app.mobile.ui.theme.Dimens
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -94,37 +95,39 @@ fun HivesListScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HivesListContent(hives: List<HivePreview>, actions: HivesListActions) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Список ульев",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
+    Surface(modifier = Modifier.fillMaxSize().padding(bottom = Dimens.BottomAppBarHeight), color = MaterialTheme.colorScheme.background) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "Список ульев",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        titleContentColor = MaterialTheme.colorScheme.onBackground
                     )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
                 )
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = actions.onCreateHiveClick,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = "Добавить улей")
+            },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = actions.onCreateHiveClick,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = "Добавить улей")
+                }
             }
+        ) { innerPadding ->
+            HivesList(
+                hives = hives,
+                actions = actions,
+                modifier = Modifier.padding(innerPadding)
+            )
         }
-    ) { innerPadding ->
-        HivesList(
-            hives = hives,
-            actions = actions,
-            modifier = Modifier.padding(innerPadding)
-        )
     }
 }
 

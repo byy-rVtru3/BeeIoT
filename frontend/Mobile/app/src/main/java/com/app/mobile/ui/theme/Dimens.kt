@@ -29,14 +29,41 @@ object Dimens {
     val Size76 = 76.dp
     val Size80 = 80.dp
 
+    val Size120 = 120.dp
+
     // ============================================
     // СЕМАНТИЧЕСКИЕ РАЗМЕРЫ (Semantic Spacing)
     // Специфичные для компонентов и контекста
     // ============================================
 
+    // --- Ноль отступ ---
+    val Null = 0.dp
+
+    // --- Bottom App Bar ---
+    val BottomAppBarTextPadding = Size4
+    val BottomAppBarVerticalButtonPadding = Null
+    val BottomAppBarHorizontalButtonPadding = Size12
+    val BottomAppBarIconSize = Size44
+    val BottomAppBarHeight = Size80
+    val BottomAppBarHorizontalPadding = Size8
+
+    // --- Shadow ---
+    val ShadowBlur = Size16
+
+    // --- Размеры статичных элементов ---
+
+    val LogoCircleSize = Size120
+    val LogoCircleLogoSize = LogoCircleSize.minus(12.dp)
+
+
     // --- Границы и разделители ---
-    val BorderWidthThin = Size2           // Тонкая граница (нажатая кнопка)
-    val BorderWidthNormal = Size4.minus(1.dp)  // Обычная граница (3dp для кнопок и подчеркиваний)
+    val BorderWidthThin = Size2.minus(1.dp)
+    val BorderWidthNormal = Size2
+
+    val BorderWidthThick = Size4
+
+    // --- Закругления углов ---
+    val BorderRadiusMedium = Size16
 
     // --- Отступы для текстовых полей ---
     val TextFieldPaddingHorizontal = Size4
@@ -52,8 +79,9 @@ object Dimens {
 
     // --- Отступы для кнопок ---
     val ButtonTextPadding = Size8
+    val ButtonTextPaddingSmall = Size4
     val ButtonBorderWidthPressed = BorderWidthThin
-    val ButtonBorderWidthNormal = BorderWidthNormal // 3dp
+    val ButtonBorderWidthNormal = BorderWidthNormal
 
     // --- Отступы для экранов ---
     val OpenScreenPaddingHorizontal = Size36  // Для открытых экранов (авторизация, регистрация, подтверждение)
@@ -63,8 +91,12 @@ object Dimens {
     // --- Отступы для заголовков ---
     val TitleTopPadding = Size44
 
+    val SettingsTitleBottomPadding = Size48
+
     // --- Отступы между элементами ---
     val ItemsSpacingSmall = Size4          // Между полями формы
+
+    val ItemSpacingSmallMedium = Size8   // Между иконкой и текстом в кнопке
     val ItemsSpacingMedium = Size16        // Между кнопками, элементами списка
     val ItemsSpacingLarge = Size20         // Между секциями
 
