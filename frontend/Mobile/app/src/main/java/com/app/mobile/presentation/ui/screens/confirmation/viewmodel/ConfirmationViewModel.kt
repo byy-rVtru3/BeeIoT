@@ -1,8 +1,6 @@
 package com.app.mobile.presentation.ui.screens.confirmation.viewmodel
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,7 +10,6 @@ import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.account.ConfirmationUserUseCase
 import com.app.mobile.presentation.models.account.ConfirmationModelUi
 import com.app.mobile.presentation.models.account.ConfirmationResultUi
-import com.app.mobile.presentation.models.account.TypeConfirmationUi
 import com.app.mobile.presentation.ui.screens.confirmation.ConfirmationRoute
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Job
