@@ -179,35 +179,29 @@ fun AppNavigation(
             HiveEditorScreen(
                 hiveEditorViewModel,
                 hiveId = destination.hiveId,
-                onBackClick = { navController.navigate(HivesListRoute) },
+                onBackClick = { navController.popBackStack() },
                 onCreateQueenClick = { navController.navigate(QueenEditorRoute(null)) },
                 onCreateHubClick = { TODO("HiveCreateHubRoute") }
             )
         }
 
         animatedComposable<WorksListRoute> {
-            val destination = it.toRoute<WorksListRoute>()
             val worksListViewModel: WorksListViewModel = koinViewModel()
             WorksListScreen(
                 worksListViewModel,
-                hiveId = destination.hiveId,
-                onWorkClick = { workId ->
+                onWorkClick = { workId, hiveId ->
                     navController.navigate(
-                        WorkEditorRoute(
-                            workId = workId,
-                            hiveId = destination.hiveId
-                        )
+                        WorkEditorRoute(workId = workId, hiveId = hiveId)
                     )
                 },
-                onCreateClick = {
+                onCreateClick = { hiveId ->
                     navController.navigate(
-                        WorkEditorRoute(
-                            workId = null,
-                            hiveId = destination.hiveId
-                        )
+                        WorkEditorRoute(workId = null, hiveId = hiveId)
                     )
                 },
-                onBackClick = { navController.navigate(HiveRoute(destination.hiveId)) }
+                onBackClick = {
+                    navController.popBackStack()
+                }
             )
         }
 
@@ -218,7 +212,7 @@ fun AppNavigation(
                 worksEditorViewModel,
                 workId = destination.workId,
                 hiveId = destination.hiveId,
-                onBackClick = { navController.navigate(WorksListRoute(destination.hiveId)) }
+                onBackClick = { navController.popBackStack() }
             )
         }
     }
