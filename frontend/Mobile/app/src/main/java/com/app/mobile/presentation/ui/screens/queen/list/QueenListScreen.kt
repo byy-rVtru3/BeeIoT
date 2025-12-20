@@ -35,6 +35,7 @@ import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListUiSt
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListViewModel
 import com.app.mobile.ui.theme.Dimens
 import kotlinx.coroutines.flow.collectLatest
+import com.app.mobile.ui.theme.Dimens
 
 @Composable
 fun QueenListScreen(

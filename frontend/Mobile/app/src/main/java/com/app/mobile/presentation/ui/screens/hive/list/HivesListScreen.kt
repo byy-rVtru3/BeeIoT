@@ -33,6 +33,7 @@ import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListUiStat
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListViewModel
 import com.app.mobile.ui.theme.Dimens
 import kotlinx.coroutines.flow.collectLatest
+import com.app.mobile.ui.theme.Dimens
 
 @Composable
 fun HivesListScreen(
