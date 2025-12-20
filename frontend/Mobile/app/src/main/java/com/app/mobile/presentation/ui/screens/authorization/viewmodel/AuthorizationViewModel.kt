@@ -11,16 +11,22 @@ import com.app.mobile.domain.usecase.account.AuthorizationAccountUseCase
 import com.app.mobile.presentation.models.account.AuthorizationModelUi
 import com.app.mobile.presentation.models.account.AuthorizationResultUi
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class AuthorizationViewModel(
     private val authorizationAccountUseCase: AuthorizationAccountUseCase
 ) : ViewModel() {
-    private val _authorizationUiState = MutableLiveData<AuthorizationUiState>()
-    val authorizationUiState: LiveData<AuthorizationUiState> = _authorizationUiState
 
-    private val _navigationEvent = MutableLiveData<AuthorizationNavigationEvent?>()
-    val navigationEvent: LiveData<AuthorizationNavigationEvent?> = _navigationEvent
+    private val _authorizationUiState =
+        MutableStateFlow<AuthorizationUiState>(AuthorizationUiState.Loading)
+    val authorizationUiState = _authorizationUiState.asStateFlow()
+
+    private val _navigationEvent = Channel<AuthorizationNavigationEvent>()
+    val navigationEvent = _navigationEvent.receiveAsFlow()
 
     // Используем новый helper для валидации
     private val formValidator = AuthorizationFormValidator()
@@ -53,8 +59,9 @@ class AuthorizationViewModel(
             viewModelScope.launch(handler) {
                 when (val result = authorizationAccountUseCase(model.toDomain()).toUiModel()) {
                     is AuthorizationResultUi.Success -> {
-                        _navigationEvent.value =
+                        _navigationEvent.send(
                             AuthorizationNavigationEvent.NavigateToMainScreen
+                        )
                     }
 
                     is AuthorizationResultUi.Error -> {
@@ -118,11 +125,9 @@ class AuthorizationViewModel(
     fun onRegistrationClick() {
         val currentState = _authorizationUiState.value
         if (currentState is AuthorizationUiState.Content) {
-            _navigationEvent.value = AuthorizationNavigationEvent.NavigateToRegistration
+            viewModelScope.launch(handler) {
+                _navigationEvent.send(AuthorizationNavigationEvent.NavigateToRegistration)
+            }
         }
-    }
-
-    fun onNavigationHandled() {
-        _navigationEvent.value = null
     }
 }

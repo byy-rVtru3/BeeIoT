@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -16,6 +17,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.R
 import com.app.mobile.presentation.models.account.TypeConfirmationUi
 import com.app.mobile.presentation.ui.components.ErrorMessage
@@ -29,32 +35,37 @@ import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.Confirmatio
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationNavigationEvent
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationUiState
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationViewModel
+import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorNavigationEvent
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun ConfirmationScreen(
     confirmationViewModel: ConfirmationViewModel,
-    email: String,
-    type: TypeConfirmationUi,
     onConfirmClick: () -> Unit
 ) {
-    val confirmationUiState = confirmationViewModel.confirmationUiState.observeAsState(
-        ConfirmationUiState.Loading
-    )
+    val confirmationUiState =
+        confirmationViewModel.confirmationUiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(key1 = Unit) {
-        confirmationViewModel.createConfirmationModelUi(email, type)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                confirmationViewModel.createConfirmationModelUi()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
-    val navigationEvent by confirmationViewModel.navigationEvent.observeAsState()
-
-    LaunchedEffect(navigationEvent) {
-        navigationEvent?.let { event ->
-            when (event) {
-                is ConfirmationNavigationEvent.NavigateToAuthorization -> {
-                    onConfirmClick()
-                    confirmationViewModel.onNavigationHandled()
+    LaunchedEffect(confirmationViewModel.navigationEvent) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            confirmationViewModel.navigationEvent.collectLatest { event ->
+                when (event) {
+                    is ConfirmationNavigationEvent.NavigateToAuthorization -> onConfirmClick()
                 }
             }
         }

@@ -8,7 +8,6 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.toRoute
 import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppRoute
 import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppScreen
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppViewModel
@@ -75,12 +74,9 @@ fun AppNavigation(
         }
 
         animatedComposable<ConfirmationRoute> {
-            val destination = it.toRoute<ConfirmationRoute>()
             val confirmationViewModel: ConfirmationViewModel = koinViewModel()
             ConfirmationScreen(
                 confirmationViewModel,
-                destination.email,
-                destination.type,
                 onConfirmClick = {
                     navController.navigate(AuthorizationRoute)
                 }
@@ -109,12 +105,17 @@ fun AppNavigation(
             val accountInfoViewModel: AccountInfoViewModel = koinViewModel()
             AccountInfoScreen(
                 accountInfoViewModel,
-                onDeleteClick = { navController.navigate(AuthorizationRoute) })
+                onDeleteClick = { navController.navigate(AuthorizationRoute) },
+                onBackClick = { navController.popBackStack() }
+            )
         }
 
         animatedComposable<AboutAppRoute> {
             val aboutAppViewModel: AboutAppViewModel = koinViewModel()
-            AboutAppScreen(aboutAppViewModel)
+            AboutAppScreen(
+                aboutAppViewModel,
+                onBackClick = { navController.popBackStack() }
+            )
         }
 
         animatedComposable<HivesListRoute> {
@@ -127,13 +128,11 @@ fun AppNavigation(
         }
 
         animatedComposable<HiveRoute> {
-            val destination = it.toRoute<HiveRoute>()
             val hiveViewModel: HiveViewModel = koinViewModel()
             HiveScreen(
                 hiveViewModel,
-                destination.hiveId,
                 onQueenClick = { navController.navigate(QueenRoute) },
-                onWorksClick = { navController.navigate(WorksListRoute(destination.hiveId)) },
+                onWorksClick = { navController.navigate(WorksListRoute(it)) },
                 onNotificationsClick = { TODO("NotificationsRoute") },
                 onTemperatureClick = { TODO("TemperatureRoute") },
                 onNoiseClick = { TODO("NoiseRoute") },
@@ -144,22 +143,18 @@ fun AppNavigation(
         }
 
         animatedComposable<QueenRoute> {
-            val destination = it.toRoute<QueenRoute>()
             val queenViewModel: QueenViewModel = koinViewModel()
             QueenScreen(
                 queenViewModel,
-                queenId = destination.queenId,
                 onEditClick = {},
                 onHiveClick = {}
             )
         }
 
         animatedComposable<QueenEditorRoute> {
-            val destination = it.toRoute<QueenEditorRoute>()
             val queenEditorViewModel: QueenEditorViewModel = koinViewModel()
             QueenEditorScreen(
                 queenEditorViewModel,
-                queenId = destination.queenId,
                 onBackClick = { navController.popBackStack() }
             )
         }
@@ -174,11 +169,9 @@ fun AppNavigation(
         }
 
         animatedComposable<HiveEditorRoute> {
-            val destination = it.toRoute<HiveEditorRoute>()
             val hiveEditorViewModel: HiveEditorViewModel = koinViewModel()
             HiveEditorScreen(
                 hiveEditorViewModel,
-                hiveId = destination.hiveId,
                 onBackClick = { navController.popBackStack() },
                 onCreateQueenClick = { navController.navigate(QueenEditorRoute(null)) },
                 onCreateHubClick = { TODO("HiveCreateHubRoute") }

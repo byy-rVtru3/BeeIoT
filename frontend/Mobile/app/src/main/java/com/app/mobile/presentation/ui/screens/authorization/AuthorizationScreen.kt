@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -16,6 +17,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.R
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
@@ -29,36 +35,40 @@ import com.app.mobile.presentation.ui.screens.authorization.viewmodel.Authorizat
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationNavigationEvent
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationUiState
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationViewModel
+import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorNavigationEvent
 import com.app.mobile.presentation.validators.ValidationConfig
 import com.app.mobile.presentation.validators.ValidationError
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
+import kotlinx.coroutines.flow.collectLatest
+
 @Composable
 fun AuthorizationScreen(
     authorizationViewModel: AuthorizationViewModel,
     onAuthorizeClick: () -> Unit,
     onRegistrationClick: () -> Unit
 ) {
-    val authorizationUiState by authorizationViewModel.authorizationUiState.observeAsState(
-        AuthorizationUiState.Loading
-    )
+    val authorizationUiState by authorizationViewModel.authorizationUiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(key1 = Unit) {
-        authorizationViewModel.createAuthorizationModel()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                authorizationViewModel.createAuthorizationModel()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
-    val navigationEvent by authorizationViewModel.navigationEvent.observeAsState()
-    LaunchedEffect(navigationEvent) {
-        navigationEvent?.let { event ->
-            when (event) {
-                is AuthorizationNavigationEvent.NavigateToMainScreen -> {
-                    onAuthorizeClick()
-                    authorizationViewModel.onNavigationHandled()
-                }
-
-                is AuthorizationNavigationEvent.NavigateToRegistration -> {
-                    onRegistrationClick()
-                    authorizationViewModel.onNavigationHandled()
+    LaunchedEffect(authorizationViewModel.navigationEvent) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            authorizationViewModel.navigationEvent.collectLatest { event ->
+                when (event) {
+                    is AuthorizationNavigationEvent.NavigateToMainScreen -> onAuthorizeClick()
+                    is AuthorizationNavigationEvent.NavigateToRegistration -> onRegistrationClick()
                 }
             }
         }

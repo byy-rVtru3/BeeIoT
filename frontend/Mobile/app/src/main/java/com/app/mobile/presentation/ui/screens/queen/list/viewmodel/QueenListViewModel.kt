@@ -1,24 +1,26 @@
 package com.app.mobile.presentation.ui.screens.queen.list.viewmodel
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.usecase.hives.queen.GetQueensUseCase
 import com.app.mobile.presentation.mappers.toPreviewModel
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class QueenListViewModel(
     private val getQueensUseCase: GetQueensUseCase
 ) : ViewModel() {
 
-    private val _queenListUiState = MutableLiveData<QueenListUiState>(QueenListUiState.Loading)
-    val queenListUiState: LiveData<QueenListUiState> = _queenListUiState
+    private val _queenListUiState = MutableStateFlow<QueenListUiState>(QueenListUiState.Loading)
+    val queenListUiState = _queenListUiState.asStateFlow()
 
-    private val _navigationEvent = MutableLiveData<QueenListNavigationEvent?>()
-    val navigationEvent: LiveData<QueenListNavigationEvent?> = _navigationEvent
+    private val _navigationEvent = Channel<QueenListNavigationEvent>()
+    val navigationEvent = _navigationEvent.receiveAsFlow()
 
     val handler = CoroutineExceptionHandler { _, exception ->
         _queenListUiState.value = QueenListUiState.Error(exception.message ?: "Unknown error")
@@ -37,18 +39,18 @@ class QueenListViewModel(
     fun onQueenClick(queenId: String) {
         val currentState = _queenListUiState.value
         if (currentState is QueenListUiState.Content) {
-            _navigationEvent.value = QueenListNavigationEvent.NavigateToQueen(queenId)
+            viewModelScope.launch(handler) {
+                _navigationEvent.send(QueenListNavigationEvent.NavigateToQueen(queenId))
+            }
         }
     }
 
     fun onAddClick() {
         val currentState = _queenListUiState.value
         if (currentState is QueenListUiState.Content) {
-            _navigationEvent.value = QueenListNavigationEvent.NavigateToAddQueen
+            viewModelScope.launch(handler) {
+                _navigationEvent.send(QueenListNavigationEvent.NavigateToAddQueen)
+            }
         }
-    }
-
-    fun onNavigationHandled() {
-        _navigationEvent.value = null
     }
 }

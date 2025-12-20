@@ -1,16 +1,7 @@
 package com.app.mobile.presentation.ui.screens.queen.list
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -23,12 +14,17 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.presentation.models.queen.QueenPreviewModel
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
@@ -36,6 +32,7 @@ import com.app.mobile.presentation.ui.screens.queen.list.models.QueenListActions
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListNavigationEvent
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListUiState
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListViewModel
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun QueenListScreen(
@@ -43,25 +40,33 @@ fun QueenListScreen(
     onQueenClick: (String) -> Unit,
     onAddClick: () -> Unit
 ) {
-    val queenListUiState by queenListViewModel.queenListUiState.observeAsState(QueenListUiState.Loading)
+    val queenListUiState by queenListViewModel.queenListUiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(key1 = Unit) {
-        queenListViewModel.loadQueens()
-    }
-
-    val navigationEvent by queenListViewModel.navigationEvent.observeAsState()
-
-    LaunchedEffect(navigationEvent) {
-        navigationEvent?.let { event ->
-            when (event) {
-                is QueenListNavigationEvent.NavigateToQueen -> onQueenClick(event.queenId)
-                is QueenListNavigationEvent.NavigateToAddQueen -> onAddClick()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                queenListViewModel.loadQueens()
             }
-            queenListViewModel.onNavigationHandled()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
-    when(val state = queenListUiState) {
+    LaunchedEffect(queenListViewModel.navigationEvent) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            queenListViewModel.navigationEvent.collectLatest { event ->
+                when (event) {
+                    is QueenListNavigationEvent.NavigateToQueen -> onQueenClick(event.queenId)
+                    is QueenListNavigationEvent.NavigateToAddQueen -> onAddClick()
+                }
+            }
+        }
+    }
+
+    when (val state = queenListUiState) {
         is QueenListUiState.Loading -> FullScreenProgressIndicator()
 
         is QueenListUiState.Error -> ErrorMessage(state.message, onRetry = {})
@@ -77,7 +82,7 @@ fun QueenListScreen(
 }
 
 @Composable
-fun QueenListContent(queens : List<QueenPreviewModel>, actions: QueenListActions) {
+fun QueenListContent(queens: List<QueenPreviewModel>, actions: QueenListActions) {
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
