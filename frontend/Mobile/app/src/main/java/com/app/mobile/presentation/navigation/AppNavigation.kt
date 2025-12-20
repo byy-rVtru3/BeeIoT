@@ -206,12 +206,9 @@ fun AppNavigation(
         }
 
         animatedComposable<WorkEditorRoute> {
-            val destination = it.toRoute<WorkEditorRoute>()
             val worksEditorViewModel: WorksEditorViewModel = koinViewModel()
             WorksEditorScreen(
                 worksEditorViewModel,
-                workId = destination.workId,
-                hiveId = destination.hiveId,
                 onBackClick = { navController.popBackStack() }
             )
         }

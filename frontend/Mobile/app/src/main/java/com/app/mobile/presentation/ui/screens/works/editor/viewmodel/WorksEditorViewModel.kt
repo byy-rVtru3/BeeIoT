@@ -3,29 +3,41 @@ package com.app.mobile.presentation.ui.screens.works.editor.viewmodel
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.app.mobile.domain.mappers.toDomain
 import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.hives.works.CreateWorkUseCase
 import com.app.mobile.domain.usecase.hives.works.GetWorkUseCase
 import com.app.mobile.domain.usecase.hives.works.SaveWorkUseCase
+import com.app.mobile.presentation.ui.screens.works.editor.WorkEditorRoute
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class WorksEditorViewModel(
+    savedStateHandle: SavedStateHandle,
     private val createWorkUseCase: CreateWorkUseCase,
     private val getWorkUseCase: GetWorkUseCase,
     private val saveWorkUseCase: SaveWorkUseCase
 ) : ViewModel() {
 
-    private val _worksEditorUiState =
-        MutableLiveData<WorksEditorUiState>(WorksEditorUiState.Loading)
-    val worksEditorUiState: LiveData<WorksEditorUiState> = _worksEditorUiState
+    private val route = savedStateHandle.toRoute<WorkEditorRoute>()
+    private val hiveId = route.hiveId
+    private val workId = route.workId
 
-    private val _navigationEvent = MutableLiveData<WorksEditorNavigationEvent?>()
-    val navigationEvent: LiveData<WorksEditorNavigationEvent?> = _navigationEvent
+    private val _worksEditorUiState =
+        MutableStateFlow<WorksEditorUiState>(WorksEditorUiState.Loading)
+    val worksEditorUiState = _worksEditorUiState.asStateFlow()
+
+    private val _navigationEvent = Channel<WorksEditorNavigationEvent>()
+    val navigationEvent = _navigationEvent.receiveAsFlow()
 
     private val handler = CoroutineExceptionHandler { _, exception ->
         _worksEditorUiState.value = WorksEditorUiState.Error(exception.message ?: "Unknown error")
@@ -33,7 +45,7 @@ class WorksEditorViewModel(
     }
 
 
-    fun loadWork(workId: String?, hiveId: String) {
+    fun loadWork() {
         _worksEditorUiState.value = WorksEditorUiState.Loading
         viewModelScope.launch(handler) {
 
@@ -68,13 +80,9 @@ class WorksEditorViewModel(
         if (currentState is WorksEditorUiState.Content) {
             viewModelScope.launch(handler) {
                 saveWorkUseCase(currentState.work.toDomain())
-                _navigationEvent.value =
-                    WorksEditorNavigationEvent.NavigateToWorksList(currentState.work.hiveId)
+                _navigationEvent.send(
+                    WorksEditorNavigationEvent.NavigateToWorksList(currentState.work.hiveId))
             }
         }
-    }
-
-    fun onNavigationHandled() {
-        _navigationEvent.value = null
     }
 }
