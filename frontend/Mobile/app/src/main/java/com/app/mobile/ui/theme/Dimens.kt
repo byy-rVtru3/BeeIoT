@@ -45,7 +45,7 @@ object Dimens {
     val BottomAppBarHorizontalButtonPadding = Size12
     val BottomAppBarIconSize = Size44
     val BottomAppBarHeight = Size80
-    var BottomAppBarHorizontalPadding = Size8
+    val BottomAppBarHorizontalPadding = Size8
 
     // --- Shadow ---
     val ShadowBlur = Size16
