@@ -1,8 +1,6 @@
 package com.app.mobile.presentation.ui.screens.registration.viewmodel
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.mappers.toUiModel
@@ -12,6 +10,10 @@ import com.app.mobile.presentation.mappers.toDomain
 import com.app.mobile.presentation.models.account.RegistrationResultUi
 import com.app.mobile.presentation.models.account.TypeConfirmationUi
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class RegistrationViewModel(
@@ -19,11 +21,12 @@ class RegistrationViewModel(
     private val createUserAccountUseCase: CreateUserAccountUseCase
 ) : ViewModel() {
 
-    private val _registrationUiState = MutableLiveData<RegistrationUiState>()
-    val registrationUiState: LiveData<RegistrationUiState> = _registrationUiState
+    private val _registrationUiState =
+        MutableStateFlow<RegistrationUiState>(RegistrationUiState.Loading)
+    val registrationUiState = _registrationUiState.asStateFlow()
 
-    private val _navigationEvent = MutableLiveData<RegistrationNavigationEvent?>()
-    val navigationEvent: LiveData<RegistrationNavigationEvent?> = _navigationEvent
+    private val _navigationEvent = Channel<RegistrationNavigationEvent>()
+    val navigationEvent = _navigationEvent.receiveAsFlow()
 
     // Используем новый helper для валидации
     private val formValidator = RegistrationFormValidator()
@@ -123,9 +126,11 @@ class RegistrationViewModel(
 
                 when (response) {
                     is RegistrationResultUi.Success -> {
-                        _navigationEvent.value = RegistrationNavigationEvent.NavigateToConfirmation(
-                            email = validatedFormState.email,
-                            type = TypeConfirmationUi.REGISTRATION
+                        _navigationEvent.send(
+                            RegistrationNavigationEvent.NavigateToConfirmation(
+                                email = validatedFormState.email,
+                                type = TypeConfirmationUi.REGISTRATION
+                            )
                         )
                     }
 
@@ -153,9 +158,5 @@ class RegistrationViewModel(
                 formState = initialFormState
             )
         }
-    }
-
-    fun onNavigationHandled() {
-        _navigationEvent.value = null
     }
 }

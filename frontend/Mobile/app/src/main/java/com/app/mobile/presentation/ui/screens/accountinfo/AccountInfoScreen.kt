@@ -10,12 +10,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.presentation.models.account.UserInfoModel
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
@@ -27,16 +32,28 @@ import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoU
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoViewModel
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun AccountInfoScreen(accountInfoViewModel: AccountInfoViewModel, onDeleteClick: () -> Unit) {
+fun AccountInfoScreen(
+    accountInfoViewModel: AccountInfoViewModel,
+    onDeleteClick: () -> Unit,
+    onBackClick: () -> Unit
+) {
 
-    val accountInfoUiState by accountInfoViewModel.accountInfoUiState.observeAsState(
-        AccountInfoUiState.Loading
-    )
+    val accountInfoUiState by accountInfoViewModel.accountInfoUiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(key1 = Unit) {
-        accountInfoViewModel.getAccountInfo()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                accountInfoViewModel.getAccountInfo()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     when (val currentState = accountInfoUiState) {
@@ -53,22 +70,18 @@ fun AccountInfoScreen(accountInfoViewModel: AccountInfoViewModel, onDeleteClick:
         }
     }
 
-    val navigationEvent by accountInfoViewModel.navigationEvent.observeAsState()
-
-    LaunchedEffect(navigationEvent) {
-        navigationEvent?.let { event ->
-            when (event) {
-                is AccountInfoNavigationEvent.NavigateToRegistration -> {
-                    onDeleteClick()
-                    accountInfoViewModel.onNavigationHandled()
+    LaunchedEffect(accountInfoViewModel.navigationEvent) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            accountInfoViewModel.navigationEvent.collectLatest { event ->
+                when (event) {
+                    is AccountInfoNavigationEvent.NavigateToRegistration -> onDeleteClick()
+                    is AccountInfoNavigationEvent.NavigateBack -> onBackClick()
                 }
             }
         }
     }
 
-    val accountInfoDialogState by accountInfoViewModel.accountInfoDialogState.observeAsState(
-        AccountInfoDialogState.Hidden
-    )
+    val accountInfoDialogState by accountInfoViewModel.accountInfoDialogState.collectAsStateWithLifecycle()
 
     when (val state = accountInfoDialogState) {
         is AccountInfoDialogState.SetName -> {

@@ -7,18 +7,34 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.presentation.models.queen.QueenUiModel
 import com.app.mobile.presentation.models.queen.StageType
 import com.app.mobile.presentation.models.queen.TimelineItem
@@ -27,34 +43,42 @@ import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenNavigationEvent
 import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenUiState
 import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenViewModel
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun QueenScreen(
     queenViewModel: QueenViewModel,
-    queenId: String,
     onEditClick: (queenId: String) -> Unit,
     onHiveClick: (hiveId: String) -> Unit
 ) {
-    val queenUiState by queenViewModel.queenUiState.observeAsState(QueenUiState.Loading)
+    val queenUiState by queenViewModel.queenUiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(key1 = Unit) {
-        queenViewModel.getQueen(queenId)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                queenViewModel.getQueen()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
-    val navigationEvent by queenViewModel.navigationEvent.observeAsState()
+    LaunchedEffect(queenViewModel.navigationEvent) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            queenViewModel.navigationEvent.collectLatest { event ->
+                when (event) {
+                    is QueenNavigationEvent.NavigateToEditQueen -> {
+                        onEditClick(event.queenId)
+                    }
 
-    LaunchedEffect(navigationEvent) {
-        navigationEvent?.let { event ->
-            when (event) {
-                is QueenNavigationEvent.NavigateToEditQueen -> {
-                    onEditClick(event.queenId)
-                }
-
-                is QueenNavigationEvent.NavigateToHive -> {
-                    onHiveClick(event.hiveId)
+                    is QueenNavigationEvent.NavigateToHive -> {
+                        onHiveClick(event.hiveId)
+                    }
                 }
             }
-            queenViewModel.onNavigationHandled()
         }
     }
 

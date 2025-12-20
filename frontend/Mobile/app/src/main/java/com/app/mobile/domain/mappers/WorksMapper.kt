@@ -13,7 +13,25 @@ fun WorkEntity.toDomain() = WorkDomain(
 )
 
 fun WorkDomain.toUiModel() = WorkUi(
+    id = this.id,
+    hiveId = this.hiveId,
     title = this.title,
     text = this.text,
     dateTime = localDateTimeFormatter(this.dateTime)
+)
+
+fun WorkDomain.toEntity() = WorkEntity(
+    id = this.id,
+    hiveId = this.hiveId,
+    title = this.title,
+    text = this.text,
+    dateTime = this.dateTime
+)
+
+fun WorkUi.toDomain() = WorkDomain(
+    id = this.id,
+    hiveId = this.hiveId,
+    title = this.title,
+    text = this.text,
+    dateTime = localDateTimeParser(this.dateTime)
 )

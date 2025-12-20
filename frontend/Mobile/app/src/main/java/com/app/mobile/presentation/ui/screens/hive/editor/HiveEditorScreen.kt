@@ -19,14 +19,19 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.presentation.models.hive.HiveEditorModel
 import com.app.mobile.presentation.ui.components.CustomTextField
 import com.app.mobile.presentation.ui.components.ErrorMessage
@@ -36,31 +41,39 @@ import com.app.mobile.presentation.ui.screens.hive.editor.models.HiveEditorActio
 import com.app.mobile.presentation.ui.screens.hive.editor.viewmodel.HiveEditorNavigationEvent
 import com.app.mobile.presentation.ui.screens.hive.editor.viewmodel.HiveEditorUiState
 import com.app.mobile.presentation.ui.screens.hive.editor.viewmodel.HiveEditorViewModel
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun HiveEditorScreen(
     hiveEditorViewModel: HiveEditorViewModel,
-    hiveId: String?,
     onBackClick: () -> Unit,
     onCreateQueenClick: () -> Unit,
     onCreateHubClick: () -> Unit
 ) {
-    val hiveEditorUiState by hiveEditorViewModel.hiveEditorUiState.observeAsState(HiveEditorUiState.Loading)
+    val hiveEditorUiState by hiveEditorViewModel.hiveEditorUiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(key1 = Unit) {
-        hiveEditorViewModel.loadHive(hiveId)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hiveEditorViewModel.loadHive()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
-    val navigationEvent by hiveEditorViewModel.navigationEvent.observeAsState()
-
-    LaunchedEffect(navigationEvent) {
-        navigationEvent?.let { event ->
-            when (event) {
-                is HiveEditorNavigationEvent.NavigateToCreateQueen -> onCreateQueenClick()
-                is HiveEditorNavigationEvent.NavigateToCreateHub -> onCreateHubClick()
-                is HiveEditorNavigationEvent.NavigateBack -> onBackClick()
+    LaunchedEffect(hiveEditorViewModel.navigationEvent) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            hiveEditorViewModel.navigationEvent.collectLatest { event ->
+                when (event) {
+                    is HiveEditorNavigationEvent.NavigateToCreateQueen -> onCreateQueenClick()
+                    is HiveEditorNavigationEvent.NavigateToCreateHub -> onCreateHubClick()
+                    is HiveEditorNavigationEvent.NavigateBack -> onBackClick()
+                }
             }
-            hiveEditorViewModel.onNavigationHandled()
         }
     }
 

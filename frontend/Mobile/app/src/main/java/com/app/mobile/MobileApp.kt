@@ -11,6 +11,7 @@ import com.app.mobile.di.repository.queenLocalRepositoryModule
 import com.app.mobile.di.repository.repositoryApiModule
 import com.app.mobile.di.repository.repositoryDatabaseModule
 import com.app.mobile.di.repository.userLocalRepositoryModule
+import com.app.mobile.di.repository.workLocalRepositoryModule
 import com.app.mobile.di.screens.*
 import com.app.mobile.di.sessionModule
 import org.koin.android.ext.koin.androidContext
@@ -51,7 +52,10 @@ class MobileApp : Application() {
                 hiveEditorModule,
                 queenModule,
                 queenEditorModule,
-                queenListModule
+                queenListModule,
+                workLocalRepositoryModule,
+                workEditorModule,
+                workListModule
             )
         }
     }

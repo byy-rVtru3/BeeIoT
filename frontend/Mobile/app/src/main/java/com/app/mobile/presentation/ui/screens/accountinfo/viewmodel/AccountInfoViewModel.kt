@@ -1,8 +1,6 @@
 package com.app.mobile.presentation.ui.screens.accountinfo.viewmodel
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.mappers.toPresentation
@@ -11,6 +9,10 @@ import com.app.mobile.domain.usecase.account.DeleteAccountUseCase
 import com.app.mobile.domain.usecase.account.GetAccountInfoUseCase
 import com.app.mobile.presentation.models.account.DeleteResultUi
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class AccountInfoViewModel(
@@ -18,14 +20,16 @@ class AccountInfoViewModel(
     private val deleteAccountUseCase: DeleteAccountUseCase
 ) : ViewModel() {
 
-    private val _accountInfoUiState = MutableLiveData<AccountInfoUiState>()
-    val accountInfoUiState: LiveData<AccountInfoUiState> = _accountInfoUiState
+    private val _accountInfoUiState =
+        MutableStateFlow<AccountInfoUiState>(AccountInfoUiState.Loading)
+    val accountInfoUiState = _accountInfoUiState.asStateFlow()
 
-    private val _accountInfoDialogState = MutableLiveData<AccountInfoDialogState>()
-    val accountInfoDialogState: LiveData<AccountInfoDialogState> = _accountInfoDialogState
+    private val _accountInfoDialogState =
+        MutableStateFlow<AccountInfoDialogState>(AccountInfoDialogState.Hidden)
+    val accountInfoDialogState = _accountInfoDialogState.asStateFlow()
 
-    private val _navigationEvent = MutableLiveData<AccountInfoNavigationEvent?>()
-    val navigationEvent: LiveData<AccountInfoNavigationEvent?> = _navigationEvent
+    private val _navigationEvent = Channel<AccountInfoNavigationEvent>()
+    val navigationEvent = _navigationEvent.receiveAsFlow()
 
     val handler = CoroutineExceptionHandler { _, exception ->
         _accountInfoUiState.value = AccountInfoUiState.Error(exception.message.toString())
@@ -86,7 +90,7 @@ class AccountInfoViewModel(
             viewModelScope.launch(handler) {
                 when (val result = deleteAccountUseCase().toUiModel()) {
                     is DeleteResultUi.Success -> {
-                        _navigationEvent.value = AccountInfoNavigationEvent.NavigateToRegistration
+                        _navigationEvent.send(AccountInfoNavigationEvent.NavigateToRegistration)
                     }
 
                     is DeleteResultUi.Error -> {
@@ -97,7 +101,9 @@ class AccountInfoViewModel(
         }
     }
 
-    fun onNavigationHandled() {
-        _navigationEvent.value = null
+    fun onBackClick() {
+        viewModelScope.launch(handler) {
+            _navigationEvent.send(AccountInfoNavigationEvent.NavigateBack)
+        }
     }
 }

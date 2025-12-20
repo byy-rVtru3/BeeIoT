@@ -1,15 +1,6 @@
 package com.app.mobile.presentation.ui.screens.hive.list
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,26 +8,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.R
 import com.app.mobile.presentation.models.hive.HivePreview
 import com.app.mobile.presentation.ui.components.ErrorMessage
@@ -46,6 +32,7 @@ import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListNaviga
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListUiState
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListViewModel
 import com.app.mobile.ui.theme.Dimens
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun HivesListScreen(
@@ -53,29 +40,32 @@ fun HivesListScreen(
     onHiveClick: (String) -> Unit,
     onCreateHiveClick: () -> Unit
 ) {
-    val hivesListUiState by hivesListViewModel.hivesListUiState.observeAsState(
-        HivesListUiState
-            .Loading
-    )
+    val hivesListUiState by hivesListViewModel.hivesListUiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        hivesListViewModel.loadHives()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hivesListViewModel.loadHives()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
-    val navigationEvent by hivesListViewModel.navigationEvent.observeAsState()
+    LaunchedEffect(hivesListViewModel.navigationEvent) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            hivesListViewModel.navigationEvent.collectLatest { event ->
+                when (event) {
+                    is HivesListNavigationEvent.NavigateToHive -> {
+                        onHiveClick(event.hiveId)
+                    }
 
-    LaunchedEffect(navigationEvent) {
-        navigationEvent?.let { event ->
-            when (event) {
-                is HivesListNavigationEvent.NavigateToHive -> {
-                    onHiveClick(event.hiveId)
-                    hivesListViewModel.onNavigationHandled()
-                }
-
-                is HivesListNavigationEvent.NavigateToCreateHive -> {
-                    onCreateHiveClick()
-                    hivesListViewModel.onNavigationHandled()
-
+                    is HivesListNavigationEvent.NavigateToCreateHive -> {
+                        onCreateHiveClick()
+                    }
                 }
             }
         }

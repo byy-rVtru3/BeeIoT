@@ -18,22 +18,28 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.presentation.models.queen.QueenEditorModel
 import com.app.mobile.presentation.ui.components.CustomTextField
 import com.app.mobile.presentation.ui.components.ErrorMessage
-import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.screens.queen.editor.viewmodel.QueenEditorNavigationEvent
 import com.app.mobile.presentation.ui.screens.queen.editor.viewmodel.QueenEditorUiState
 import com.app.mobile.presentation.ui.screens.queen.editor.viewmodel.QueenEditorViewModel
+import kotlinx.coroutines.flow.collectLatest
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -41,23 +47,30 @@ import java.util.Locale
 @Composable
 fun QueenEditorScreen(
     queenEditorViewModel: QueenEditorViewModel,
-    queenId: String?,
     onBackClick: () -> Unit
 ) {
-    val queenUiState by queenEditorViewModel.queenEditorUiState.observeAsState(QueenEditorUiState.Loading)
+    val queenUiState by queenEditorViewModel.queenEditorUiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(key1 = Unit) {
-        queenEditorViewModel.loadQueen(queenId)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                queenEditorViewModel.loadQueen()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
-    val navigationEvent by queenEditorViewModel.navigationEvent.observeAsState()
-
-    LaunchedEffect(navigationEvent) {
-        navigationEvent?.let { event ->
-            when (event) {
-                is QueenEditorNavigationEvent.NavigateBack -> onBackClick()
+    LaunchedEffect(queenEditorViewModel.navigationEvent) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            queenEditorViewModel.navigationEvent.collectLatest { event ->
+                when (event) {
+                    is QueenEditorNavigationEvent.NavigateBack -> onBackClick()
+                }
             }
-            queenEditorViewModel.onNavigationHandled()
         }
     }
 

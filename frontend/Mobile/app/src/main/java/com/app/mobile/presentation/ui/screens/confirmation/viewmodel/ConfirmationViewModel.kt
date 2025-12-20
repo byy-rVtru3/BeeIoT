@@ -1,30 +1,40 @@
 package com.app.mobile.presentation.ui.screens.confirmation.viewmodel
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.app.mobile.domain.mappers.toDomain
 import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.account.ConfirmationUserUseCase
 import com.app.mobile.presentation.models.account.ConfirmationModelUi
 import com.app.mobile.presentation.models.account.ConfirmationResultUi
-import com.app.mobile.presentation.models.account.TypeConfirmationUi
+import com.app.mobile.presentation.ui.screens.confirmation.ConfirmationRoute
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class ConfirmationViewModel(
+    savedStateHandle: SavedStateHandle,
     private val confirmationUserUseCase: ConfirmationUserUseCase
 ) : ViewModel() {
 
-    private val _confirmationUiState = MutableLiveData<ConfirmationUiState>()
-    val confirmationUiState: LiveData<ConfirmationUiState> = _confirmationUiState
+    private val route = savedStateHandle.toRoute<ConfirmationRoute>()
+    private val email = route.email
+    private val type = route.type
 
-    private val _navigationEvent = MutableLiveData<ConfirmationNavigationEvent?>()
-    val navigationEvent: LiveData<ConfirmationNavigationEvent?> = _navigationEvent
+    private val _confirmationUiState =
+        MutableStateFlow<ConfirmationUiState>(ConfirmationUiState.Loading)
+    val confirmationUiState = _confirmationUiState.asStateFlow()
+
+    private val _navigationEvent = Channel<ConfirmationNavigationEvent>()
+    val navigationEvent = _navigationEvent.receiveAsFlow()
 
     private val handler = CoroutineExceptionHandler { _, exception ->
         _confirmationUiState.value = ConfirmationUiState.Error(exception.message ?: "Unknown error")
@@ -81,7 +91,7 @@ class ConfirmationViewModel(
 
                 when (result) {
                     is ConfirmationResultUi.Success -> {
-                        _navigationEvent.value = ConfirmationNavigationEvent.NavigateToAuthorization
+                        _navigationEvent.send(ConfirmationNavigationEvent.NavigateToAuthorization)
                     }
 
                     is ConfirmationResultUi.Error -> {
@@ -92,7 +102,7 @@ class ConfirmationViewModel(
         }
     }
 
-    fun createConfirmationModelUi(email: String, type: TypeConfirmationUi) {
+    fun createConfirmationModelUi() {
         val model = ConfirmationModelUi(email = email, code = "", type = type)
         val initialFormState = ConfirmationFormState(code = "")
 
@@ -151,10 +161,6 @@ class ConfirmationViewModel(
                 }
             }
         }
-    }
-
-    fun onNavigationHandled() {
-        _navigationEvent.value = null
     }
 
     override fun onCleared() {
