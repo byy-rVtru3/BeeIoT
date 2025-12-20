@@ -19,47 +19,8 @@ import androidx.navigation.compose.rememberNavController
 import com.app.mobile.presentation.navigation.AppNavigation
 import com.app.mobile.presentation.ui.components.AppBottomBar
 import com.app.mobile.presentation.ui.screens.hive.list.HivesListRoute
+import com.app.mobile.presentation.ui.screens.queen.list.QueenListRoute
 import com.app.mobile.presentation.ui.screens.settings.SettingsRoute
-
-
-//@Composable
-//fun AppHost() {
-//    val navController = rememberNavController()
-//    val navBackStackEntry by navController.currentBackStackEntryAsState()
-//    val currentDestination = navBackStackEntry?.destination
-//
-//
-//    val showBottomBar = currentDestination?.let { dest ->
-//        dest.hasRoute<HivesListRoute>() ||
-//                dest.hasRoute<SettingsRoute>()
-//        // || dest.hasRoute<QueenListRoute>() // Добавьте другие главные экраны
-//    } ?: false
-//
-//    Scaffold(
-//        modifier = Modifier.fillMaxSize(),
-//        bottomBar = {
-//            if (showBottomBar) {
-//                AppBottomBar(
-//                    currentDestination = currentDestination,
-//                    onNavigate = { route ->
-//                        navController.navigate(route) {
-//                            popUpTo(navController.graph.findStartDestination().id) {
-//                                saveState = true
-//                            }
-//                            launchSingleTop = true
-//                            restoreState = true
-//                        }
-//                    }
-//                )
-//            }
-//        }
-//    ) { innerPadding ->
-//        AppNavigation(
-//            modifier = Modifier.padding(innerPadding),
-//            navController = navController
-//        )
-//    }
-//}
 
 @Composable
 fun AppHost() {
@@ -68,7 +29,7 @@ fun AppHost() {
     val currentDestination = navBackStackEntry?.destination
 
     val showBottomBar = currentDestination?.let { dest ->
-        dest.hasRoute<HivesListRoute>() || dest.hasRoute<SettingsRoute>()
+        dest.hasRoute<HivesListRoute>() || dest.hasRoute<SettingsRoute>() || dest.hasRoute<QueenListRoute>()
     } ?: false
 
     Scaffold(

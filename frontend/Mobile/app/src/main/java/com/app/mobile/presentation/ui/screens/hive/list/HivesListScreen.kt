@@ -45,6 +45,7 @@ import com.app.mobile.presentation.ui.screens.hive.list.models.HivesListActions
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListNavigationEvent
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListUiState
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListViewModel
+import com.app.mobile.ui.theme.Dimens
 
 @Composable
 fun HivesListScreen(
@@ -104,7 +105,7 @@ fun HivesListScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HivesListContent(hives: List<HivePreview>, actions: HivesListActions) {
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(modifier = Modifier.fillMaxSize().padding(bottom = Dimens.BottomAppBarHeight), color = MaterialTheme.colorScheme.background) {
         Scaffold(
             topBar = {
                 TopAppBar(

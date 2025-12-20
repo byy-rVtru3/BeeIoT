@@ -37,6 +37,7 @@ import com.app.mobile.presentation.ui.screens.queen.list.models.QueenListActions
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListNavigationEvent
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListUiState
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListViewModel
+import com.app.mobile.ui.theme.Dimens
 
 @Composable
 fun QueenListScreen(
@@ -79,7 +80,7 @@ fun QueenListScreen(
 
 @Composable
 fun QueenListContent(queens: List<QueenPreviewModel>, actions: QueenListActions) {
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(modifier = Modifier.fillMaxSize().padding(bottom = Dimens.BottomAppBarHeight), color = MaterialTheme.colorScheme.background) {
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 contentPadding = PaddingValues(16.dp),

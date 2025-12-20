@@ -13,13 +13,18 @@
     <string name="authorization_title">Авторизация</string>
     <string name="authorization_button">Войти</string>
     <string name="forgot_password">Забыли пароль?</string>
+    <string name="hives">Ульи</string>
+    <string name="queens">Матки</string>
     <string name="settings">Настройки</string>
+    <string name="home">Главная</string>
+    <string name="sensors">Датчики</string>
     <string name="logout_button">Выйти</string>
     <string name="account_button">Профиль</string>
     <string name="about_button">О приложении</string>
     <string name="app_info">BeeIoT — это мобильное приложение, предназначенное для пчеловодов любого уровня. Оно помогает организовать работу на пасеке, отслеживать состояние ульев и пчелиных семей, планировать мероприятия и вести журнал операций без необходимости подключения к интернету.\n\nПриложение создаёт единое цифровое пространство для управления пасекой, собирая и систематизируя данные о каждом улье.</string>
     <string name="confirm">Подтвердить</string>
     <string name="enter_code">Код подтверждения</string>
+    <string name="logo_description">Логотип пчела</string>
 
 
 

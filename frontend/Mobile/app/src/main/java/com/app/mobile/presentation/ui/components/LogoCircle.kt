@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import com.app.mobile.R
 import com.app.mobile.ui.theme.Dimens
 
@@ -24,7 +25,7 @@ fun LogoCircle() {
         modifier = Modifier
             .size(Dimens.LogoCircleSize)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surface) // Фон внутри круга
+            .background(MaterialTheme.colorScheme.surface)
             .border(
                 width = Dimens.BorderWidthThick,
                 color = MaterialTheme.colorScheme.outline,
@@ -32,15 +33,9 @@ fun LogoCircle() {
             ),
         contentAlignment = Alignment.Center
     ) {
-//        Icon(
-//            imageVector = Icons.Default.Settings,
-//            contentDescription = null,
-//            modifier = Modifier.size(Dimens.LogoCircleLogoSize),
-//            tint = Color.Black
-//        )
         Image(
             painter = painterResource(id = R.drawable.ic_logo),
-            contentDescription = "Логотип пчелы",
+            contentDescription = stringResource(R.string.logo_description),
             modifier = Modifier.size(Dimens.LogoCircleLogoSize)
         )
     }

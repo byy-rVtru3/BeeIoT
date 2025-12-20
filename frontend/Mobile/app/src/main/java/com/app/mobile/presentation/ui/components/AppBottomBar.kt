@@ -7,14 +7,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Inbox
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -23,18 +22,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
+import com.app.mobile.R
+import com.app.mobile.presentation.ui.modifiers.styleShadow
+import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppRoute
 
 import com.app.mobile.presentation.ui.screens.hive.list.HivesListRoute
+import com.app.mobile.presentation.ui.screens.queen.list.QueenListRoute
 import com.app.mobile.presentation.ui.screens.settings.SettingsRoute
+import com.app.mobile.ui.theme.Dimens
 
 
 data class BottomTabItem(
@@ -43,89 +47,54 @@ data class BottomTabItem(
     val route: Any
 )
 
-//@Composable
-//fun AppBottomBar(
-//    currentDestination: NavDestination?,
-//    onNavigate: (Any) -> Unit
-//) {
-//    val tabs = listOf(
-////        BottomTabItem("Главная", Icons.Outlined.Home, HivesListRoute),
-////        BottomTabItem("Датчики", Icons.Outlined.Sensors, SettingsRoute),
-////        BottomTabItem("Матки", Icons.Outlined.Settings, SettingsRoute),
-//        BottomTabItem("Ульи", Icons.Outlined.Inbox, HivesListRoute),
-//        BottomTabItem("Настройки", Icons.Outlined.Settings, SettingsRoute)
-//    )
-//
-//
-//    NavigationBar(
-//        containerColor = MaterialTheme.colorScheme.surface,
-//        tonalElevation = 0.dp,
-//        modifier = Modifier
-//            .shadow(elevation = 16.dp, shape = RoundedCornerShape(topStart = Dimens.BorderRadiusMedium, topEnd = Dimens.BorderRadiusMedium))
-//            .clip(RoundedCornerShape(topStart = Dimens.BorderRadiusMedium, topEnd = Dimens.BorderRadiusMedium))
-//            .height(80.dp)
-//    ) {
-//        tabs.forEach { tab ->
-//            val selected = currentDestination?.hierarchy?.any {
-//                it.hasRoute(tab.route::class)
-//            } == true
-//
-//            NavigationBarItem(
-//                selected = selected,
-//                onClick = { onNavigate(tab.route) },
-//                icon = {
-//                    Icon(
-//                        imageVector = tab.icon,
-//                        contentDescription = tab.label,
-//                        modifier = Modifier.size(32.dp)
-//                    )
-//                },
-//                label = {
-//                    Text(
-//                        text = tab.label,
-//                        style = MaterialTheme.typography.labelSmall.copy(
-//                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
-//                        )
-//                    )
-//                },
-//                alwaysShowLabel = true,
-//
-//                colors = NavigationBarItemDefaults.colors(
-//                    indicatorColor = MaterialTheme.colorScheme.primary,
-//
-//                    selectedIconColor = MaterialTheme.colorScheme.onSurface,
-//                    unselectedIconColor = MaterialTheme.colorScheme.onSurface,
-//
-//                    selectedTextColor = MaterialTheme.colorScheme.onSurface,
-//                    unselectedTextColor = MaterialTheme.colorScheme.onSurface
-//                )
-//            )
-//        }
-//    }
-//}
-
-
 @Composable
 fun AppBottomBar(
     currentDestination: NavDestination?,
     onNavigate: (Any) -> Unit
 ) {
     val tabs = listOf(
-        BottomTabItem("Ульи", Icons.Outlined.Inbox, HivesListRoute),
-        BottomTabItem("Настройки", Icons.Outlined.Settings, SettingsRoute)
+        BottomTabItem(
+            stringResource(R.string.home),
+            ImageVector.vectorResource(R.drawable.ic_home),
+            AboutAppRoute
+        ),
+
+        BottomTabItem(
+            stringResource(R.string.sensors),
+            ImageVector.vectorResource(R.drawable.ic_sensors),
+            AboutAppRoute
+        ),
+
+        BottomTabItem(
+            stringResource(R.string.queens), ImageVector.vectorResource(R.drawable.ic_queens),
+            QueenListRoute
+        ),
+        BottomTabItem(
+            stringResource(R.string.hives),
+            ImageVector.vectorResource(R.drawable.ic_hives),
+            HivesListRoute
+        ),
+        BottomTabItem(
+            stringResource(R.string.settings),
+            ImageVector.vectorResource(R.drawable.ic_settings),
+            SettingsRoute
+        )
     )
 
-    val activeBorderColor = Color(0xFFFFC107)
-    val indicatorShape = RoundedCornerShape(16.dp)
+    val activeBorderColor = MaterialTheme.colorScheme.primary
+    val indicatorShape = RoundedCornerShape(Dimens.BorderRadiusMedium)
 
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp,
+        tonalElevation = Dimens.Null,
         modifier = Modifier
-            .shadow(elevation = 16.dp, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-            .height(80.dp)
+            .styleShadow()
+            .clip(RoundedCornerShape(Dimens.BorderRadiusMedium, Dimens.BorderRadiusMedium))
+            .height(Dimens.BottomAppBarHeight)
+
     ) {
+        Spacer(modifier = Modifier.width(Dimens.BottomAppBarHorizontalPadding))
+
         tabs.forEach { tab ->
             val selected = currentDestination?.hierarchy?.any {
                 it.hasRoute(tab.route::class)
@@ -138,9 +107,13 @@ fun AppBottomBar(
                 icon = tab.icon,
                 label = tab.label,
                 activeBorderColor = activeBorderColor,
-                shape = indicatorShape
-            )
+                shape = indicatorShape,
+
+                )
         }
+
+        Spacer(modifier = Modifier.width(Dimens.BottomAppBarHorizontalPadding))
+
     }
 }
 
@@ -171,17 +144,20 @@ fun RowScope.CustomBottomNavigationItem(
 
                     .clip(shape)
                     .border(
-                        width = if (selected) 2.dp else 0.dp,
+                        width = if (selected) Dimens.BorderWidthNormal else Dimens.Null,
                         color = if (selected) activeBorderColor else Color.Transparent,
                         shape = shape
                     )
                     .clickable(onClick = onClick)
-                    .padding(horizontal = 20.dp, vertical = 4.dp)
+                    .padding(
+                        horizontal = Dimens.BottomAppBarHorizontalButtonPadding,
+                        vertical = Dimens.BottomAppBarVerticalButtonPadding
+                    )
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = label,
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(Dimens.BottomAppBarIconSize),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -192,12 +168,11 @@ fun RowScope.CustomBottomNavigationItem(
                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
                 ),
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = 4.dp)
+                modifier = Modifier.padding(top = Dimens.BottomAppBarTextPadding)
             )
         }
     }
 }
-
 
 
 @Preview
