@@ -33,6 +33,9 @@
     <string name="hive_name">Название улья</string>
     <string name="add">Добавить</string>
     <string name="cancel">Отмена</string>
+    <string name="empty_hives_list_screen">Пока нету ульев, чтобы добавить улей нажмите на кнопку "Добавить улей"</string>
+    <string name="empty_archive_hives_list_screen">В архиве пока пусто</string>
+    <string name="hive_last_connection_format">Последняя связь\n%1$s</string>
 
 
 
@@ -52,5 +55,4 @@
     <string name="error_name_too_long">Имя слишком длинное (максимум 50 символов)</string>
     <string name="password_requirements">Пароль должен быть длиной 8 и более символов, состоящий из букв, цифр и других символов</string>
 
-    <string name="empty_hives_list_screen">Пока нету ульев, чтобы добавить улей нажмите на кнопку "Добавить улей"</string>
 </resources>

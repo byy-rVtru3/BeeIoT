@@ -199,7 +199,7 @@ fun SelectorTopBar(
                             modifier = Modifier
                                 .width(Dimens.SelectTopBarLineWidth)
                                 .height(Dimens.SelectTopBarLineHeight)
-                                .background(MaterialTheme.colorScheme.primary)
+                                .background(MaterialTheme.colorScheme.outline)
                         )
                     } else {
                         Spacer(modifier = Modifier.height(Dimens.SelectTopBarLineHeight))
