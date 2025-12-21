@@ -10,8 +10,6 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,20 +17,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.R
 import com.app.mobile.presentation.models.hive.HivePreview
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.screens.hive.list.models.HivesListActions
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListNavigationEvent
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListUiState
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListViewModel
 import com.app.mobile.ui.theme.Dimens
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun HivesListScreen(
@@ -40,33 +36,20 @@ fun HivesListScreen(
     onHiveClick: (String) -> Unit,
     onCreateHiveClick: () -> Unit
 ) {
-    val hivesListUiState by hivesListViewModel.hivesListUiState.collectAsStateWithLifecycle()
+    val hivesListUiState by hivesListViewModel.uiState.collectAsStateWithLifecycle()
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                hivesListViewModel.loadHives()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        hivesListViewModel.loadHives()
     }
 
-    LaunchedEffect(hivesListViewModel.navigationEvent) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            hivesListViewModel.navigationEvent.collectLatest { event ->
-                when (event) {
-                    is HivesListNavigationEvent.NavigateToHive -> {
-                        onHiveClick(event.hiveId)
-                    }
+    ObserveAsEvents(hivesListViewModel.event) { event ->
+        when (event) {
+            is HivesListNavigationEvent.NavigateToHive -> {
+                onHiveClick(event.hiveId)
+            }
 
-                    is HivesListNavigationEvent.NavigateToCreateHive -> {
-                        onCreateHiveClick()
-                    }
-                }
+            is HivesListNavigationEvent.NavigateToCreateHive -> {
+                onCreateHiveClick()
             }
         }
     }
@@ -95,7 +78,12 @@ fun HivesListScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HivesListContent(hives: List<HivePreview>, actions: HivesListActions) {
-    Surface(modifier = Modifier.fillMaxSize().padding(bottom = Dimens.BottomAppBarHeight), color = MaterialTheme.colorScheme.background) {
+    Surface(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = Dimens.BottomAppBarHeight),
+        color = MaterialTheme.colorScheme.background
+    ) {
         Scaffold(
             topBar = {
                 TopAppBar(

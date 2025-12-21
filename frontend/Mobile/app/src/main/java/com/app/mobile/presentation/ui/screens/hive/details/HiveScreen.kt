@@ -21,8 +21,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,10 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.presentation.models.hive.HiveUi
 import com.app.mobile.presentation.models.hive.HubUi
 import com.app.mobile.presentation.models.hive.NotificationUi
@@ -42,12 +38,12 @@ import com.app.mobile.presentation.models.hive.QueenUi
 import com.app.mobile.presentation.models.hive.WorkUi
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.screens.hive.details.models.HiveActions
 import com.app.mobile.presentation.ui.screens.hive.details.viewmodel.HiveNavigationEvent
 import com.app.mobile.presentation.ui.screens.hive.details.viewmodel.HiveUiState
 import com.app.mobile.presentation.ui.screens.hive.details.viewmodel.HiveViewModel
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun HiveScreen(
@@ -61,38 +57,25 @@ fun HiveScreen(
     onHiveListClick: () -> Unit,
     onHiveEditClick: (hiveId: String) -> Unit
 ) {
-    val hiveUiState by hiveViewModel.hiveUiState.collectAsStateWithLifecycle()
+    val hiveUiState by hiveViewModel.uiState.collectAsStateWithLifecycle()
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                hiveViewModel.loadHive()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        hiveViewModel.loadHive()
     }
 
-    LaunchedEffect(hiveViewModel.navigationEvent) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            hiveViewModel.navigationEvent.collectLatest { event ->
-                when (event) {
-                    is HiveNavigationEvent.NavigateToHiveList -> onHiveListClick()
-                    is HiveNavigationEvent.NavigateToQueenByHive -> onQueenClick(event.queenId)
-                    is HiveNavigationEvent.NavigateToWorkByHive -> onWorksClick(event.hiveId)
-                    is HiveNavigationEvent.NavigateToNotificationByHive -> onNotificationsClick(
-                        event.hiveId
-                    )
+    ObserveAsEvents(hiveViewModel.event) { event ->
+        when (event) {
+            is HiveNavigationEvent.NavigateToHiveList -> onHiveListClick()
+            is HiveNavigationEvent.NavigateToQueenByHive -> onQueenClick(event.queenId)
+            is HiveNavigationEvent.NavigateToWorkByHive -> onWorksClick(event.hiveId)
+            is HiveNavigationEvent.NavigateToNotificationByHive -> onNotificationsClick(
+                event.hiveId
+            )
 
-                    is HiveNavigationEvent.NavigateToTemperatureByHive -> onTemperatureClick(event.hiveId)
-                    is HiveNavigationEvent.NavigateToNoiseByHive -> onNoiseClick(event.hiveId)
-                    is HiveNavigationEvent.NavigateToWeightByHive -> onWeightClick(event.hiveId)
-                    is HiveNavigationEvent.NavigateToHiveEdit -> onHiveEditClick(event.hiveId)
-                }
-            }
+            is HiveNavigationEvent.NavigateToTemperatureByHive -> onTemperatureClick(event.hiveId)
+            is HiveNavigationEvent.NavigateToNoiseByHive -> onNoiseClick(event.hiveId)
+            is HiveNavigationEvent.NavigateToWeightByHive -> onWeightClick(event.hiveId)
+            is HiveNavigationEvent.NavigateToHiveEdit -> onHiveEditClick(event.hiveId)
         }
     }
 
