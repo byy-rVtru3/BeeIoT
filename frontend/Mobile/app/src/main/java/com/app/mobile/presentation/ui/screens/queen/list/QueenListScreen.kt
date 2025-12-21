@@ -15,26 +15,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.presentation.models.queen.QueenPreviewModel
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.screens.queen.list.models.QueenListActions
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListNavigationEvent
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListUiState
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListViewModel
 import com.app.mobile.ui.theme.Dimens
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun QueenListScreen(
@@ -42,29 +38,16 @@ fun QueenListScreen(
     onQueenClick: (String) -> Unit,
     onAddClick: () -> Unit
 ) {
-    val queenListUiState by queenListViewModel.queenListUiState.collectAsStateWithLifecycle()
+    val queenListUiState by queenListViewModel.uiState.collectAsStateWithLifecycle()
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                queenListViewModel.loadQueens()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        queenListViewModel.loadQueens()
     }
 
-    LaunchedEffect(queenListViewModel.navigationEvent) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            queenListViewModel.navigationEvent.collectLatest { event ->
-                when (event) {
-                    is QueenListNavigationEvent.NavigateToQueen -> onQueenClick(event.queenId)
-                    is QueenListNavigationEvent.NavigateToAddQueen -> onAddClick()
-                }
-            }
+    ObserveAsEvents(queenListViewModel.event) { event ->
+        when (event) {
+            is QueenListNavigationEvent.NavigateToQueen -> onQueenClick(event.queenId)
+            is QueenListNavigationEvent.NavigateToAddQueen -> onAddClick()
         }
     }
 
@@ -85,7 +68,12 @@ fun QueenListScreen(
 
 @Composable
 fun QueenListContent(queens: List<QueenPreviewModel>, actions: QueenListActions) {
-    Surface(modifier = Modifier.fillMaxSize().padding(bottom = Dimens.BottomAppBarHeight), color = MaterialTheme.colorScheme.background) {
+    Surface(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = Dimens.BottomAppBarHeight),
+        color = MaterialTheme.colorScheme.background
+    ) {
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 contentPadding = PaddingValues(16.dp),

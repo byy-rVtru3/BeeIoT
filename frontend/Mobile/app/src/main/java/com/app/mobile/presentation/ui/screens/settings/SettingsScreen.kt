@@ -4,22 +4,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import com.app.mobile.R
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
+import com.app.mobile.R
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.LogoCircle
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.components.SettingsButton
 import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.screens.settings.models.SettingsActions
@@ -28,10 +26,6 @@ import com.app.mobile.presentation.ui.screens.settings.viewmodel.SettingsUiState
 import com.app.mobile.presentation.ui.screens.settings.viewmodel.SettingsViewModel
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import com.app.mobile.presentation.ui.components.LogoCircle
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun SettingsScreen(
@@ -40,33 +34,15 @@ fun SettingsScreen(
     onLogoutClick: () -> Unit,
     onAboutAppClick: () -> Unit
 ) {
-    val settingsUiState by settingsViewModel.settingsUiState.collectAsStateWithLifecycle()
+    val settingsUiState by settingsViewModel.uiState.collectAsStateWithLifecycle()
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                // что-то для резюма
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
+    ObserveAsEvents(settingsViewModel.event) { event ->
+        when (event) {
+            is SettingsNavigationEvent.NavigateToAccountInfo -> onAccountInfoClick()
 
+            is SettingsNavigationEvent.NavigateToAboutApp -> onAboutAppClick()
 
-    LaunchedEffect(settingsViewModel.navigationEvent) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            settingsViewModel.navigationEvent.collectLatest { event ->
-                when (event) {
-                    is SettingsNavigationEvent.NavigateToAccountInfo -> onAccountInfoClick()
-
-                    is SettingsNavigationEvent.NavigateToAboutApp -> onAboutAppClick()
-
-                    is SettingsNavigationEvent.NavigateToAuthorization -> onLogoutClick()
-                }
-            }
+            is SettingsNavigationEvent.NavigateToAuthorization -> onLogoutClick()
         }
     }
 
@@ -88,7 +64,12 @@ fun SettingsScreen(
 
 @Composable
 private fun SettingsContent(actions: SettingsActions) {
-    Surface(modifier = Modifier.fillMaxSize().padding(bottom = Dimens.BottomAppBarHeight), color = MaterialTheme.colorScheme.background) {
+    Surface(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = Dimens.BottomAppBarHeight),
+        color = MaterialTheme.colorScheme.background
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()

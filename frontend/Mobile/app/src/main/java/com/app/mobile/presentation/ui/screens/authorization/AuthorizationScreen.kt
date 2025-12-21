@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -19,14 +17,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.R
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.LabelButton
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.components.PasswordTextField
 import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.components.Title
@@ -40,7 +37,6 @@ import com.app.mobile.presentation.validators.ValidationConfig
 import com.app.mobile.presentation.validators.ValidationError
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun AuthorizationScreen(
@@ -48,29 +44,16 @@ fun AuthorizationScreen(
     onAuthorizeClick: () -> Unit,
     onRegistrationClick: () -> Unit
 ) {
-    val authorizationUiState by authorizationViewModel.authorizationUiState.collectAsStateWithLifecycle()
+    val authorizationUiState by authorizationViewModel.uiState.collectAsStateWithLifecycle()
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                authorizationViewModel.createAuthorizationModel()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        authorizationViewModel.createAuthorizationModel()
     }
 
-    LaunchedEffect(authorizationViewModel.navigationEvent) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            authorizationViewModel.navigationEvent.collectLatest { event ->
-                when (event) {
-                    is AuthorizationNavigationEvent.NavigateToMainScreen -> onAuthorizeClick()
-                    is AuthorizationNavigationEvent.NavigateToRegistration -> onRegistrationClick()
-                }
-            }
+    ObserveAsEvents(authorizationViewModel.event) { event ->
+        when (event) {
+            is AuthorizationNavigationEvent.NavigateToMainScreen -> onAuthorizeClick()
+            is AuthorizationNavigationEvent.NavigateToRegistration -> onRegistrationClick()
         }
     }
 
@@ -173,6 +156,7 @@ private fun AuthorizationContent(
         }
     }
 }
+
 @Composable
 fun AuthorizationEmailTextField(
     email: String,
