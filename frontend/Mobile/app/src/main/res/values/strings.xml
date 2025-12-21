@@ -36,7 +36,7 @@
     <string name="empty_hives_list_screen">Пока нету ульев, чтобы добавить улей нажмите на кнопку "Добавить улей"</string>
     <string name="empty_archive_hives_list_screen">В архиве пока пусто</string>
     <string name="hive_last_connection_format">Последняя связь\n%1$s</string>
-
+    <string name="hive_title_details">Детали улья</string>
 
 
 

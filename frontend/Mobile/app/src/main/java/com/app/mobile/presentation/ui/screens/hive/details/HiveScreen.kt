@@ -3,30 +3,22 @@ package com.app.mobile.presentation.ui.screens.hive.details
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MonitorWeight
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Thermostat
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -40,14 +32,17 @@ import com.app.mobile.presentation.models.hive.HubUi
 import com.app.mobile.presentation.models.hive.NotificationUi
 import com.app.mobile.presentation.models.hive.QueenUi
 import com.app.mobile.presentation.models.hive.WorkUi
+import com.app.mobile.presentation.ui.components.AppTopBar
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
-import com.app.mobile.presentation.ui.components.Title
+import com.app.mobile.presentation.ui.components.TopBarAction
 import com.app.mobile.presentation.ui.screens.hive.details.models.HiveActions
 import com.app.mobile.presentation.ui.screens.hive.details.viewmodel.HiveNavigationEvent
 import com.app.mobile.presentation.ui.screens.hive.details.viewmodel.HiveUiState
 import com.app.mobile.presentation.ui.screens.hive.details.viewmodel.HiveViewModel
+import com.app.mobile.ui.theme.Dimens
 import kotlinx.coroutines.flow.collectLatest
+import com.app.mobile.R
 
 @Composable
 fun HiveScreen(
@@ -116,144 +111,233 @@ fun HiveScreen(
                 onHiveEditClick = hiveViewModel::onHiveEditClick,
                 onDeleteClick = {} // необходимо добавить удаление, сейчас мне лень
             )
-            HiveContent(state.hive, actions)
+            HiveContent(state.hive, actions, onBackClick = onHiveListClick)
         }
     }
 }
 
-
 @Composable
-private fun HiveContent(hive: HiveUi, actions: HiveActions) {
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+private fun HiveContent(
+    hive: HiveUi,
+    actions: HiveActions,
+    onBackClick: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                title = stringResource(R.string.hive_title_details),
+                onBackClick = onBackClick,
+                action = TopBarAction.Delete(onClick = actions.onDeleteClick)
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceVariant // Серый фон
+    ) { innerPadding ->
         Column(
             modifier = Modifier
+                .padding(innerPadding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.Start
+                .padding(Dimens.ScreenContentPadding),
+            verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingLarge)
         ) {
-            Title("Улей")
+            // 1. Основная информация
+            SectionTitle(title = "Основная информация")
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                InfoCard(
+                    title = "Название:",
+                    value = hive.name,
+                    modifier = Modifier.weight(1f)
+                )
 
-            MainInformation(hive)
-
-            if (hive.connectedHub is HubUi.Present) {
-                HubInformation(
-                    hive.connectedHub,
-                    actions.onTemperatureClick,
-                    actions.onNoiseClick,
-                    actions.onWeightClick
+                val hubName = if (hive.connectedHub is HubUi.Present) {
+                    hive.connectedHub.name
+                } else {
+                    "Нет"
+                }
+                InfoCard(
+                    title = "Подключенный хаб:",
+                    value = hubName,
+                    modifier = Modifier.weight(1f)
                 )
             }
 
-            if (hive.queen is QueenUi.Present) {
-                QueenInformation(hive.queen, actions.onQueenClick)
+            // 2. Хаб и сенсоры
+            if (hive.connectedHub is HubUi.Present) {
+                SectionTitle(title = "Данные хаба")
+                HubControlCard(
+                    hub = hive.connectedHub,
+                    onTempClick = actions.onTemperatureClick,
+                    onNoiseClick = actions.onNoiseClick,
+                    onWeightClick = actions.onWeightClick
+                )
             }
 
-            NotificationsInformation(hive.notifications, actions.onNotificationClick)
+            // 3. Матка
+            if (hive.queen is QueenUi.Present) {
+                SectionTitle(title = "Матка")
+                // Используем actions.onQueenClick без аргументов, так как ID прошит выше
+                QueenCard(queen = hive.queen, onClick = actions.onQueenClick)
+            }
 
-            WorksInformation(hive.works, actions.onWorkClick)
+            // 4. Уведомления
+            if (hive.notifications.isNotEmpty()) {
+                SectionHeaderWithAction(
+                    title = "Уведомления",
+                    actionText = "Посмотреть все",
+                    onActionClick = actions.onNotificationClick
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)) {
+                    hive.notifications.take(2).forEach { notification ->
+                        NotificationItemCard(notification)
+                    }
+                }
+            }
+
+            // 5. Работы
+            if (hive.works.isNotEmpty()) {
+                SectionHeaderWithAction(
+                    title = "Работы по улью",
+                    actionText = "Посмотреть все",
+                    onActionClick = actions.onWorkClick
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)) {
+                    hive.works.take(2).forEach { work ->
+                        WorkItemCard(work)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(Dimens.ItemsSpacingLarge))
         }
     }
 }
 
+// --- UI Components ---
+
 @Composable
-private fun MainInformation(hive: HiveUi) {
-    Card(
+private fun SectionTitle(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurface
+    )
+}
+
+@Composable
+private fun SectionHeaderWithAction(
+    title: String,
+    actionText: String,
+    onActionClick: () -> Unit
+) {
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = actionText,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.clickable { onActionClick() }
+        )
+    }
+}
+
+@Composable
+private fun InfoCard(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(Dimens.ItemCardRadius),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 0.dp
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(Dimens.ItemCardPadding),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Home,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = hive.name,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            val hubText = if (hive.connectedHub is HubUi.Present) {
-                "Подключен к хабу: ${hive.connectedHub.name}"
-            } else {
-                "Нет подключения к хабу"
-            }
-
             Text(
-                text = hubText,
-                style = MaterialTheme.typography.bodyMedium,
+                text = title,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
 }
 
 @Composable
-private fun HubInformation(
+private fun HubControlCard(
     hub: HubUi.Present,
-    onTemperatureClick: () -> Unit,
+    onTempClick: () -> Unit,
     onNoiseClick: () -> Unit,
     onWeightClick: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        )
+    Surface(
+        shape = RoundedCornerShape(Dimens.ItemCardRadius),
+        color = MaterialTheme.colorScheme.surface,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(Dimens.ItemCardPadding),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            // Информация о хабе
+            Column {
                 Text(
                     text = "Хаб: ${hub.name}",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "IP: ${hub.ipAddress}:${hub.port}",
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            Text(
-                text = "IP: ${hub.ipAddress}:${hub.port}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            // Горизонтальная линия
+            // Обратите внимание: Divider устарел в новых версиях M3, лучше использовать HorizontalDivider
+            // Но если у вас старая версия, оставьте Divider
+            androidx.compose.material3.HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant
             )
 
+            // Кнопки сенсоров (ТЕКСТОВЫЕ)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp) // Расстояние между кнопками
             ) {
-                SensorButton(
-                    text = "Темп.",
-                    icon = Icons.Default.Thermostat,
-                    onClick = onTemperatureClick,
+                // Weight(1f) растянет кнопки равномерно по ширине
+                SensorActionItem(
+                    label = "Темп.",
+                    onClick = onTempClick,
                     modifier = Modifier.weight(1f)
                 )
-                SensorButton(
-                    text = "Шум",
-                    icon = Icons.Default.GraphicEq,
+                SensorActionItem(
+                    label = "Шум",
                     onClick = onNoiseClick,
                     modifier = Modifier.weight(1f)
                 )
-                SensorButton(
-                    text = "Вес",
-                    icon = Icons.Default.MonitorWeight,
+                SensorActionItem(
+                    label = "Вес",
                     onClick = onWeightClick,
                     modifier = Modifier.weight(1f)
                 )
@@ -263,236 +347,127 @@ private fun HubInformation(
 }
 
 @Composable
-private fun SensorButton(
-    text: String,
-    icon: ImageVector,
+private fun SensorActionItem(
+    label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    OutlinedButton(
+    // Используем Surface или OutlinedButton, чтобы текст выглядел как кнопка
+    Surface(
         onClick = onClick,
-        modifier = modifier,
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+        shape = RoundedCornerShape(8.dp), // Скругление углов кнопки
+        color = MaterialTheme.colorScheme.secondaryContainer, // Цвет фона кнопки
+        modifier = modifier
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(imageVector = icon, contentDescription = null)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
-}
-
-@Composable
-private fun QueenInformation(
-    queen: QueenUi.Present,
-    onQueenClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onQueenClick),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Матка: ${queen.queen.name}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = "Details",
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            }
-
-            val stage = queen.queen.stage
-            Text(
-                text = stage.title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-            Text(
-                text = stage.description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-
-            LinearProgressIndicator(
-                progress = { stage.progress },
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                trackColor = MaterialTheme.colorScheme.secondary
-            )
-
-            Text(
-                text = stage.remainingDays,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-        }
-    }
-}
-
-@Composable
-private fun NotificationsInformation(
-    notifications: List<NotificationUi>,
-    onNotificationClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.padding(vertical = 12.dp) // Отступы внутри кнопки
         ) {
             Text(
-                text = "Уведомления",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground
+                text = label,
+                style = MaterialTheme.typography.labelLarge, // Шрифт чуть крупнее для читаемости
+                color = MaterialTheme.colorScheme.onSecondaryContainer
             )
-            TextButton(onClick = onNotificationClick) {
-                Text("Все")
-            }
-        }
-
-        if (notifications.isEmpty()) {
-            Text(
-                text = "Нет новых уведомлений",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        } else {
-            notifications.take(3).forEach { notification ->
-                NotificationItem(notification)
-            }
         }
     }
 }
 
 @Composable
-private fun NotificationItem(notification: NotificationUi) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+private fun QueenCard(queen: QueenUi.Present, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(Dimens.ItemCardRadius),
+        color = MaterialTheme.colorScheme.surface,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
-                .padding(12.dp)
+                .padding(Dimens.ItemCardPadding)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(
-                imageVector = Icons.Default.Notifications,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = notification.message,
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = queen.queen.name,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = notification.dateTime,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = queen.queen.stage.title,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
 
 @Composable
-private fun WorksInformation(
-    works: List<WorkUi>,
-    onWorkClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Работы",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            TextButton(onClick = onWorkClick) {
-                Text("Все")
-            }
-        }
-
-        if (works.isEmpty()) {
-            Text(
-                text = "Нет запланированных работ",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        } else {
-            works.take(3).forEach { work ->
-                WorkItem(work)
-            }
-        }
-    }
-}
-
-@Composable
-private fun WorkItem(work: WorkUi) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+private fun NotificationItemCard(notification: NotificationUi) {
+    Surface(
+        shape = RoundedCornerShape(Dimens.ItemCardRadius),
+        color = MaterialTheme.colorScheme.surface,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
-                .padding(12.dp)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+                .padding(Dimens.ItemCardPadding)
+                .fillMaxWidth()
+        ) {
+            Text(
+                text = notification.message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = notification.dateTime,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+        }
+    }
+}
+
+@Composable
+private fun WorkItemCard(work: WorkUi) {
+    Surface(
+        shape = RoundedCornerShape(Dimens.ItemCardRadius),
+        color = MaterialTheme.colorScheme.surface,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(Dimens.ItemCardPadding)
+                .fillMaxWidth()
         ) {
             Text(
                 text = work.title,
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = work.text,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface
+                overflow = TextOverflow.Ellipsis
             )
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = work.dateTime,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.outline
             )
         }
     }
