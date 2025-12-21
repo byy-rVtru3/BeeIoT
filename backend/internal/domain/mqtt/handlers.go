@@ -12,6 +12,24 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
+func (m *Client) handleDeviceDataTest(_ mqtt.Client, msg mqtt.Message) {
+	topic := msg.Topic()
+	parts := strings.Split(topic, "/")
+	if len(parts) != 4 || parts[1] != "device" || parts[3] != "data" {
+		m.logger.Error().Str("topic", topic).Msg("Invalid topic format")
+		return
+	}
+	sensorId := parts[2]
+
+	var data mqttTypes.DeviceData
+	if err := json.Unmarshal(msg.Payload(), &data); err != nil {
+		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to unmarshal payload")
+		return
+	}
+	fmt.Println("\nReceived test data:", data, "\nFrom sensor:", sensorId)
+	m.logger.Info().Msgf("Received test data from sensor %s: %+v", sensorId, data)
+}
+
 // handleDeviceData обработчик топика /device/{id}/data
 func (m *Client) handleDeviceData(_ mqtt.Client, msg mqtt.Message) {
 	topic := msg.Topic()
@@ -81,6 +99,23 @@ func (m *Client) addTemperature(ctx context.Context, email, hiveName string, dat
 		Hive:        hiveName,
 	})
 	return err
+}
+
+func (m *Client) handleDeviceStatusTest(_ mqtt.Client, msg mqtt.Message) {
+	topic := msg.Topic()
+	parts := strings.Split(topic, "/")
+	if len(parts) != 4 || parts[1] != "device" || parts[3] != "status" {
+		m.logger.Error().Str("topic", topic).Msg("Invalid topic format")
+		return
+	}
+	sensorId := parts[2]
+
+	var DeviceStatus mqttTypes.DeviceStatus
+	if err := json.Unmarshal(msg.Payload(), &DeviceStatus); err != nil {
+		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to unmarshal payload")
+		return
+	}
+	fmt.Println("\nReceived test status:", DeviceStatus, "\nFrom sensor:", sensorId)
 }
 
 // handleDeviceStatus обработчик топика /device/{id}/status

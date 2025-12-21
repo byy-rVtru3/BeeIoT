@@ -16,7 +16,7 @@ func (h *Handler) MQTTSendConfig(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info().Str("sensor", data.Sensor).Msg("sending MQTT config")
 	conf := mqttTypes.NewDeviceConfig()
 	conf.Health = true
-	conf.Frequency = 1
+	conf.Frequency = 10000
 	conf.SamplingTemp = 1
 	conf.SamplingNoise = 1
 	if err := h.mqtt.SendConfig(data.Sensor, conf); err != nil {
