@@ -16,52 +16,35 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.presentation.models.hive.WorkUi
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.screens.works.editor.models.WorksEditorActions
 import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorNavigationEvent
 import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorUiState
 import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorViewModel
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun WorksEditorScreen(
     worksEditorViewModel: WorksEditorViewModel,
     onBackClick: () -> Unit
 ) {
-    val workEditorUiState by worksEditorViewModel.worksEditorUiState.collectAsStateWithLifecycle()
+    val workEditorUiState by worksEditorViewModel.uiState.collectAsStateWithLifecycle()
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                worksEditorViewModel.loadWork()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        worksEditorViewModel.loadWork()
     }
 
-    LaunchedEffect(worksEditorViewModel.navigationEvent) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            worksEditorViewModel.navigationEvent.collectLatest { event ->
-                when (event) {
-                    is WorksEditorNavigationEvent.NavigateToWorksList -> onBackClick()
-                }
-            }
+    ObserveAsEvents(worksEditorViewModel.event) { event ->
+        when (event) {
+            is WorksEditorNavigationEvent.NavigateToWorksList -> onBackClick()
         }
     }
 

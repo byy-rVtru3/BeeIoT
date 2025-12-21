@@ -7,19 +7,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,19 +16,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.presentation.models.queen.QueenEditorModel
 import com.app.mobile.presentation.ui.components.CustomTextField
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.screens.queen.editor.viewmodel.QueenEditorNavigationEvent
 import com.app.mobile.presentation.ui.screens.queen.editor.viewmodel.QueenEditorUiState
 import com.app.mobile.presentation.ui.screens.queen.editor.viewmodel.QueenEditorViewModel
-import kotlinx.coroutines.flow.collectLatest
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -49,28 +36,15 @@ fun QueenEditorScreen(
     queenEditorViewModel: QueenEditorViewModel,
     onBackClick: () -> Unit
 ) {
-    val queenUiState by queenEditorViewModel.queenEditorUiState.collectAsStateWithLifecycle()
+    val queenUiState by queenEditorViewModel.uiState.collectAsStateWithLifecycle()
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                queenEditorViewModel.loadQueen()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        queenEditorViewModel.loadQueen()
     }
 
-    LaunchedEffect(queenEditorViewModel.navigationEvent) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            queenEditorViewModel.navigationEvent.collectLatest { event ->
-                when (event) {
-                    is QueenEditorNavigationEvent.NavigateBack -> onBackClick()
-                }
-            }
+    ObserveAsEvents(queenEditorViewModel.event) { event ->
+        when (event) {
+            is QueenEditorNavigationEvent.NavigateBack -> onBackClick()
         }
     }
 

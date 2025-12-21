@@ -10,21 +10,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.R
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.LabelButton
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.components.OtpTextField
 import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.components.Title
@@ -35,7 +32,6 @@ import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.Confirmatio
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationViewModel
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun ConfirmationScreen(
@@ -43,28 +39,15 @@ fun ConfirmationScreen(
     onConfirmClick: () -> Unit
 ) {
     val confirmationUiState =
-        confirmationViewModel.confirmationUiState.collectAsStateWithLifecycle()
+        confirmationViewModel.uiState.collectAsStateWithLifecycle()
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                confirmationViewModel.createConfirmationModelUi()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        confirmationViewModel.createConfirmationModelUi()
     }
 
-    LaunchedEffect(confirmationViewModel.navigationEvent) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            confirmationViewModel.navigationEvent.collectLatest { event ->
-                when (event) {
-                    is ConfirmationNavigationEvent.NavigateToAuthorization -> onConfirmClick()
-                }
-            }
+    ObserveAsEvents(confirmationViewModel.event) { event ->
+        when (event) {
+            is ConfirmationNavigationEvent.NavigateToAuthorization -> onConfirmClick()
         }
     }
 

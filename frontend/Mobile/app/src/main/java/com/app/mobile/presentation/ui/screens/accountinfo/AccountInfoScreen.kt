@@ -9,8 +9,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,16 +16,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.R
 import com.app.mobile.presentation.models.account.UserInfoModel
 import com.app.mobile.presentation.ui.components.AppTopBar
 import com.app.mobile.presentation.ui.components.ClickableProfileField
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.components.TopBarAction
 import com.app.mobile.presentation.ui.screens.accountinfo.models.AccountInfoActions
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoDialogState
@@ -36,7 +33,6 @@ import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoU
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoViewModel
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun AccountInfoScreen(
@@ -45,18 +41,16 @@ fun AccountInfoScreen(
     onBackClick: () -> Unit
 ) {
 
-    val accountInfoUiState by accountInfoViewModel.accountInfoUiState.collectAsStateWithLifecycle()
+    val accountInfoUiState by accountInfoViewModel.uiState.collectAsStateWithLifecycle()
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                accountInfoViewModel.getAccountInfo()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        accountInfoViewModel.getAccountInfo()
+    }
+
+    ObserveAsEvents(accountInfoViewModel.event) { event ->
+        when (event) {
+            is AccountInfoNavigationEvent.NavigateToRegistration -> onDeleteClick()
+            is AccountInfoNavigationEvent.NavigateBack -> onBackClick()
         }
     }
 
@@ -75,17 +69,6 @@ fun AccountInfoScreen(
                 actions = actions,
                 onBackClick = onBackClick
             )
-        }
-    }
-
-    LaunchedEffect(accountInfoViewModel.navigationEvent) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            accountInfoViewModel.navigationEvent.collectLatest { event ->
-                when (event) {
-                    is AccountInfoNavigationEvent.NavigateToRegistration -> onDeleteClick()
-                    is AccountInfoNavigationEvent.NavigateBack -> onBackClick()
-                }
-            }
         }
     }
 
@@ -111,7 +94,11 @@ fun AccountInfoScreen(
 }
 
 @Composable
-private fun AccountInfoContent(userInfo: UserInfoModel, actions: AccountInfoActions,onBackClick: () -> Unit) {
+private fun AccountInfoContent(
+    userInfo: UserInfoModel,
+    actions: AccountInfoActions,
+    onBackClick: () -> Unit
+) {
     Scaffold(
         topBar = {
             AppTopBar(

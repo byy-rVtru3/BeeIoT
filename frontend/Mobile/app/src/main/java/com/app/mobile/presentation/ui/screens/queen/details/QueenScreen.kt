@@ -22,8 +22,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,19 +30,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.presentation.models.queen.QueenUiModel
 import com.app.mobile.presentation.models.queen.StageType
 import com.app.mobile.presentation.models.queen.TimelineItem
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenNavigationEvent
 import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenUiState
 import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenViewModel
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun QueenScreen(
@@ -52,33 +48,20 @@ fun QueenScreen(
     onEditClick: (queenId: String) -> Unit,
     onHiveClick: (hiveId: String) -> Unit
 ) {
-    val queenUiState by queenViewModel.queenUiState.collectAsStateWithLifecycle()
+    val queenUiState by queenViewModel.uiState.collectAsStateWithLifecycle()
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                queenViewModel.getQueen()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        queenViewModel.getQueen()
     }
 
-    LaunchedEffect(queenViewModel.navigationEvent) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            queenViewModel.navigationEvent.collectLatest { event ->
-                when (event) {
-                    is QueenNavigationEvent.NavigateToEditQueen -> {
-                        onEditClick(event.queenId)
-                    }
+    ObserveAsEvents(queenViewModel.event) { event ->
+        when (event) {
+            is QueenNavigationEvent.NavigateToEditQueen -> {
+                onEditClick(event.queenId)
+            }
 
-                    is QueenNavigationEvent.NavigateToHive -> {
-                        onHiveClick(event.hiveId)
-                    }
-                }
+            is QueenNavigationEvent.NavigateToHive -> {
+                onHiveClick(event.hiveId)
             }
         }
     }
