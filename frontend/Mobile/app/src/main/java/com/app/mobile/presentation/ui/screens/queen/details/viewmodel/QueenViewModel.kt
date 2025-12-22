@@ -2,75 +2,58 @@ package com.app.mobile.presentation.ui.screens.queen.details.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.app.mobile.domain.usecase.hives.hive.GetHivePreviewUseCase
 import com.app.mobile.domain.usecase.hives.queen.GetQueenUseCase
 import com.app.mobile.presentation.mappers.toUiModel
+import com.app.mobile.presentation.ui.components.BaseViewModel
 import com.app.mobile.presentation.ui.screens.queen.details.QueenRoute
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.launch
 
 class QueenViewModel(
     savedStateHandle: SavedStateHandle,
     private val getQueenUseCase: GetQueenUseCase,
     private val getHivePreviewUseCase: GetHivePreviewUseCase
-) : ViewModel() {
+) : BaseViewModel<QueenUiState, QueenNavigationEvent>(QueenUiState.Loading) {
 
     private val route = savedStateHandle.toRoute<QueenRoute>()
     private val queenId = route.queenId
 
-    private val _queenUiState = MutableStateFlow<QueenUiState>(QueenUiState.Loading)
-    val queenUiState = _queenUiState.asStateFlow()
-
-    private val _navigationEvent = Channel<QueenNavigationEvent>()
-    val navigationEvent = _navigationEvent.receiveAsFlow()
-
-    val handler = CoroutineExceptionHandler { _, exception ->
-        _queenUiState.value = QueenUiState.Error(exception.message ?: "Unknown error")
+    override fun handleError(exception: Throwable) {
+        updateState { QueenUiState.Error(exception.message ?: "Unknown error") }
         Log.e("QueenViewModel", exception.message ?: "Unknown error")
     }
 
     fun getQueen() {
-        _queenUiState.value = QueenUiState.Loading
+        updateState { QueenUiState.Loading }
 
-        viewModelScope.launch(handler) {
+        launch {
             val queen = getQueenUseCase(queenId)
 
-            _queenUiState.value = if (queen != null) {
+            if (queen != null) {
                 val hive = queen.hiveId?.let { getHivePreviewUseCase(it) }
-                QueenUiState.Content(queen.toUiModel(hive))
+                updateState { QueenUiState.Content(queen.toUiModel(hive)) }
             } else {
-                QueenUiState.Error("Матка не найдена")
+                updateState { QueenUiState.Error("Матка не найдена") }
             }
         }
     }
 
     fun onEditQueenClick() {
-        val currentUiState = _queenUiState.value
-        if (currentUiState is QueenUiState.Content) {
-            viewModelScope.launch(handler) {
-                _navigationEvent.send(
-                    QueenNavigationEvent.NavigateToEditQueen(currentUiState.queen.id)
-                )
-            }
+        val state = currentState
+        if (state is QueenUiState.Content) {
+            sendEvent(
+                QueenNavigationEvent.NavigateToEditQueen(state.queen.id)
+            )
         }
     }
 
     fun onHiveClick() {
-        val currentUiState = _queenUiState.value
-        if (currentUiState is QueenUiState.Content) {
-            if (currentUiState.queen.hive?.id != null) {
-                viewModelScope.launch(handler) {
-                    _navigationEvent.send(
-                        QueenNavigationEvent.NavigateToHive(currentUiState.queen.hive.id)
-                    )
-                }
+        val state = currentState
+        if (state is QueenUiState.Content) {
+            if (state.queen.hive?.id != null) {
+                sendEvent(
+                    QueenNavigationEvent.NavigateToHive(state.queen.hive.id)
+                )
             }
         }
     }

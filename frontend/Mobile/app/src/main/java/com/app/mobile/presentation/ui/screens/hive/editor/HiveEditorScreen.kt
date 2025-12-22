@@ -26,8 +26,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,8 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.R
@@ -46,6 +43,7 @@ import com.app.mobile.presentation.ui.components.AppTopBar
 import com.app.mobile.presentation.ui.components.CustomTextField
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.screens.hive.editor.models.HiveEditorActions
 import com.app.mobile.presentation.ui.screens.hive.editor.viewmodel.HiveEditorNavigationEvent
@@ -61,30 +59,17 @@ fun HiveEditorScreen(
     onCreateQueenClick: () -> Unit,
     onCreateHubClick: () -> Unit
 ) {
-    val hiveEditorUiState by hiveEditorViewModel.hiveEditorUiState.collectAsStateWithLifecycle()
+    val hiveEditorUiState by hiveEditorViewModel.uiState.collectAsStateWithLifecycle()
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                hiveEditorViewModel.loadHive()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        hiveEditorViewModel.loadHive()
     }
 
-    LaunchedEffect(hiveEditorViewModel.navigationEvent) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            hiveEditorViewModel.navigationEvent.collectLatest { event ->
-                when (event) {
-                    is HiveEditorNavigationEvent.NavigateToCreateQueen -> onCreateQueenClick()
-                    is HiveEditorNavigationEvent.NavigateToCreateHub -> onCreateHubClick()
-                    is HiveEditorNavigationEvent.NavigateBack -> onBackClick()
-                }
-            }
+    ObserveAsEvents(hiveEditorViewModel.event) { event ->
+        when (event) {
+            is HiveEditorNavigationEvent.NavigateToCreateQueen -> onCreateQueenClick()
+            is HiveEditorNavigationEvent.NavigateToCreateHub -> onCreateHubClick()
+            is HiveEditorNavigationEvent.NavigateBack -> onBackClick()
         }
     }
 
