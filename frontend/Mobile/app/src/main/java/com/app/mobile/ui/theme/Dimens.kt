@@ -138,9 +138,14 @@ object Dimens {
 //    --- ItemCard ---
     val ItemCardPadding = Size12
     val ItemCardRadius = Size8
+    val ItemCardTextPadding = Size8
+
+    val ItemCardBigTextPadding = Size12
 
     val HiveItemCardIconSize = Size36
     val HiveItemPadding = Size4
+
+    val SectionTitleLeftPadding=Size4
 }
 
 
