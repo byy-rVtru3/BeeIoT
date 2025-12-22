@@ -264,7 +264,7 @@ fun ClickableProfileField(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val bottomLineColor = MaterialTheme.colorScheme.primary
+    val bottomLineColor = MaterialTheme.colorScheme.outline
     val labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
     val valueColor = MaterialTheme.colorScheme.onSurface
 
@@ -282,7 +282,6 @@ fun ClickableProfileField(
                     strokeWidth = strokeWidth
                 )
             }
-            // Внутренние отступы, чтобы текст не прилипал к линии
             .padding(vertical = Dimens.ClickableProfileFieldTextPaddingVertical)
     ) {
         Text(

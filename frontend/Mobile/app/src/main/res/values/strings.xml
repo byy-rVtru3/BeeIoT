@@ -27,7 +27,16 @@
     <string name="logo_description">Логотип пчела</string>
     <string name="hint_account_info">Нажмите, чтобы изменить данные</string>
     <string name="back">Вернуться назад</string>
-
+    <string name="archive">Архив</string>
+    <string name="active_hives">Мои ульи</string>
+    <string name="add_hive">Добавить улей</string>
+    <string name="hive_name">Название улья</string>
+    <string name="add">Добавить</string>
+    <string name="cancel">Отмена</string>
+    <string name="empty_hives_list_screen">Пока нету ульев, чтобы добавить улей нажмите на кнопку "Добавить улей"</string>
+    <string name="empty_archive_hives_list_screen">В архиве пока пусто</string>
+    <string name="hive_last_connection_format">Последняя связь\n%1$s</string>
+    <string name="hive">Улей</string>
 
 
 
@@ -46,5 +55,24 @@
     <string name="error_name_too_long">Имя слишком длинное (максимум 50 символов)</string>
     <string name="password_requirements">Пароль должен быть длиной 8 и более символов, состоящий из букв, цифр и других символов</string>
 
-    <string name="empty_hives_list_screen">Пока нету ульев, чтобы добавить улей нажмите на кнопку "Добавить улей"</string>
+    <!-- Strings used in HiveScreen -->
+    <string name="section_main_info">Основная информация</string>
+    <string name="label_name">Название:</string>
+    <string name="label_connected_hub">Подключенный хаб:</string>
+    <string name="no">Нет</string>
+    <string name="queen">Матка</string>
+    <string name="notifications">Уведомления</string>
+    <string name="see_all">Посмотреть все</string>
+    <string name="notification">Уведомление</string>
+    <string name="works_for_hive">Работы по улью</string>
+
+    <!-- Strings used in HiveEditorScreen -->
+    <string name="hive_edit_title">Редактирование улья</string>
+    <string name="hive_name_label">Название улья</string>
+    <string name="hive_name_placeholder">Название улья</string>
+    <string name="available_hubs">Доступные хабы:</string>
+    <string name="available_queens">Доступные матки:</string>
+    <string name="save">Сохранить</string>
+
+
 </resources>
