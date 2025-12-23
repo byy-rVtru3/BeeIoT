@@ -3,14 +3,11 @@ package com.app.mobile.presentation.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -34,43 +31,32 @@ fun AppHost() {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-
-        bottomBar = {}
-    ) { innerPadding ->
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = innerPadding.calculateTopPadding())
-        ) {
-
-            AppNavigation(
-                modifier = Modifier.fillMaxSize(),
-                navController = navController
-            )
-
-            Column(
-                modifier = Modifier.align(Alignment.BottomCenter)
+        bottomBar = {
+            AnimatedVisibility(
+                visible = showBottomBar,
+                enter = slideInVertically { it },
+                exit = slideOutVertically { it }
             ) {
-                AnimatedVisibility(
-                    visible = showBottomBar,
-                    enter = slideInVertically { it },
-                    exit = slideOutVertically { it }
-                ) {
-                    AppBottomBar(
-                        currentDestination = currentDestination,
-                        onNavigate = { route ->
-                            navController.navigate(route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
+                AppBottomBar(
+                    currentDestination = currentDestination,
+                    onNavigate = { route ->
+                        navController.navigate(route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
                             }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                    )
-                }
+                    }
+                )
             }
         }
+    ) { innerPadding ->
+        AppNavigation(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            navController = navController
+        )
     }
 }

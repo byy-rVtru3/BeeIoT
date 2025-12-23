@@ -3,18 +3,21 @@ package com.app.mobile.presentation.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -24,14 +27,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.app.mobile.R
-import com.app.mobile.presentation.models.hive.QueenUi
+import com.app.mobile.presentation.models.queen.QueenPreviewModel
 import com.app.mobile.ui.theme.Dimens
 
 
@@ -151,43 +153,113 @@ fun InfoCard(
     }
 }
 
-
+enum class QueenCardDisplayMode {
+    SHOW_HIVE,
+    Compact
+}
 @Composable
-fun QueenCard(queen: QueenUi.Present, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
+fun QueenCard(
+    queen: QueenPreviewModel,
+    onClick: () -> Unit,
+    displayMode: QueenCardDisplayMode = QueenCardDisplayMode.SHOW_HIVE
+) {
+    val isError = queen.stage.isActionRequired
+    val statusColor =
+        if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+
+    val borderStroke = if (isError) BorderStroke(
+        Dimens.BorderWidthNormal,
+        MaterialTheme.colorScheme.error
+    ) else null
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(Dimens.ItemCardRadius),
-        color = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxWidth()
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = borderStroke
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .padding(Dimens.ItemCardPadding)
                 .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.spacedBy(Dimens.ItemCardTextPadding)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = queen.queen.name,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = queen.queen.stage.title,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
 
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                if (displayMode == QueenCardDisplayMode.SHOW_HIVE) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Dimens.ItemCardBigTextPadding)) {
+                        Text(
+                            text = queen.name,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(R.string.hive_format) + " ${queen.hiveName}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = queen.stage.title,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = queen.name,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = queen.stage.title,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+
+
+                LinearProgressIndicator(
+                    progress = { queen.stage.progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(Dimens.BorderWidthThick),
+                    color = statusColor,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    strokeCap = StrokeCap.Round,
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = queen.stage.remainingDays,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = queen.stage.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
         }
     }
-}
+
+
 
 @Composable
 fun DetailsItemCard(

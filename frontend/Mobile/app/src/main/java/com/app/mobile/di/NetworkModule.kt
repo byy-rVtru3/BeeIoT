@@ -27,7 +27,7 @@ val authorizedRetrofit = named("authorizedRetrofit")
 val networkModule = module {
 
     single {
-        Json.asConverterFactory("application/json; charset=UTF8".toMediaType())
+        get<Json>().asConverterFactory("application/json; charset=UTF8".toMediaType())
     }
 
     single<HttpLoggingInterceptor> {

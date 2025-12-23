@@ -14,13 +14,14 @@ import java.time.ZoneId
 
 private val UTC_ZONE = ZoneId.of("UTC")
 
-fun QueenDomain?.toUiModel(): QueenUi {
+fun QueenDomain?.toUiModel(hiveName: String): QueenUi {
     return this?.let { queen ->
         QueenUi.Present(
             queen = QueenPreviewModel(
                 id = queen.id,
                 name = queen.name,
-                stage = this.stages.toCurrentStageUi()
+                stage = this.stages.toCurrentStageUi(),
+                hiveName = hiveName
             )
         )
     } ?: QueenUi.Absent
@@ -33,10 +34,11 @@ fun QueenDomain.toUiModel(hive: HiveDomainPreview?) = QueenUiModel(
     timeline = this.stages.toTimelineUi()
 )
 
-fun QueenDomain.toPreviewModel() = QueenPreviewModel(
+fun QueenDomain.toPreviewModel(hiveName: String?) = QueenPreviewModel(
     id = this.id,
     name = this.name,
-    stage = this.stages.toCurrentStageUi()
+    stage = this.stages.toCurrentStageUi(),
+    hiveName = hiveName
 )
 
 fun QueenEditorDomain.toPresentation(hives: List<HiveDomainPreview>) = QueenEditorModel(

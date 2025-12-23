@@ -39,7 +39,7 @@ fun HiveDomain.toUiModel() = HiveUi(
     name = this.name,
     connectedHub = this.connectedHub.toUiModel(),
     notifications = this.notifications.map { it.toUiModel() },
-    queen = this.queen.toUiModel(),
+    queen = this.queen.toUiModel(this.name),
     works = this.works.map { it.toUiModel() }
 )
 
@@ -49,7 +49,7 @@ fun HiveDomain.toEditor(queens: List<QueenDomain>, hubs: List<HubDomain>) = Hive
     connectedHubId = this.connectedHub?.id,
     hubs = hubs.map { it.toPreviewModel() },
     connectedQueenId = this.queen?.id,
-    queens = queens.map { it.toPreviewModel() }
+    queens = queens.map { it.toPreviewModel(this.name) }
 )
 
 fun HiveEditorDomain.toPresentation(queens: List<QueenDomain>, hubs: List<HubDomain>) =
@@ -59,7 +59,7 @@ fun HiveEditorDomain.toPresentation(queens: List<QueenDomain>, hubs: List<HubDom
         connectedHubId = this.connectedHubId,
         hubs = hubs.map { it.toPreviewModel() },
         connectedQueenId = this.connectedQueenId,
-        queens = queens.map { it.toPreviewModel() }
+        queens = queens.map { it.toPreviewModel(this.name) }
     )
 
 fun HiveEditorDomain.toEntity() = HiveEntity(

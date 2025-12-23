@@ -1,38 +1,28 @@
 package com.app.mobile.presentation.ui.screens.works.list
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.app.mobile.R
 import com.app.mobile.presentation.models.hive.WorkUi
-import com.app.mobile.presentation.ui.components.ErrorMessage
-import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
-import com.app.mobile.presentation.ui.components.ObserveAsEvents
+import com.app.mobile.presentation.ui.components.*
 import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListNavigationEvent
 import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListUiState
 import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListViewModel
+import com.app.mobile.ui.theme.Dimens
 
 @Composable
 fun WorksListScreen(
@@ -53,9 +43,7 @@ fun WorksListScreen(
                 event.workId,
                 event.hiveId
             )
-
             is WorksListNavigationEvent.NavigateToWorkCreate -> onCreateClick(event.hiveId)
-
             is WorksListNavigationEvent.NavigateBack -> onBackClick()
         }
     }
@@ -72,7 +60,6 @@ fun WorksListScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorksListContent(
     works: List<WorkUi>,
@@ -82,99 +69,80 @@ fun WorksListContent(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Список работ",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
-                )
+            AppTopBar(
+                title = stringResource(R.string.works_for_hive),
+                onBackClick = onNavigateBack
             )
         },
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+            .exclude(WindowInsets.navigationBars),
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
         floatingActionButton = {
-            FloatingActionButton(
+            CustomFloatingActionButton(
                 onClick = onCreateClick,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = "Добавить работу")
-            }
+                icon = Icons.Filled.Add,
+                contentDescription = stringResource(R.string.add)
+            )
         }
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(vertical = 16.dp)
-        ) {
-            items(
-                works,
-                key = { work -> work.id }
-            ) { work ->
-                WorkItem(work, onWorkClick)
-            }
+        if (works.isNotEmpty()) {
+            WorksList(
+                works = works,
+                onWorkClick = onWorkClick,
+                modifier = Modifier.padding(innerPadding)
+            )
+        } else {
+            EmptyStub(
+                text = stringResource(R.string.empty_works_list),
+                modifier = Modifier.padding(innerPadding)
+            )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorkItem(
-    work: WorkUi,
-    onWorkClick: (String) -> Unit
+private fun WorksList(
+    works: List<WorkUi>,
+    onWorkClick: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        onClick = { onWorkClick(work.id) }
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = Dimens.ScreenContentPadding),
+        verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
+        contentPadding = PaddingValues(
+            top = Dimens.ScreenContentPadding,
+            bottom = Dimens.ScreenContentPadding
+        )
     ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = work.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = work.dateTime,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = work.text,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis
+        items(
+            items = works,
+            key = { it.id }
+        ) { work ->
+            DetailsItemCard(
+                title = work.title,
+                description = work.text,
+                footer = work.dateTime,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.medium)
+                    .clickable { onWorkClick(work.id) }
             )
         }
+    }
+}
+
+@Composable
+private fun EmptyStub(text: String, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+        )
     }
 }
