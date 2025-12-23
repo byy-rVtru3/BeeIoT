@@ -18,7 +18,7 @@ func (h *Handler) Registration(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
-	if !exist {
+	if exist {
 		h.logger.Warn().Str("email", userData.Email).Msg("user does not exist")
 		http.Error(w, "Пользователь с таким email не зарегистрирован", http.StatusNotFound)
 		return
