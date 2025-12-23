@@ -11,7 +11,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -99,49 +98,47 @@ private fun HivesListContent(
             )
         },
         containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+            .exclude(WindowInsets.navigationBars),
         floatingActionButton = {
             if (selectedTab == 0) {
                 CustomFloatingActionButton(
                     onClick = actions.onCreateHiveClick,
                     icon = Icons.Filled.Add,
-                    bottomPadding = Dimens.BottomAppBarHeight,
                     contentDescription = stringResource(R.string.add_hive)
                 )
             }
         }
     ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .padding(top = innerPadding.calculateTopPadding())
-                .fillMaxSize()
-        ) {
-            when (selectedTab) {
-                0 -> {
-                    if (hives.isNotEmpty()) {
-
-                        val fabSpace = Dimens.BottomAppBarHeight + Dimens.FabSize + Dimens.ItemsSpacingLarge
-
-                        HivesList(
-                            hives = hives,
-                            actions = actions,
-                            bottomPadding = fabSpace
-                        )
-                    } else {
-                        EmptyStub(text = stringResource(R.string.empty_hives_list_screen))
-                    }
+        when (selectedTab) {
+            0 -> {
+                if (hives.isNotEmpty()) {
+                    HivesList(
+                        hives = hives,
+                        actions = actions,
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                } else {
+                    EmptyStub(
+                        text = stringResource(R.string.empty_hives_list_screen),
+                        modifier = Modifier.padding(innerPadding)
+                    )
                 }
-                1 -> {
-                    EmptyStub(text = stringResource(R.string.empty_archive_hives_list_screen))
-                }
+            }
+            1 -> {
+                EmptyStub(
+                    text = stringResource(R.string.empty_archive_list_screen),
+                    modifier = Modifier.padding(innerPadding)
+                )
             }
         }
     }
 }
 
 @Composable
-private fun EmptyStub(text: String) {
+private fun EmptyStub(text: String, modifier: Modifier = Modifier) {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -155,7 +152,6 @@ private fun EmptyStub(text: String) {
 private fun HivesList(
     hives: List<HivePreview>,
     actions: HivesListActions,
-    bottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -165,7 +161,7 @@ private fun HivesList(
         verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
         contentPadding = PaddingValues(
             top = Dimens.ScreenContentPadding,
-            bottom = bottomPadding + Dimens.ScreenContentPadding
+            bottom = Dimens.ScreenContentPadding
         )
     ) {
         items(hives) { hive ->
@@ -211,8 +207,7 @@ private fun EmptyHivesListScreen(
                 CustomFloatingActionButton(
                     onClick = onCreateHiveClick,
                     icon = Icons.Filled.Add,
-                    contentDescription = stringResource(R.string.add_hive),
-                    bottomPadding = Dimens.BottomAppBarHeight
+                    contentDescription = stringResource(R.string.add_hive)
                 )
             }
         }
@@ -226,7 +221,7 @@ private fun EmptyHivesListScreen(
             val emptyText = if (selectedTab == 0) {
                 stringResource(R.string.empty_hives_list_screen)
             } else {
-                stringResource(R.string.empty_archive_hives_list_screen)
+                stringResource(R.string.empty_archive_list_screen)
 
             }
             Text(

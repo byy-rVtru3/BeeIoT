@@ -7,17 +7,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -166,33 +165,23 @@ fun CustomFloatingActionButton(
     onClick: () -> Unit,
     icon: ImageVector,
     contentDescription: String,
-    modifier: Modifier = Modifier,
-    bottomPadding: Dp,
-    endPadding: Dp = Dimens.Null
+    modifier: Modifier = Modifier
 ) {
-
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.BottomEnd
+    Surface(
+        onClick = onClick,
+        modifier = modifier.size(Dimens.FabSize),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shadowElevation = Dimens.FabShadowElevation,
+        border = BorderStroke(Dimens.BorderWidthNormal, MaterialTheme.colorScheme.outline)
     ) {
-        androidx.compose.material3.Surface(
-            onClick = onClick,
-            modifier = modifier
-                .padding(bottom = bottomPadding+Dimens.FabContentPadding, end = endPadding+Dimens.FabContentPadding)
-                .size(Dimens.FabSize),
-            shape = CircleShape,
-            color =  MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            shadowElevation = Dimens.FabShadowElevation,
-            border = BorderStroke(Dimens.BorderWidthNormal, MaterialTheme.colorScheme.outline)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = contentDescription,
-                    modifier = Modifier.size(Dimens.FabIconSize)
-                )
-            }
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(Dimens.FabIconSize)
+            )
         }
     }
 }

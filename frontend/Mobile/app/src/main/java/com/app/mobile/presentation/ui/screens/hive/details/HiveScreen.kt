@@ -20,17 +20,16 @@ import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.TopBarAction
 import com.app.mobile.presentation.ui.components.ObserveAsEvents
-import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.screens.hive.details.models.HiveActions
 import com.app.mobile.presentation.ui.screens.hive.details.viewmodel.HiveNavigationEvent
 import com.app.mobile.presentation.ui.screens.hive.details.viewmodel.HiveUiState
 import com.app.mobile.presentation.ui.screens.hive.details.viewmodel.HiveViewModel
 import com.app.mobile.ui.theme.Dimens
-import kotlinx.coroutines.flow.collectLatest
 import com.app.mobile.R
 import com.app.mobile.presentation.ui.components.DetailsItemCard
 import com.app.mobile.presentation.ui.components.InfoCard
 import com.app.mobile.presentation.ui.components.QueenCard
+import com.app.mobile.presentation.ui.components.QueenCardDisplayMode
 import com.app.mobile.presentation.ui.components.SectionHeaderWithAction
 import com.app.mobile.presentation.ui.components.SectionTitle
 
@@ -153,7 +152,7 @@ private fun HiveContent(
                     verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
                 ) {
                     SectionTitle(title = stringResource(R.string.queen))
-                    QueenCard(queen = hive.queen, onClick = actions.onQueenClick)
+                    QueenCard(queen = hive.queen.queen, onClick = actions.onQueenClick, displayMode = QueenCardDisplayMode.Compact)
                 }
             }
 
