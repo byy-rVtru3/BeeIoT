@@ -28,6 +28,7 @@ object Dimens {
     val Size72 = 72.dp
     val Size76 = 76.dp
     val Size80 = 80.dp
+    val Size100 = 100.dp
 
     val Size120 = 120.dp
 
@@ -70,8 +71,11 @@ object Dimens {
     val TopbarIconSize = Size40
     val TopBarHorizontalPadding = Size8
 
-    val SelectTopBarLineWidth = Size40
+    val SelectTopBarLineWidth = Size100
     val SelectTopBarLineHeight = BorderWidthNormal
+    val SelectTopBarHorizontalPadding = Size16
+    val SelectTopBarVerticalPadding = Size8
+    val SelectTopBarPaddingBetweenLine = Size2
 
     // --- Отступы для текстовых полей ---
     val TextFieldPaddingHorizontal = Size4
@@ -109,6 +113,8 @@ object Dimens {
     val ItemsSpacingSmall = Size4          // Между полями формы
 
     val ItemSpacingSmallMedium = Size8   // Между иконкой и текстом в кнопке
+
+    val ItemSpacingNormal = Size12
     val ItemsSpacingMedium = Size16        // Между кнопками, элементами списка
     val ItemsSpacingLarge = Size20         // Между секциями
 
@@ -120,4 +126,26 @@ object Dimens {
 
     // --- Толщина линий прогресс-индикатора ---
     val ProgressIndicatorStrokeWidth = Size4
+
+
+    // --- FAB ---
+    val FabSize = Size56
+    val FabIconSize = Size24
+    val FabShadowElevation = Size4
+    val FabContentPadding = Size16
+
+
+//    --- ItemCard ---
+    val ItemCardPadding = Size12
+    val ItemCardRadius = Size8
+    val ItemCardTextPadding = Size8
+
+    val ItemCardBigTextPadding = Size12
+
+    val HiveItemCardIconSize = Size36
+    val HiveItemPadding = Size4
+
+    val SectionTitleLeftPadding=Size4
 }
+
+

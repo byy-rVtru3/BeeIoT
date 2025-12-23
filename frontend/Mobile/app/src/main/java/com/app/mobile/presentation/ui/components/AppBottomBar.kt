@@ -81,7 +81,7 @@ fun AppBottomBar(
         )
     )
 
-    val activeBorderColor = MaterialTheme.colorScheme.primary
+    val activeBorderColor = MaterialTheme.colorScheme.outline
     val indicatorShape = RoundedCornerShape(Dimens.BorderRadiusMedium)
 
     NavigationBar(

@@ -116,11 +116,13 @@ fun AppTopBar(
                     action.onClick,
                     MaterialTheme.colorScheme.error
                 )
+
                 is TopBarAction.Archive -> Triple(
                     ImageVector.vectorResource(R.drawable.ic_trash),
                     action.onClick,
                     MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                 )
+
                 is TopBarAction.Custom -> Triple(
                     action.icon,
                     action.onClick,
@@ -163,39 +165,41 @@ fun SelectorTopBar(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = Dimens.ScreenContentPadding),
-            verticalAlignment = Alignment.Bottom
+            verticalAlignment = Alignment.CenterVertically
         ) {
             tabs.forEachIndexed { index, title ->
                 val isSelected = index == selectedTabIndex
                 val color =
                     if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(
-                        alpha = 0.6f
+                        alpha = 0.5f
                     )
 
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
+                        .padding(horizontal = Dimens.SelectTopBarHorizontalPadding, vertical = Dimens.SelectTopBarVerticalPadding)
+                        .clip(RoundedCornerShape(50))
                         .clickable { onTabSelected(index) },
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Bottom // Прижимаем к низу
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                            ),
-                            color = color
-                        )
-                    }
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                        ),
+                        color = color
+                    )
+
+                    Spacer(modifier = Modifier.height(Dimens.SelectTopBarPaddingBetweenLine))
 
                     if (isSelected) {
                         Box(
                             modifier = Modifier
                                 .width(Dimens.SelectTopBarLineWidth)
                                 .height(Dimens.SelectTopBarLineHeight)
-                                .background(MaterialTheme.colorScheme.primary)
+                                .background(MaterialTheme.colorScheme.outline)
                         )
                     } else {
                         Spacer(modifier = Modifier.height(Dimens.SelectTopBarLineHeight))

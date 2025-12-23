@@ -72,7 +72,7 @@ val Typography = Typography(
     // Средний заголовок секции
     titleMedium = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         fontSize = 20.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.sp
