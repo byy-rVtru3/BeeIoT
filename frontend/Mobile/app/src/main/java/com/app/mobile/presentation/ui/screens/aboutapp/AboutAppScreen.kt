@@ -4,47 +4,76 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.mobile.R
+import com.app.mobile.presentation.ui.components.AppTopBar
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
-import com.app.mobile.presentation.ui.components.Title
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
+import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppNavigationEvent
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppUiState
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppViewModel
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
 
 @Composable
-fun AboutAppScreen(aboutAppViewModel: AboutAppViewModel) {
+fun AboutAppScreen(aboutAppViewModel: AboutAppViewModel, onBackClick: () -> Unit) {
 
-    val aboutAppUiState by aboutAppViewModel.aboutAppUiState.observeAsState(AboutAppUiState.Content)
+    val aboutAppUiState by aboutAppViewModel.uiState.collectAsStateWithLifecycle()
+
+    ObserveAsEvents(aboutAppViewModel.event) { event ->
+        when (event) {
+            is AboutAppNavigationEvent.NavigateBack -> onBackClick()
+        }
+    }
 
     when (val state = aboutAppUiState) {
-        is AboutAppUiState.Content -> AboutAppContent()
+        is AboutAppUiState.Content -> AboutAppContent(onBackClick)
         is AboutAppUiState.Error -> ErrorMessage(state.message, {})
         is AboutAppUiState.Loading -> FullScreenProgressIndicator()
 
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AboutAppContent() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(Dimens.ScreenContentPadding),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Title("О приложении", modifier = Modifier.padding(bottom = Dimens.ItemsSpacingMedium))
-        Text(stringResource(R.string.app_info))
+private fun AboutAppContent(onBackClick: () -> Unit) {
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                title = stringResource(R.string.about),
+                hasBackground = false,
+                onBackClick = onBackClick
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(Dimens.ScreenContentPadding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Text(
+                text = stringResource(R.string.app_info),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Start
+            )
+        }
     }
 }
 
@@ -52,6 +81,6 @@ private fun AboutAppContent() {
 @Composable
 fun AboutAppContentPreview() {
     MobileTheme {
-        AboutAppContent()
+        AboutAppContent(onBackClick = {})
     }
 }

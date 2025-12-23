@@ -4,17 +4,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.app.mobile.R
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.LogoCircle
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
+import com.app.mobile.presentation.ui.components.SettingsButton
 import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.screens.settings.models.SettingsActions
 import com.app.mobile.presentation.ui.screens.settings.viewmodel.SettingsNavigationEvent
@@ -30,28 +34,15 @@ fun SettingsScreen(
     onLogoutClick: () -> Unit,
     onAboutAppClick: () -> Unit
 ) {
-    val settingsUiState by settingsViewModel.settingsUiState.observeAsState(SettingsUiState.Content)
+    val settingsUiState by settingsViewModel.uiState.collectAsStateWithLifecycle()
 
-    val navigationEvent by settingsViewModel.navigationEvent.observeAsState()
+    ObserveAsEvents(settingsViewModel.event) { event ->
+        when (event) {
+            is SettingsNavigationEvent.NavigateToAccountInfo -> onAccountInfoClick()
 
-    LaunchedEffect(navigationEvent) {
-        navigationEvent?.let { event ->
-            when (event) {
-                is SettingsNavigationEvent.NavigateToAuthorization -> {
-                    onLogoutClick()
-                    settingsViewModel.onNavigationHandled()
-                }
+            is SettingsNavigationEvent.NavigateToAboutApp -> onAboutAppClick()
 
-                is SettingsNavigationEvent.NavigateToAccountInfo -> {
-                    onAccountInfoClick()
-                    settingsViewModel.onNavigationHandled()
-                }
-
-                is SettingsNavigationEvent.NavigateToAboutApp -> {
-                    onAboutAppClick()
-                    settingsViewModel.onNavigationHandled()
-                }
-            }
+            is SettingsNavigationEvent.NavigateToAuthorization -> onLogoutClick()
         }
     }
 
@@ -73,52 +64,79 @@ fun SettingsScreen(
 
 @Composable
 private fun SettingsContent(actions: SettingsActions) {
-    Column(
+    Surface(
         modifier = Modifier
             .fillMaxSize()
-            .padding(Dimens.ScreenContentPadding),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-
+            .padding(bottom = Dimens.BottomAppBarHeight),
+        color = MaterialTheme.colorScheme.background
     ) {
-        Title("Настройки")
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(Dimens.ScreenContentPadding),
+            horizontalAlignment = Alignment.CenterHorizontally,
 
-        AccountInfoButton(actions.onAccountInfoClick)
+            ) {
+            Column(
+                modifier = Modifier.padding(top = Dimens.TitleTopPadding),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingSmallMedium)
+            ) {
+                LogoCircle()
+                Title(
+                    text = stringResource(R.string.settings),
+                    modifier = Modifier.padding(
 
-        AboutAppButton(actions.onAboutAppClick)
+                        bottom = Dimens.SettingsTitleBottomPadding
+                    ),
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
 
-        LogoutButton(actions.onLogoutClick)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingMedium),
+                modifier = Modifier
+                    .fillMaxSize()
+
+            ) {
+                AccountInfoButton(actions.onAccountInfoClick)
+
+                AboutAppButton(actions.onAboutAppClick)
+
+                LogoutButton(actions.onLogoutClick)
+            }
+
+
+        }
     }
 }
 
 @Composable
 private fun AccountInfoButton(onAccountInfoClick: () -> Unit) {
-    Button(
-        modifier = Modifier.padding(bottom = Dimens.ItemsSpacingMedium),
-        onClick = onAccountInfoClick
-    ) {
-        Text(text = "Учетная запись")
-    }
+    SettingsButton(
+        onClick = onAccountInfoClick,
+        text = stringResource(R.string.account),
+
+
+        )
 }
 
 @Composable
 private fun AboutAppButton(onAboutAppClick: () -> Unit) {
-    Button(
-        modifier = Modifier.padding(bottom = Dimens.ItemsSpacingMedium),
-        onClick = onAboutAppClick
-    ) {
-        Text(text = " О приложении")
-    }
+    SettingsButton(
+        onClick = onAboutAppClick,
+        text = stringResource(R.string.about),
+
+        )
 }
 
 @Composable
 private fun LogoutButton(onLogoutClick: () -> Unit) {
-    Button(
-        modifier = Modifier,
-        onClick = onLogoutClick
-    ) {
-        Text(text = "Выйти")
-    }
+    SettingsButton(
+        onClick = onLogoutClick,
+        text = stringResource(R.string.logout),
+        exit = true,
+    )
 }
 
 @Preview(showBackground = true)

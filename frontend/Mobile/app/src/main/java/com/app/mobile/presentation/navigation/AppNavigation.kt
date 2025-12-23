@@ -1,6 +1,12 @@
 package com.app.mobile.presentation.navigation
 
 import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavBackStackEntry
@@ -8,7 +14,6 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.toRoute
 import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppRoute
 import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppScreen
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppViewModel
@@ -45,6 +50,12 @@ import com.app.mobile.presentation.ui.screens.registration.viewmodel.Registratio
 import com.app.mobile.presentation.ui.screens.settings.SettingsRoute
 import com.app.mobile.presentation.ui.screens.settings.SettingsScreen
 import com.app.mobile.presentation.ui.screens.settings.viewmodel.SettingsViewModel
+import com.app.mobile.presentation.ui.screens.works.editor.WorkEditorRoute
+import com.app.mobile.presentation.ui.screens.works.editor.WorksEditorScreen
+import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorViewModel
+import com.app.mobile.presentation.ui.screens.works.list.WorksListRoute
+import com.app.mobile.presentation.ui.screens.works.list.WorksListScreen
+import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListViewModel
 import org.koin.androidx.compose.koinViewModel
 
 
@@ -69,12 +80,9 @@ fun AppNavigation(
         }
 
         animatedComposable<ConfirmationRoute> {
-            val destination = it.toRoute<ConfirmationRoute>()
             val confirmationViewModel: ConfirmationViewModel = koinViewModel()
             ConfirmationScreen(
                 confirmationViewModel,
-                destination.email,
-                destination.type,
                 onConfirmClick = {
                     navController.navigate(AuthorizationRoute)
                 }
@@ -85,7 +93,7 @@ fun AppNavigation(
             val authorizationViewModel: AuthorizationViewModel = koinViewModel()
             AuthorizationScreen(
                 authorizationViewModel,
-                onAuthorizeClick = { navController.navigate(HivesListRoute) },
+                onAuthorizeClick = { navController.navigate(SettingsRoute) },
                 onRegistrationClick = { navController.navigate(RegistrationRoute) }
             )
         }
@@ -103,12 +111,17 @@ fun AppNavigation(
             val accountInfoViewModel: AccountInfoViewModel = koinViewModel()
             AccountInfoScreen(
                 accountInfoViewModel,
-                onDeleteClick = { navController.navigate(AuthorizationRoute) })
+                onDeleteClick = { navController.navigate(AuthorizationRoute) },
+                onBackClick = { navController.popBackStack() }
+            )
         }
 
         animatedComposable<AboutAppRoute> {
             val aboutAppViewModel: AboutAppViewModel = koinViewModel()
-            AboutAppScreen(aboutAppViewModel)
+            AboutAppScreen(
+                aboutAppViewModel,
+                onBackClick = { navController.popBackStack() }
+            )
         }
 
         animatedComposable<HivesListRoute> {
@@ -121,13 +134,11 @@ fun AppNavigation(
         }
 
         animatedComposable<HiveRoute> {
-            val destination = it.toRoute<HiveRoute>()
             val hiveViewModel: HiveViewModel = koinViewModel()
             HiveScreen(
                 hiveViewModel,
-                destination.hiveId,
                 onQueenClick = { navController.navigate(QueenRoute) },
-                onWorksClick = { TODO("WorksRoute") },
+                onWorksClick = { navController.navigate(WorksListRoute(it)) },
                 onNotificationsClick = { TODO("NotificationsRoute") },
                 onTemperatureClick = { TODO("TemperatureRoute") },
                 onNoiseClick = { TODO("NoiseRoute") },
@@ -138,23 +149,19 @@ fun AppNavigation(
         }
 
         animatedComposable<QueenRoute> {
-            val destination = it.toRoute<QueenRoute>()
             val queenViewModel: QueenViewModel = koinViewModel()
             QueenScreen(
                 queenViewModel,
-                queenId = destination.queenId,
                 onEditClick = {},
                 onHiveClick = {}
             )
         }
 
         animatedComposable<QueenEditorRoute> {
-            val destination = it.toRoute<QueenEditorRoute>()
             val queenEditorViewModel: QueenEditorViewModel = koinViewModel()
             QueenEditorScreen(
                 queenEditorViewModel,
-                queenId = destination.queenId,
-                onBackClick = { navController.navigate(QueenListRoute) }
+                onBackClick = { navController.popBackStack() }
             )
         }
 
@@ -168,27 +175,62 @@ fun AppNavigation(
         }
 
         animatedComposable<HiveEditorRoute> {
-            val destination = it.toRoute<HiveEditorRoute>()
             val hiveEditorViewModel: HiveEditorViewModel = koinViewModel()
             HiveEditorScreen(
                 hiveEditorViewModel,
-                hiveId = destination.hiveId,
-                onBackClick = { navController.navigate(HivesListRoute) },
+                onBackClick = { navController.popBackStack() },
                 onCreateQueenClick = { navController.navigate(QueenEditorRoute(null)) },
                 onCreateHubClick = { TODO("HiveCreateHubRoute") }
+            )
+        }
+
+        animatedComposable<WorksListRoute> {
+            val worksListViewModel: WorksListViewModel = koinViewModel()
+            WorksListScreen(
+                worksListViewModel,
+                onWorkClick = { workId, hiveId ->
+                    navController.navigate(
+                        WorkEditorRoute(workId = workId, hiveId = hiveId)
+                    )
+                },
+                onCreateClick = { hiveId ->
+                    navController.navigate(
+                        WorkEditorRoute(workId = null, hiveId = hiveId)
+                    )
+                },
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        animatedComposable<WorkEditorRoute> {
+            val worksEditorViewModel: WorksEditorViewModel = koinViewModel()
+            WorksEditorScreen(
+                worksEditorViewModel,
+                onBackClick = { navController.popBackStack() }
             )
         }
     }
 }
 
 inline fun <reified T : Any> NavGraphBuilder.animatedComposable(
+    noinline enterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition?)? = {
+        fadeIn(animationSpec = tween(300))
+    },
+    noinline exitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition?)? = {
+        fadeOut(animationSpec = tween(300))
+    },
+    noinline popEnterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition?)? = enterTransition,
+    noinline popExitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition?)? = exitTransition,
+
     noinline block: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
 ) {
     composable<T>(
-        enterTransition = ENTER_TRANSITION,
-        exitTransition = EXIT_TRANSITION,
-        popEnterTransition = POP_ENTER_TRANSITION,
-        popExitTransition = POP_EXIT_TRANSITION,
+        enterTransition = enterTransition,
+        exitTransition = exitTransition,
+        popEnterTransition = popEnterTransition,
+        popExitTransition = popExitTransition,
         content = block
     )
 }

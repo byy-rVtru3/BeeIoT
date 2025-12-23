@@ -1,13 +1,19 @@
 package com.app.mobile.presentation.ui.screens.aboutapp.viewmodel
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import android.util.Log
+import com.app.mobile.presentation.ui.components.BaseViewModel
 
-class AboutAppViewModel(
+class AboutAppViewModel() :
+    BaseViewModel<AboutAppUiState, AboutAppNavigationEvent>(AboutAppUiState.Content) {
 
-) : ViewModel() {
+    override fun handleError(exception: Throwable) {
+        AboutAppUiState.Error(exception.message ?: "Unknown error")
+        Log.e("AboutAppViewModel", exception.message.toString())
+    }
 
-    private val _aboutAppUiState = MutableLiveData<AboutAppUiState>(AboutAppUiState.Content)
-    val aboutAppUiState: LiveData<AboutAppUiState> = _aboutAppUiState
+    fun onBackClick() {
+        launch {
+            sendEvent(AboutAppNavigationEvent.NavigateBack)
+        }
+    }
 }

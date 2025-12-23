@@ -1,33 +1,31 @@
 package com.app.mobile.presentation.ui.screens.confirmation.viewmodel
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.app.mobile.domain.mappers.toDomain
 import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.account.ConfirmationUserUseCase
 import com.app.mobile.presentation.models.account.ConfirmationModelUi
 import com.app.mobile.presentation.models.account.ConfirmationResultUi
-import com.app.mobile.presentation.models.account.TypeConfirmationUi
-import kotlinx.coroutines.CoroutineExceptionHandler
+import com.app.mobile.presentation.ui.components.BaseViewModel
+import com.app.mobile.presentation.ui.screens.confirmation.ConfirmationRoute
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class ConfirmationViewModel(
+    savedStateHandle: SavedStateHandle,
     private val confirmationUserUseCase: ConfirmationUserUseCase
-) : ViewModel() {
+) : BaseViewModel<ConfirmationUiState, ConfirmationNavigationEvent>(ConfirmationUiState.Loading) {
 
-    private val _confirmationUiState = MutableLiveData<ConfirmationUiState>()
-    val confirmationUiState: LiveData<ConfirmationUiState> = _confirmationUiState
+    private val route = savedStateHandle.toRoute<ConfirmationRoute>()
+    private val email = route.email
+    private val type = route.type
 
-    private val _navigationEvent = MutableLiveData<ConfirmationNavigationEvent?>()
-    val navigationEvent: LiveData<ConfirmationNavigationEvent?> = _navigationEvent
-
-    private val handler = CoroutineExceptionHandler { _, exception ->
-        _confirmationUiState.value = ConfirmationUiState.Error(exception.message ?: "Unknown error")
+    override fun handleError(exception: Throwable) {
+        updateState { ConfirmationUiState.Error(exception.message ?: "Unknown error") }
         Log.e("ConfirmationViewModel", exception.message.toString())
     }
 
@@ -43,73 +41,75 @@ class ConfirmationViewModel(
     }
 
     fun onCodeChange(code: String) {
-        val currentState = _confirmationUiState.value
-        if (currentState is ConfirmationUiState.Content) {
+        val state = currentState
+        if (state is ConfirmationUiState.Content) {
             val validationResult = formValidator.validateCode(code)
 
-            val updatedFormState = currentState.formState.copy(
+            val updatedFormState = state.formState.copy(
                 code = validationResult.data,
                 codeError = null
             )
 
-            _confirmationUiState.value = currentState.copy(formState = updatedFormState)
+            updateState { state.copy(formState = updatedFormState) }
         }
     }
 
     fun onConfirmClick() {
-        val currentState = _confirmationUiState.value
-        if (currentState is ConfirmationUiState.Content) {
+        val state = currentState
+        if (state is ConfirmationUiState.Content) {
             // Валидируем форму через helper - чисто и просто!
-            val (validatedFormState, hasErrors) = formValidator.validateAndApply(currentState.formState)
+            val (validatedFormState, hasErrors) = formValidator.validateAndApply(state.formState)
 
             if (hasErrors) {
-                _confirmationUiState.value = currentState.copy(formState = validatedFormState)
+                updateState { state.copy(formState = validatedFormState) }
                 Log.w("ConfirmationViewModel", "Form validation failed")
                 return
             }
 
-            _confirmationUiState.value = ConfirmationUiState.Loading
+            updateState { ConfirmationUiState.Loading }
 
-            val model = currentState.confirmationModelUi.copy(
+            val model = state.confirmationModelUi.copy(
                 code = validatedFormState.code
             )
 
-            viewModelScope.launch(handler) {
+            launch {
                 val result = confirmationUserUseCase(
                     model.toDomain()
                 ).toUiModel()
 
                 when (result) {
                     is ConfirmationResultUi.Success -> {
-                        _navigationEvent.value = ConfirmationNavigationEvent.NavigateToAuthorization
+                        sendEvent(ConfirmationNavigationEvent.NavigateToAuthorization)
                     }
 
                     is ConfirmationResultUi.Error -> {
-                        _confirmationUiState.value = ConfirmationUiState.Error(result.message)
+                        updateState { ConfirmationUiState.Error(result.message) }
                     }
                 }
             }
         }
     }
 
-    fun createConfirmationModelUi(email: String, type: TypeConfirmationUi) {
+    fun createConfirmationModelUi() {
         val model = ConfirmationModelUi(email = email, code = "", type = type)
         val initialFormState = ConfirmationFormState(code = "")
 
-        _confirmationUiState.value = ConfirmationUiState.Content(
-            confirmationModelUi = model,
-            formState = initialFormState,
-            resendTimerSeconds = 0,
-            canResendCode = true
-        )
+        updateState {
+            ConfirmationUiState.Content(
+                confirmationModelUi = model,
+                formState = initialFormState,
+                resendTimerSeconds = 0,
+                canResendCode = true
+            )
+        }
     }
 
     fun onResendCode() {
-        val currentState = _confirmationUiState.value
-        if (currentState is ConfirmationUiState.Content && currentState.canResendCode) {
-            viewModelScope.launch(handler) {
+        val state = currentState
+        if (state is ConfirmationUiState.Content && state.canResendCode) {
+            launch {
                 confirmationUserUseCase(
-                    currentState.confirmationModelUi.toDomain()
+                    state.confirmationModelUi.toDomain()
                 )
 
                 Log.i("ConfirmationViewModel", "Resend code request sent")
@@ -124,37 +124,39 @@ class ConfirmationViewModel(
         timerJob?.cancel()
 
         timerJob = viewModelScope.launch {
-            val currentState = _confirmationUiState.value
-            if (currentState is ConfirmationUiState.Content) {
-                _confirmationUiState.value = currentState.copy(
-                    resendTimerSeconds = RESEND_TIMER_SECONDS,
-                    canResendCode = false
-                )
+            val state = currentState
+            if (state is ConfirmationUiState.Content) {
+                updateState {
+                    state.copy(
+                        resendTimerSeconds = RESEND_TIMER_SECONDS,
+                        canResendCode = false
+                    )
+                }
 
                 for (seconds in RESEND_TIMER_SECONDS - 1 downTo 0) {
                     delay(1000)
 
-                    val state = _confirmationUiState.value
+                    val state = currentState
                     if (state is ConfirmationUiState.Content) {
-                        _confirmationUiState.value = state.copy(
-                            resendTimerSeconds = seconds
-                        )
+                        updateState {
+                            state.copy(
+                                resendTimerSeconds = seconds
+                            )
+                        }
                     }
                 }
 
-                val finalState = _confirmationUiState.value
+                val finalState = currentState
                 if (finalState is ConfirmationUiState.Content) {
-                    _confirmationUiState.value = finalState.copy(
-                        resendTimerSeconds = 0,
-                        canResendCode = true
-                    )
+                    updateState {
+                        finalState.copy(
+                            resendTimerSeconds = 0,
+                            canResendCode = true
+                        )
+                    }
                 }
             }
         }
-    }
-
-    fun onNavigationHandled() {
-        _navigationEvent.value = null
     }
 
     override fun onCleared() {

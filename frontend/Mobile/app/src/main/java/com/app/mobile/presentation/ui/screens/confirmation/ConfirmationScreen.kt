@@ -7,20 +7,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.mobile.R
-import com.app.mobile.presentation.models.account.TypeConfirmationUi
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.LabelButton
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.components.OtpTextField
 import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.components.Title
@@ -35,28 +36,18 @@ import com.app.mobile.ui.theme.MobileTheme
 @Composable
 fun ConfirmationScreen(
     confirmationViewModel: ConfirmationViewModel,
-    email: String,
-    type: TypeConfirmationUi,
     onConfirmClick: () -> Unit
 ) {
-    val confirmationUiState = confirmationViewModel.confirmationUiState.observeAsState(
-        ConfirmationUiState.Loading
-    )
+    val confirmationUiState =
+        confirmationViewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(key1 = Unit) {
-        confirmationViewModel.createConfirmationModelUi(email, type)
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        confirmationViewModel.createConfirmationModelUi()
     }
 
-    val navigationEvent by confirmationViewModel.navigationEvent.observeAsState()
-
-    LaunchedEffect(navigationEvent) {
-        navigationEvent?.let { event ->
-            when (event) {
-                is ConfirmationNavigationEvent.NavigateToAuthorization -> {
-                    onConfirmClick()
-                    confirmationViewModel.onNavigationHandled()
-                }
-            }
+    ObserveAsEvents(confirmationViewModel.event) { event ->
+        when (event) {
+            is ConfirmationNavigationEvent.NavigateToAuthorization -> onConfirmClick()
         }
     }
 
@@ -88,65 +79,67 @@ private fun ConfirmationContent(
     resendTimerSeconds: Int,
     actions: ConfirmationActions
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(
-                horizontal = Dimens.OpenScreenPaddingHorizontal,
-                vertical = Dimens.OpenScreenPaddingVertical
-            ),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Title(
-            text = stringResource(R.string.confirm_registration_title),
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(top = Dimens.TitleTopPadding)
-        )
-
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    horizontal = Dimens.OpenScreenPaddingHorizontal,
+                    vertical = Dimens.OpenScreenPaddingVertical
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(
-                text = stringResource(R.string.enter_code),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = Dimens.ItemsSpacingLarge)
+            Title(
+                text = stringResource(R.string.confirm_registration_title),
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(top = Dimens.TitleTopPadding)
             )
 
-            OtpTextField(
-                value = formState.code,
-                onValueChange = actions.onCodeChange,
-                isError = formState.codeError != null
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = Dimens.OtpCellSpacing),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                LabelButton(
-                    text = stringResource(R.string.resend_code),
-                    onClick = { actions.onResendCodeClick() },
-                    enabled = canResendCode
+                Text(
+                    text = stringResource(R.string.enter_code),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = Dimens.ItemsSpacingLarge)
                 )
 
-                if (resendTimerSeconds > 0) {
-                    val minutes = resendTimerSeconds / 60
-                    val seconds = resendTimerSeconds % 60
-                    Text(
-                        text = "$minutes:${seconds.toString().padStart(2, '0')}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                OtpTextField(
+                    value = formState.code,
+                    onValueChange = actions.onCodeChange,
+                    isError = formState.codeError != null
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = Dimens.OtpCellSpacing),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    LabelButton(
+                        text = stringResource(R.string.resend_code),
+                        onClick = { actions.onResendCodeClick() },
+                        enabled = canResendCode
                     )
+
+                    if (resendTimerSeconds > 0) {
+                        val minutes = resendTimerSeconds / 60
+                        val seconds = resendTimerSeconds % 60
+                        Text(
+                            text = "$minutes:${seconds.toString().padStart(2, '0')}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
-        }
 
-        CodeConfirmButton(onClick = actions.onConfirmClick)
+            CodeConfirmButton(onClick = actions.onConfirmClick)
+        }
     }
 }
 

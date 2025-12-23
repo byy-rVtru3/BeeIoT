@@ -7,6 +7,7 @@ import com.app.mobile.data.database.dao.HiveDao
 import com.app.mobile.data.database.dao.HubDao
 import com.app.mobile.data.database.dao.QueenDao
 import com.app.mobile.data.database.dao.UserDao
+import com.app.mobile.data.database.dao.WorkDao
 import com.app.mobile.data.database.entity.HiveEntity
 import com.app.mobile.data.database.entity.HubEntity
 import com.app.mobile.data.database.entity.NotificationEntity
@@ -35,5 +36,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun queenDao(): QueenDao
 
     abstract fun hubDao(): HubDao
+
+    abstract fun workDao(): WorkDao
 
 }

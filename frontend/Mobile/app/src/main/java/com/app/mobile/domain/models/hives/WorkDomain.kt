@@ -9,5 +9,5 @@ data class WorkDomain(
     val hiveId: String,
     val title: String,
     val text: String,
-    val dateTime: LocalDateTime
+    val dateTime: LocalDateTime = LocalDateTime.now()
 )

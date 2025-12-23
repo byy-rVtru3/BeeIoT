@@ -6,20 +6,24 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.mobile.R
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.LabelButton
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.components.PasswordTextField
 import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.components.Title
@@ -33,34 +37,23 @@ import com.app.mobile.presentation.validators.ValidationConfig
 import com.app.mobile.presentation.validators.ValidationError
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
+
 @Composable
 fun AuthorizationScreen(
     authorizationViewModel: AuthorizationViewModel,
     onAuthorizeClick: () -> Unit,
     onRegistrationClick: () -> Unit
 ) {
-    val authorizationUiState by authorizationViewModel.authorizationUiState.observeAsState(
-        AuthorizationUiState.Loading
-    )
+    val authorizationUiState by authorizationViewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(key1 = Unit) {
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         authorizationViewModel.createAuthorizationModel()
     }
 
-    val navigationEvent by authorizationViewModel.navigationEvent.observeAsState()
-    LaunchedEffect(navigationEvent) {
-        navigationEvent?.let { event ->
-            when (event) {
-                is AuthorizationNavigationEvent.NavigateToMainScreen -> {
-                    onAuthorizeClick()
-                    authorizationViewModel.onNavigationHandled()
-                }
-
-                is AuthorizationNavigationEvent.NavigateToRegistration -> {
-                    onRegistrationClick()
-                    authorizationViewModel.onNavigationHandled()
-                }
-            }
+    ObserveAsEvents(authorizationViewModel.event) { event ->
+        when (event) {
+            is AuthorizationNavigationEvent.NavigateToMainScreen -> onAuthorizeClick()
+            is AuthorizationNavigationEvent.NavigateToRegistration -> onRegistrationClick()
         }
     }
 
@@ -107,57 +100,59 @@ private fun AuthorizationContent(
     formState: AuthorizationFormState,
     actions: AuthorizationActions
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(
-                horizontal = Dimens.OpenScreenPaddingHorizontal,
-                vertical = Dimens.OpenScreenPaddingVertical
-            ),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Title(
-            text = stringResource(R.string.authorization_title),
-            modifier = Modifier.padding(top = Dimens.TitleTopPadding)
-        )
-
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    horizontal = Dimens.OpenScreenPaddingHorizontal,
+                    vertical = Dimens.OpenScreenPaddingVertical
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingSmall)
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            AuthorizationEmailTextField(
-                email = formState.email,
-                emailError = formState.emailError,
-                onEmailChange = actions.onEmailChange
+            Title(
+                text = stringResource(R.string.authorization_title),
+                modifier = Modifier.padding(top = Dimens.TitleTopPadding)
             )
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.End
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingSmall)
             ) {
-                AuthorizationPasswordTextField(
-                    password = formState.password,
-                    passwordError = formState.passwordError,
-                    onPasswordChange = actions.onPasswordChange
+                AuthorizationEmailTextField(
+                    email = formState.email,
+                    emailError = formState.emailError,
+                    onEmailChange = actions.onEmailChange
                 )
 
-                ForgotPasswordButton(onClick = { /* TODO */ })
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    AuthorizationPasswordTextField(
+                        password = formState.password,
+                        passwordError = formState.passwordError,
+                        onPasswordChange = actions.onPasswordChange
+                    )
+
+                    ForgotPasswordButton(onClick = { /* TODO */ })
+                }
             }
-        }
 
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingMedium),
-            modifier = Modifier
-                .padding(
-                    horizontal = Dimens.ButtonHorizontalPadding
-                )
-                .padding(bottom = Dimens.ButtonTwiceVerticalPadding)
-        ) {
-            AuthorizationButton(onClick = actions.onAuthorizeClick)
-            RegistrationButton(onClick = actions.onRegistrationClick)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingMedium),
+                modifier = Modifier
+                    .padding(
+                        horizontal = Dimens.ButtonHorizontalPadding
+                    )
+                    .padding(bottom = Dimens.ButtonTwiceVerticalPadding)
+            ) {
+                AuthorizationButton(onClick = actions.onAuthorizeClick)
+                RegistrationButton(onClick = actions.onRegistrationClick)
+            }
         }
     }
 }

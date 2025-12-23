@@ -1,38 +1,37 @@
 package com.app.mobile.presentation.ui.screens.hive.list.vewmodel
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.mappers.toHivePreview
 import com.app.mobile.domain.usecase.hives.hive.GetHivesPreviewUseCase
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.launch
+import com.app.mobile.presentation.ui.components.BaseViewModel
 
 class HivesListViewModel(
     private val getHivesPreviewUseCase: GetHivesPreviewUseCase
-) : ViewModel() {
-
-    private val _hivesListUiState = MutableLiveData<HivesListUiState>()
-    val hivesListUiState: LiveData<HivesListUiState> = _hivesListUiState
-
-    private val _navigationEvent = MutableLiveData<HivesListNavigationEvent?>()
-    val navigationEvent: LiveData<HivesListNavigationEvent?> = _navigationEvent
-
-    val handler = CoroutineExceptionHandler { _, exception ->
-        _hivesListUiState.value = HivesListUiState.Error(exception.message ?: "Unknown error")
+) : BaseViewModel<HivesListUiState, HivesListNavigationEvent>(HivesListUiState.Loading) {
+    private val _selectedTab = MutableStateFlow(0)
+    val selectedTab = _selectedTab.asStateFlow()
+    override fun handleError(exception: Throwable) {
+        updateState { HivesListUiState.Error(exception.message ?: "Unknown error") }
         Log.e("HivesListViewModel", exception.message.toString())
     }
 
+    // Метод для переключения вкладки
+    fun onTabSelected(index: Int) {
+        _selectedTab.value = index
+
+        // В будущем, когда будет реальный бэкенд для архива,
+        // здесь можно добавить логику:
+        // if (index == 0) loadActiveHives() else loadArchivedHives()
+    }
+
     fun loadHives() {
-        _hivesListUiState.value = HivesListUiState.Loading
-        viewModelScope.launch(handler) {
+        updateState { HivesListUiState.Loading }
+        launch {
             val hives = getHivesPreviewUseCase().map { it.toHivePreview() }
             if (hives.isEmpty()) {
-                _hivesListUiState.value = HivesListUiState.Empty
+                updateState { HivesListUiState.Empty }
             } else {
-                _hivesListUiState.value = HivesListUiState.Content(hives)
+                updateState { HivesListUiState.Content(hives) }
             }
         }
     }
@@ -42,26 +41,16 @@ class HivesListViewModel(
     }
 
     fun onHiveClick(hiveId: String) {
-        val currentState = _hivesListUiState.value
         if (currentState is HivesListUiState.Content) {
-            _hivesListUiState.value = HivesListUiState.Loading
-            viewModelScope.launch(handler) {
-                _navigationEvent.value = HivesListNavigationEvent.NavigateToHive(hiveId)
-            }
+            updateState { HivesListUiState.Loading }
+            sendEvent(HivesListNavigationEvent.NavigateToHive(hiveId))
         }
     }
 
     fun onCreateHiveClick() {
-        val currentState = _hivesListUiState.value
         if (currentState is HivesListUiState.Content || currentState is HivesListUiState.Empty) {
-            _hivesListUiState.value = HivesListUiState.Loading
-            viewModelScope.launch(handler) {
-                _navigationEvent.value = HivesListNavigationEvent.NavigateToCreateHive
-            }
+            updateState { HivesListUiState.Loading }
+            sendEvent(HivesListNavigationEvent.NavigateToCreateHive)
         }
-    }
-
-    fun onNavigationHandled() {
-        _navigationEvent.value = null
     }
 }

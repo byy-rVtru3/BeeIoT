@@ -1,24 +1,31 @@
 package com.app.mobile.presentation.ui.screens.accountinfo
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.app.mobile.R
 import com.app.mobile.presentation.models.account.UserInfoModel
+import com.app.mobile.presentation.ui.components.AppTopBar
+import com.app.mobile.presentation.ui.components.ClickableProfileField
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
-import com.app.mobile.presentation.ui.components.Title
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
+import com.app.mobile.presentation.ui.components.TopBarAction
 import com.app.mobile.presentation.ui.screens.accountinfo.models.AccountInfoActions
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoDialogState
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoNavigationEvent
@@ -28,14 +35,23 @@ import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
 
 @Composable
-fun AccountInfoScreen(accountInfoViewModel: AccountInfoViewModel, onDeleteClick: () -> Unit) {
+fun AccountInfoScreen(
+    accountInfoViewModel: AccountInfoViewModel,
+    onDeleteClick: () -> Unit,
+    onBackClick: () -> Unit
+) {
 
-    val accountInfoUiState by accountInfoViewModel.accountInfoUiState.observeAsState(
-        AccountInfoUiState.Loading
-    )
+    val accountInfoUiState by accountInfoViewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(key1 = Unit) {
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         accountInfoViewModel.getAccountInfo()
+    }
+
+    ObserveAsEvents(accountInfoViewModel.event) { event ->
+        when (event) {
+            is AccountInfoNavigationEvent.NavigateToRegistration -> onDeleteClick()
+            is AccountInfoNavigationEvent.NavigateBack -> onBackClick()
+        }
     }
 
     when (val currentState = accountInfoUiState) {
@@ -48,26 +64,15 @@ fun AccountInfoScreen(accountInfoViewModel: AccountInfoViewModel, onDeleteClick:
                 onPasswordClick = accountInfoViewModel::onPasswordClick,
                 onDeleteClick = accountInfoViewModel::onDeleteAccountClick
             )
-            AccountInfoContent(currentState.userInfo, actions)
+            AccountInfoContent(
+                userInfo = currentState.userInfo,
+                actions = actions,
+                onBackClick = onBackClick
+            )
         }
     }
 
-    val navigationEvent by accountInfoViewModel.navigationEvent.observeAsState()
-
-    LaunchedEffect(navigationEvent) {
-        navigationEvent?.let { event ->
-            when (event) {
-                is AccountInfoNavigationEvent.NavigateToRegistration -> {
-                    onDeleteClick()
-                    accountInfoViewModel.onNavigationHandled()
-                }
-            }
-        }
-    }
-
-    val accountInfoDialogState by accountInfoViewModel.accountInfoDialogState.observeAsState(
-        AccountInfoDialogState.Hidden
-    )
+    val accountInfoDialogState by accountInfoViewModel.accountInfoDialogState.collectAsStateWithLifecycle()
 
     when (val state = accountInfoDialogState) {
         is AccountInfoDialogState.SetName -> {
@@ -89,71 +94,86 @@ fun AccountInfoScreen(accountInfoViewModel: AccountInfoViewModel, onDeleteClick:
 }
 
 @Composable
-private fun AccountInfoContent(userInfo: UserInfoModel, actions: AccountInfoActions) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(Dimens.ScreenContentPadding),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Title("Информация о пользователе")
+private fun AccountInfoContent(
+    userInfo: UserInfoModel,
+    actions: AccountInfoActions,
+    onBackClick: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                title = stringResource(R.string.account),
+                onBackClick = onBackClick,
+                hasBackground = false,
+                action = TopBarAction.Delete(onClick = actions.onDeleteClick)
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding) // Важно: учитываем высоту TopBar
+                .padding(Dimens.ScreenContentPadding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
 
-        NameText(userInfo.name, actions.onNameClick)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = Dimens.AccountInfoTextFieldsHorizontalPadding
+                    ),
+                verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingMedium),
+            ) {
+                NameText(userInfo.name, actions.onNameClick)
 
-        EmailText(userInfo.email, actions.onEmailClick)
+                EmailText(userInfo.email, actions.onEmailClick)
 
-        PasswordText(userInfo.password, actions.onPasswordClick)
+                PasswordText(userInfo.password, actions.onPasswordClick)
 
-        DeleteButton(actions.onDeleteClick)
+                Text(
+                    text = stringResource(R.string.hint_account_info),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+
+        }
     }
 }
 
 @Composable
 private fun NameText(name: String, onNameClick: () -> Unit) {
-    Text(
-        name,
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onBackground,
-        modifier = Modifier
-            .padding(bottom = Dimens.ItemsSpacingMedium)
-            .clickable(onClick = onNameClick)
+    ClickableProfileField(
+        label = stringResource(R.string.name),
+        value = name,
+        onClick = onNameClick
     )
 }
 
 @Composable
 private fun EmailText(email: String, onEmailClick: () -> Unit) {
-    Text(
-        email,
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onBackground,
-        modifier = Modifier
-            .padding(bottom = Dimens.ItemsSpacingMedium)
-            .clickable(onClick = onEmailClick)
+    ClickableProfileField(
+        label = stringResource(R.string.email),
+        value = email,
+        onClick = onEmailClick
     )
 }
 
 @Composable
 private fun PasswordText(password: String, onPasswordClick: () -> Unit) {
-    Text(
-        password,
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onBackground,
-        modifier = Modifier
-            .padding(bottom = Dimens.ItemsSpacingMedium)
-            .clickable(onClick = onPasswordClick)
+    ClickableProfileField(
+        label = stringResource(R.string.password),
+        value = password,
+        onClick = onPasswordClick
     )
 }
 
-@Composable
-private fun DeleteButton(onDeleteClick: () -> Unit) {
-    Button(
-        modifier = Modifier,
-        onClick = onDeleteClick
-    ) {
-        Text(text = "Удалить аккаунт")
-    }
-}
 
 @Preview(showBackground = true)
 @Composable
@@ -170,6 +190,6 @@ fun AccountInfoContentPreview() {
             onPasswordClick = {},
             onDeleteClick = {}
         )
-        AccountInfoContent(userInfo, actions)
+        AccountInfoContent(userInfo, actions, {})
     }
 }

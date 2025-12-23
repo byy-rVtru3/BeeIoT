@@ -1,50 +1,38 @@
 package com.app.mobile.presentation.ui.screens.settings.viewmodel
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.account.LogoutAccountUseCase
 import com.app.mobile.presentation.models.account.LogoutResultUi
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.launch
+import com.app.mobile.presentation.ui.components.BaseViewModel
 
 class SettingsViewModel(
     private val logoutUseCase: LogoutAccountUseCase
-) : ViewModel() {
-    private val _settingsUiState = MutableLiveData<SettingsUiState>(SettingsUiState.Content)
-    val settingsUiState: LiveData<SettingsUiState> = _settingsUiState
+) : BaseViewModel<SettingsUiState, SettingsNavigationEvent>(SettingsUiState.Content) {
 
-    private val _navigationEvent = MutableLiveData<SettingsNavigationEvent?>()
-    val navigationEvent: LiveData<SettingsNavigationEvent?> = _navigationEvent
-
-    private val handler = CoroutineExceptionHandler { _, exception ->
-        _settingsUiState.value = SettingsUiState.Error(exception.message ?: "Unknown error")
+    override fun handleError(exception: Throwable) {
+        updateState { SettingsUiState.Error(exception.message ?: "Unknown error") }
         Log.e("SettingsViewModel", exception.message.toString())
     }
 
     fun onAccountInfoClick() {
-        val currentState = _settingsUiState.value
         if (currentState is SettingsUiState.Content) {
-            _navigationEvent.value = SettingsNavigationEvent.NavigateToAccountInfo
+            sendEvent(SettingsNavigationEvent.NavigateToAccountInfo)
         }
     }
 
     fun onLogoutClick() {
-        val currentState = _settingsUiState.value
         if (currentState is SettingsUiState.Content) {
-            _settingsUiState.value = SettingsUiState.Loading
-            viewModelScope.launch(handler) {
+            updateState { SettingsUiState.Loading }
+            launch {
 
                 when (val result = logoutUseCase().toUiModel()) {
                     is LogoutResultUi.Success -> {
-                        _navigationEvent.value = SettingsNavigationEvent.NavigateToAuthorization
+                        sendEvent(SettingsNavigationEvent.NavigateToAuthorization)
                     }
 
                     is LogoutResultUi.Error -> {
-                        _settingsUiState.value = SettingsUiState.Error(result.message)
+                        updateState { SettingsUiState.Error(result.message) }
 
                     }
                 }
@@ -53,13 +41,8 @@ class SettingsViewModel(
     }
 
     fun onAboutAppClick() {
-        val currentState = _settingsUiState.value
         if (currentState is SettingsUiState.Content) {
-            _navigationEvent.value = SettingsNavigationEvent.NavigateToAboutApp
+            sendEvent(SettingsNavigationEvent.NavigateToAboutApp)
         }
-    }
-
-    fun onNavigationHandled() {
-        _navigationEvent.value = null
     }
 }

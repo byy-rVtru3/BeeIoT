@@ -1,10 +1,8 @@
 package com.app.mobile.presentation.ui.screens.hive.editor.viewmodel
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.SavedStateHandle
+import androidx.navigation.toRoute
 import com.app.mobile.domain.mappers.toDomain
 import com.app.mobile.domain.mappers.toEditor
 import com.app.mobile.domain.mappers.toPresentation
@@ -15,12 +13,13 @@ import com.app.mobile.domain.usecase.hives.hub.AddHiveToHubUseCase
 import com.app.mobile.domain.usecase.hives.hub.GetHubsUseCase
 import com.app.mobile.domain.usecase.hives.queen.AddHiveToQueenUseCase
 import com.app.mobile.domain.usecase.hives.queen.GetQueensUseCase
-import kotlinx.coroutines.CoroutineExceptionHandler
+import com.app.mobile.presentation.ui.components.BaseViewModel
+import com.app.mobile.presentation.ui.screens.hive.editor.HiveEditorRoute
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 
 class HiveEditorViewModel(
+    savedStateHandle: SavedStateHandle,
     private val getHiveUseCase: GetHiveUseCase,
     private val getQueensUseCase: GetQueensUseCase,
     private val getHubsUseCase: GetHubsUseCase,
@@ -28,22 +27,19 @@ class HiveEditorViewModel(
     private val saveHiveUseCase: SaveHiveUseCase,
     private val addHiveToQueenUseCase: AddHiveToQueenUseCase,
     private val addHiveToHubUseCase: AddHiveToHubUseCase
-) : ViewModel() {
+) : BaseViewModel<HiveEditorUiState, HiveEditorNavigationEvent>(HiveEditorUiState.Loading) {
 
-    private val _hiveEditorUiState = MutableLiveData<HiveEditorUiState>(HiveEditorUiState.Loading)
-    val hiveEditorUiState: LiveData<HiveEditorUiState> = _hiveEditorUiState
+    private val route = savedStateHandle.toRoute<HiveEditorRoute>()
+    private val hiveId = route.hiveId
 
-    private val _navigationEvent = MutableLiveData<HiveEditorNavigationEvent?>()
-    val navigationEvent: LiveData<HiveEditorNavigationEvent?> = _navigationEvent
-
-    val handler = CoroutineExceptionHandler { _, exception ->
-        _hiveEditorUiState.value = HiveEditorUiState.Error(exception.message ?: "Unknown error")
+    override fun handleError(exception: Throwable) {
+        updateState { HiveEditorUiState.Error(exception.message ?: "Unknown error") }
         Log.e("HivesEditorViewModel", exception.message.toString())
     }
 
-    fun loadHive(hiveId: String?) {
-        _hiveEditorUiState.value = HiveEditorUiState.Loading
-        viewModelScope.launch(handler) {
+    fun loadHive() {
+        updateState { HiveEditorUiState.Loading }
+        launch {
             coroutineScope {
                 val deferredQueens = async { getQueensUseCase() }
                 val deferredHubs = async { getHubsUseCase() }
@@ -57,73 +53,69 @@ class HiveEditorViewModel(
                 val uiModel =
                     hive?.toEditor(queens, hubs) ?: createHiveUseCase().toPresentation(queens, hubs)
 
-                _hiveEditorUiState.value = HiveEditorUiState.Content(uiModel)
+                updateState { HiveEditorUiState.Content(uiModel) }
             }
         }
     }
 
     fun onNameChange(name: String) {
-        val currentState = _hiveEditorUiState.value
-        if (currentState is HiveEditorUiState.Content) {
-            val updatedHive = currentState.hiveEditorModel.copy(name = name)
-            _hiveEditorUiState.value = HiveEditorUiState.Content(updatedHive)
+        val state = currentState
+        if (state is HiveEditorUiState.Content) {
+            val updatedHive = state.hiveEditorModel.copy(name = name)
+            updateState { HiveEditorUiState.Content(updatedHive) }
         }
     }
 
     fun onHubAdd(hubId: String) {
-        val currentState = _hiveEditorUiState.value
-        if (currentState is HiveEditorUiState.Content) {
-            val updatedHive = currentState.hiveEditorModel.copy(connectedHubId = hubId)
-            viewModelScope.launch(handler) {
+        val state = currentState
+        if (state is HiveEditorUiState.Content) {
+            val updatedHive = state.hiveEditorModel.copy(connectedHubId = hubId)
+            launch {
 
-                addHiveToHubUseCase(hubId, currentState.hiveEditorModel.id)
+                addHiveToHubUseCase(hubId, state.hiveEditorModel.id)
 
-                _hiveEditorUiState.value = HiveEditorUiState.Content(updatedHive)
+                updateState { HiveEditorUiState.Content(updatedHive) }
             }
         }
     }
 
     fun onQueenAdd(queenId: String) {
-        val currentState = _hiveEditorUiState.value
-        if (currentState is HiveEditorUiState.Content) {
-            val updatedHive = currentState.hiveEditorModel.copy(connectedQueenId = queenId)
-            viewModelScope.launch(handler) {
+        val state = currentState
+        if (state is HiveEditorUiState.Content) {
+            val updatedHive = state.hiveEditorModel.copy(connectedQueenId = queenId)
+            launch {
 
-                addHiveToQueenUseCase(queenId, currentState.hiveEditorModel.id)
+                addHiveToQueenUseCase(queenId, state.hiveEditorModel.id)
 
-                _hiveEditorUiState.value = HiveEditorUiState.Content(updatedHive)
+                updateState { HiveEditorUiState.Content(updatedHive) }
             }
         }
     }
 
     fun onCreateQueenClick() {
-        val currentState = _hiveEditorUiState.value
         if (currentState is HiveEditorUiState.Content) {
-            _navigationEvent.value =
+            sendEvent(
                 HiveEditorNavigationEvent.NavigateToCreateQueen
+            )
         }
     }
 
     fun onCreateHubClick() {
-        val currentState = _hiveEditorUiState.value
         if (currentState is HiveEditorUiState.Content) {
-            _navigationEvent.value =
+            sendEvent(
                 HiveEditorNavigationEvent.NavigateToCreateHub
+            )
         }
     }
 
     fun onSaveClick() {
-        val currentState = _hiveEditorUiState.value
-        if (currentState is HiveEditorUiState.Content) {
-            viewModelScope.launch(handler) {
-                _hiveEditorUiState.value = HiveEditorUiState.Loading
-                saveHiveUseCase(currentState.hiveEditorModel.toDomain())
-                _navigationEvent.value = HiveEditorNavigationEvent.NavigateBack
+        val state = currentState
+        if (state is HiveEditorUiState.Content) {
+            launch {
+                updateState { HiveEditorUiState.Loading }
+                saveHiveUseCase(state.hiveEditorModel.toDomain())
+                sendEvent(HiveEditorNavigationEvent.NavigateBack)
             }
         }
-    }
-
-    fun onNavigationHandled() {
-        _navigationEvent.value = null
     }
 }

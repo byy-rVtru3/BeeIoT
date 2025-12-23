@@ -1,36 +1,36 @@
 package com.app.mobile.presentation.ui.screens.hive.details.viewmodel
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.SavedStateHandle
+import androidx.navigation.toRoute
 import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.hives.hive.GetHiveUseCase
 import com.app.mobile.presentation.models.hive.QueenUi
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.launch
+import com.app.mobile.presentation.ui.components.BaseViewModel
+import com.app.mobile.presentation.ui.screens.hive.details.HiveRoute
 
 class HiveViewModel(
+    savedStateHandle: SavedStateHandle,
     private val getHiveUseCase: GetHiveUseCase
-) : ViewModel() {
-    private val _hiveUiState = MutableLiveData<HiveUiState>()
-    val hiveUiState: LiveData<HiveUiState> = _hiveUiState
+) : BaseViewModel<HiveUiState, HiveNavigationEvent>(HiveUiState.Loading) {
+    private val route = savedStateHandle.toRoute<HiveRoute>()
 
-    private val _navigationEvent = MutableLiveData<HiveNavigationEvent?>()
-    val navigationEvent: LiveData<HiveNavigationEvent?> = _navigationEvent
+    private val hiveId = route.hiveId
 
-    val handler = CoroutineExceptionHandler { _, exception ->
-        _hiveUiState.value = HiveUiState.Error(exception.message ?: "Unknown error")
+    override fun handleError(exception: Throwable) {
+        updateState { HiveUiState.Error(exception.message ?: "Unknown error") }
         Log.e("HiveViewModel", "Error loading hive", exception)
     }
 
-    fun loadHive(hiveId: String) {
-        _hiveUiState.value = HiveUiState.Loading
-        viewModelScope.launch(handler) {
-            _hiveUiState.value = getHiveUseCase(hiveId)
-                ?.let { HiveUiState.Content(it.toUiModel()) }
-                ?: HiveUiState.Error("Улей не найден")
+    fun loadHive() {
+        updateState { HiveUiState.Loading }
+        launch {
+            val hive = getHiveUseCase(hiveId)
+            updateState {
+                hive
+                    ?.let { HiveUiState.Content(it.toUiModel()) }
+                    ?: HiveUiState.Error("Улей не найден")
+            }
         }
     }
 
@@ -47,11 +47,13 @@ class HiveViewModel(
         navigateWithId(HiveNavigationEvent::NavigateToNotificationByHive)
 
     fun onQueenClick() {
-        val currentUiState = _hiveUiState.value
-        if (currentUiState is HiveUiState.Content) {
-            val queen = currentUiState.hive.queen
+        val state = currentState
+        if (state is HiveUiState.Content) {
+            val queen = state.hive.queen
             if (queen is QueenUi.Present) {
-                _navigationEvent.value = HiveNavigationEvent.NavigateToQueenByHive(queen.queen.id)
+                launch {
+                    sendEvent(HiveNavigationEvent.NavigateToQueenByHive(queen.queen.id))
+                }
             }
         }
     }
@@ -60,19 +62,19 @@ class HiveViewModel(
         navigateWithId(HiveNavigationEvent::NavigateToWorkByHive)
 
     fun onHiveListClick() {
-        _navigationEvent.value = HiveNavigationEvent.NavigateToHiveList
+        launch {
+            sendEvent(HiveNavigationEvent.NavigateToHiveList)
+        }
     }
 
     fun onHiveEditClick() =
         navigateWithId(HiveNavigationEvent::NavigateToHiveEdit)
 
-    fun onNavigationHandled() {
-        _navigationEvent.value = null
-    }
-
-    private inline fun navigateWithId(navEvent: (String) -> HiveNavigationEvent) {
-        (_hiveUiState.value as? HiveUiState.Content)?.let { content ->
-            _navigationEvent.value = navEvent(content.hive.id)
+    private inline fun navigateWithId(crossinline navEvent: (String) -> HiveNavigationEvent) {
+        (currentState as? HiveUiState.Content)?.let {
+            launch {
+                sendEvent(navEvent(hiveId))
+            }
         }
     }
 }

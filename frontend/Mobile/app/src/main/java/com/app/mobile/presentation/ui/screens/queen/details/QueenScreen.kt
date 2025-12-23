@@ -7,23 +7,37 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.mobile.presentation.models.queen.QueenUiModel
 import com.app.mobile.presentation.models.queen.StageType
 import com.app.mobile.presentation.models.queen.TimelineItem
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenNavigationEvent
 import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenUiState
 import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenViewModel
@@ -31,33 +45,28 @@ import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenViewM
 @Composable
 fun QueenScreen(
     queenViewModel: QueenViewModel,
-    queenId: String,
     onEditClick: (queenId: String) -> Unit,
     onHiveClick: (hiveId: String) -> Unit
 ) {
-    val queenUiState by queenViewModel.queenUiState.observeAsState(QueenUiState.Loading)
+    val queenUiState by queenViewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(key1 = Unit) {
-        queenViewModel.getQueen(queenId)
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        queenViewModel.getQueen()
     }
 
-    val navigationEvent by queenViewModel.navigationEvent.observeAsState()
-
-    LaunchedEffect(navigationEvent) {
-        navigationEvent?.let { event ->
-            when (event) {
-                is QueenNavigationEvent.NavigateToEditQueen -> {
-                    onEditClick(event.queenId)
-                }
-                is QueenNavigationEvent.NavigateToHive -> {
-                    onHiveClick(event.hiveId)
-                }
+    ObserveAsEvents(queenViewModel.event) { event ->
+        when (event) {
+            is QueenNavigationEvent.NavigateToEditQueen -> {
+                onEditClick(event.queenId)
             }
-            queenViewModel.onNavigationHandled()
+
+            is QueenNavigationEvent.NavigateToHive -> {
+                onHiveClick(event.hiveId)
+            }
         }
     }
 
-    when(val state = queenUiState) {
+    when (val state = queenUiState) {
         is QueenUiState.Loading -> {
             FullScreenProgressIndicator()
         }
@@ -81,76 +90,78 @@ private fun QueenContent(
     onEditClick: () -> Unit,
     onHiveClick: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // Header
-        Card(
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
+            // Header
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.padding(16.dp)
                 ) {
-                    Text(
-                        text = queen.name,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                    )
-                    IconButton(onClick = onEditClick) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Редактировать",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = queen.name,
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                        IconButton(onClick = onEditClick) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Редактировать",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (queen.hive != null) {
+                        Text(
+                            text = "Улей: ${queen.hive.name}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.clickable { onHiveClick() }
+                        )
+                    } else {
+                        Text(
+                            text = "Улей не назначен",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                if (queen.hive != null) {
-                    Text(
-                        text = "Улей: ${queen.hive.name}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.clickable { onHiveClick() }
-                    )
-                } else {
-                    Text(
-                        text = "Улей не назначен",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
             }
-        }
 
-        Text(
-            text = "График развития",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(bottom = 8.dp),
-            color = MaterialTheme.colorScheme.onBackground
-        )
+            Text(
+                text = "График развития",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 8.dp),
+                color = MaterialTheme.colorScheme.onBackground
+            )
 
-        // Timeline
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(bottom = 16.dp)
-        ) {
-            items(queen.timeline) { item ->
-                TimelineItemView(item)
+            // Timeline
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                items(queen.timeline) { item ->
+                    TimelineItemView(item)
+                }
             }
         }
     }

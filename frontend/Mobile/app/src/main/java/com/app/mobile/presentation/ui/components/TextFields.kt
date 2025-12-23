@@ -255,3 +255,46 @@ fun OtpTextField(
         }
     }
 }
+
+
+@Composable
+fun ClickableProfileField(
+    label: String,
+    value: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val bottomLineColor = MaterialTheme.colorScheme.outline
+    val labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+    val valueColor = MaterialTheme.colorScheme.onSurface
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .drawBehind {
+                val strokeWidth = Dimens.BorderWidthNormal.toPx()
+                val y = size.height - strokeWidth / 2
+                drawLine(
+                    color = bottomLineColor,
+                    start = Offset(0f, y),
+                    end = Offset(size.width, y),
+                    strokeWidth = strokeWidth
+                )
+            }
+            .padding(vertical = Dimens.ClickableProfileFieldTextPaddingVertical)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = labelColor,
+            modifier = Modifier.padding(bottom = Dimens.ClickableProfileFieldLabelPadding)
+        )
+
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            color = valueColor
+        )
+    }
+}
