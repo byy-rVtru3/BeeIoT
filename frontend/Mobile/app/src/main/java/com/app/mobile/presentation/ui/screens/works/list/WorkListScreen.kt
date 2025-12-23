@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -75,32 +74,28 @@ fun WorksListContent(
                 onBackClick = onNavigateBack
             )
         },
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+            .exclude(WindowInsets.navigationBars),
         containerColor = MaterialTheme.colorScheme.surfaceVariant,
         floatingActionButton = {
             CustomFloatingActionButton(
                 onClick = onCreateClick,
                 icon = Icons.Filled.Add,
-                bottomPadding = Dimens.Null,
                 contentDescription = stringResource(R.string.add)
             )
         }
     ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .padding(top = innerPadding.calculateTopPadding())
-                .fillMaxSize()
-        ) {
-            if (works.isNotEmpty()) {
-                val fabSpace = Dimens.FabSize + Dimens.ItemsSpacingLarge
-
-                WorksList(
-                    works = works,
-                    onWorkClick = onWorkClick,
-                    bottomPadding = fabSpace
-                )
-            } else {
-                EmptyStub(text = stringResource(R.string.empty_works_list))
-            }
+        if (works.isNotEmpty()) {
+            WorksList(
+                works = works,
+                onWorkClick = onWorkClick,
+                modifier = Modifier.padding(innerPadding)
+            )
+        } else {
+            EmptyStub(
+                text = stringResource(R.string.empty_works_list),
+                modifier = Modifier.padding(innerPadding)
+            )
         }
     }
 }
@@ -109,7 +104,6 @@ fun WorksListContent(
 private fun WorksList(
     works: List<WorkUi>,
     onWorkClick: (String) -> Unit,
-    bottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -119,7 +113,7 @@ private fun WorksList(
         verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
         contentPadding = PaddingValues(
             top = Dimens.ScreenContentPadding,
-            bottom = bottomPadding + Dimens.ScreenContentPadding
+            bottom = Dimens.ScreenContentPadding
         )
     ) {
         items(
@@ -140,9 +134,9 @@ private fun WorksList(
 }
 
 @Composable
-private fun EmptyStub(text: String) {
+private fun EmptyStub(text: String, modifier: Modifier = Modifier) {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Text(
