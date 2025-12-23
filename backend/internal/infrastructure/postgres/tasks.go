@@ -54,8 +54,8 @@ func (db *Postgres) GetTasksByUserID(ctx context.Context, task httpType.Task) ([
 		if err != nil {
 			return nil, err
 		}
-		// Конвертируем микросекунды в строку времени
-		taskResult.Time = time.Unix(0, taskTime*1000).Format(time.RFC3339)
+
+		taskResult.Time = time.Unix(0, taskTime*1000)
 		taskResult.Hash = task.Hash
 		tasks = append(tasks, taskResult)
 	}
@@ -84,8 +84,8 @@ func (db *Postgres) GetTasksByHiveID(ctx context.Context, task httpType.Task) ([
 		if err != nil {
 			return nil, err
 		}
-		// Конвертируем микросекунды в строку времени
-		taskResult.Time = time.Unix(0, taskTime*1000).Format(time.RFC3339)
+
+		taskResult.Time = time.Unix(0, taskTime*1000)
 		taskResult.Hash = task.Hash
 		tasks = append(tasks, taskResult)
 	}
@@ -100,7 +100,6 @@ func (db *Postgres) getTasksSinceTime(ctx context.Context, task httpType.Task, s
 			 JOIN users u ON h.user_id = u.user_id
 			 WHERE h.name = $1 AND u.email = $2 AND SUBSTRING(u.password, 1, 10) = $3 AND t.time >= $4;`
 
-	// Конвертируем время в микросекунды
 	sinceTimeMicros := sinceTime.UnixNano() / 1000
 
 	rows, err := db.conn.Query(ctx, text, task.Hive, task.Email, task.Hash, sinceTimeMicros)
@@ -118,8 +117,8 @@ func (db *Postgres) getTasksSinceTime(ctx context.Context, task httpType.Task, s
 		if err != nil {
 			return nil, err
 		}
-		// Конвертируем микросекунды в строку времени
-		taskResult.Time = time.Unix(0, taskTime*1000).Format(time.RFC3339)
+
+		taskResult.Time = time.Unix(0, taskTime*1000)
 		taskResult.Hash = task.Hash
 		tasks = append(tasks, taskResult)
 	}

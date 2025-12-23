@@ -36,24 +36,52 @@ type QueenRequest struct {
 }
 
 type NoiseLevel struct {
-	Level int       `json:"level"`
+	Level float64   `json:"level"`
 	Time  time.Time `json:"time"`
 	Email string    `json:"email"`
 	Hive  string    `json:"hive"`
 }
 
-// Таблица 2 - вес улья
 type HiveWeight struct {
 	Weight float64   `json:"weight"`
 	Time   time.Time `json:"time"`
 	Email  string    `json:"email"`
 	Hive   string    `json:"hive"`
+	Hash   string    `json:"hash"` // заглушка
 }
 
-// Таблица 3 - температура
 type Temperature struct {
 	Temperature float64   `json:"temperature"`
 	Time        time.Time `json:"time"`
 	Email       string    `json:"email"`
 	Hive        string    `json:"hive"`
+}
+
+// Заглушка
+type Hive struct {
+	Email    string `json:"email"`
+	Hash     string `json:"hash"`
+	NameHive string `json:"name"`
+}
+
+// Заглушка
+type Task struct {
+	Email string    `json:"email"`
+	Hash  string    `json:"hash"`
+	Hive  string    `json:"hive"`
+	Name  string    `json:"name"`
+	Time  time.Time `json:"time"`
+}
+
+type CreateHive struct {
+	Name string `json:"name"`
+}
+
+type UpdateHive struct {
+	OldName string `json:"old_name"`
+	NewName string `json:"new_name"`
+}
+
+type DeleteHive struct {
+	Name string `json:"name"`
 }

@@ -95,3 +95,50 @@ func (r *Redis) DeleteAllJwts(ctx context.Context, email string) error {
 	err := r.rds.Del(ctx, "whitelist:"+email).Err()
 	return err
 }
+
+func (r *Redis) SetSensor(ctx context.Context, sensorID string) error {
+	timestamp := 0
+	err := r.rds.HSet(ctx, "sensors", sensorID, timestamp).Err()
+	return err
+}
+
+func (r *Redis) UpdateSensorTimestamp(ctx context.Context, sensorID string, timestamp int64) error {
+	exist, err := r.ExistSensor(ctx, sensorID)
+	switch {
+	case err != nil:
+		return err
+	case !exist:
+		return fmt.Errorf("sensor %s does not exist", sensorID)
+	default:
+		err = r.rds.HSet(ctx, "sensors", sensorID, timestamp).Err()
+		return err
+	}
+}
+
+func (r *Redis) ExistSensor(ctx context.Context, sensorID string) (bool, error) {
+	exist, err := r.rds.HExists(ctx, "sensors", sensorID).Result()
+	return exist, err
+}
+
+func (r *Redis) GetAllSensors(ctx context.Context) (map[string]int64, error) {
+	result, err := r.rds.HGetAll(ctx, "sensors").Result()
+	if err != nil {
+		return nil, err
+	}
+
+	sensors := make(map[string]int64)
+	for key, value := range result {
+		timestamp, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		sensors[key] = timestamp
+	}
+
+	return sensors, nil
+}
+
+func (r *Redis) DeleteSensor(ctx context.Context, sensorID string) error {
+	err := r.rds.HDel(ctx, "sensors", sensorID).Err()
+	return err
+}

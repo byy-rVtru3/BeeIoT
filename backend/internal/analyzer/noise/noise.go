@@ -6,9 +6,10 @@ import (
 	"BeeIOT/internal/domain/models/httpType"
 	"context"
 	"fmt"
-	"log/slog"
 	"math"
 	"time"
+
+	"github.com/rs/zerolog"
 )
 
 type Analyzer struct {
@@ -16,10 +17,12 @@ type Analyzer struct {
 	db      interfaces.DB
 	ctx     context.Context
 	inMemDb interfaces.InMemoryDB
+	logger  zerolog.Logger
 }
 
 func NewAnalyzer(ctx context.Context, period time.Duration, db interfaces.DB, inMemDb interfaces.InMemoryDB) *Analyzer {
-	return &Analyzer{period: period, db: db, ctx: ctx, inMemDb: inMemDb}
+	logger := ctx.Value("logger").(zerolog.Logger)
+	return &Analyzer{period: period, db: db, ctx: ctx, inMemDb: inMemDb, logger: logger}
 }
 
 func (a *Analyzer) Start() {
@@ -40,15 +43,13 @@ func (a *Analyzer) analyzeNoise() {
 	computingStartTime := a.createStartDayTime(ct.Year(), ct.Month(), ct.Day())
 	hives, err := a.db.GetHives(a.ctx, "")
 	if err != nil {
-		slog.Error("не удалось получить улья для анализа шума",
-			"module", "temperature", "function", "analyzeTemperature", "error", err)
+		a.logger.Error().Err(err).Msg("failed to get hives")
 		return
 	}
 	for _, hive := range hives {
 		SchumeikoDataMap, err := a.db.GetNoiseSinceTimeMap(a.ctx, hive.Id, computingStartTime)
 		if err != nil {
-			slog.Warn("не удалось получить данные по шуму для анализа",
-				"module", "noise", "function", "analyzeNoise", "hiveId", hive.Id, "error", err)
+			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Msg("failed to get noise since time map")
 			continue
 		}
 		a.analyzeDay(SchumeikoDataMap, hive, computingStartTime)
@@ -73,26 +74,25 @@ func (a *Analyzer) analyzeDay(
 		if prevData, ok := data[prevTime.Add(-24*time.Hour)]; ok {
 			prev := a.averageNoise(prevData)
 			cur := a.averageNoise(noises)
-			if math.Abs(prev-cur) >= criticalNoiseDelta {
-				email, err := a.db.GetUserById(a.ctx, hive.Id)
-				if err != nil {
-					slog.Warn("не удалось получить email пользователя",
-						"module", "temperature", "function", "analyzeTemperature",
-						"id", hive.Id, "email", email, "error", err)
-					continue
-				}
-				err = a.inMemDb.SetNotification(a.ctx, email, httpType.NotificationData{
-					Text: fmt.Sprintf(`Обнаружено отклонение шума в улье %s.
+			if math.Abs(prev-cur) < criticalNoiseDelta {
+				continue
+			}
+			email, err := a.db.GetUserById(a.ctx, hive.Id)
+			if err != nil {
+				a.logger.Warn().Int("hiveId", hive.Id).
+					Str("email", email).Err(err).Msg("failed to get user")
+				continue
+			}
+			err = a.inMemDb.SetNotification(a.ctx, email, httpType.NotificationData{
+				Text: fmt.Sprintf(`Обнаружено отклонение шума в улье %s.
 За день уровень шума изменился с %.2f до %.2f.
 Необходимо принять меры.`, hive.NameHive, prev, cur),
-					NameHive: hive.NameHive,
-					Date:     date.UnixNano(),
-				})
-				if err != nil {
-					slog.Warn("не удалось сохранить уведомление об отклонении температуры",
-						"module", "temperature", "function", "analyzeTemperature",
-						"id", hive.Id, "email", email, "error", err)
-				}
+				NameHive: hive.NameHive,
+				Date:     date.UnixNano(),
+			})
+			if err != nil {
+				a.logger.Warn().Int("hiveId", hive.Id).
+					Str("email", email).Err(err).Msg("failed to set notification")
 			}
 		}
 	}

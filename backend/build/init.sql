@@ -8,9 +8,9 @@ CREATE TABLE hives (
                        id SERIAL PRIMARY KEY,
                        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
                        name VARCHAR(255) NOT NULL,
-                       location VARCHAR(255),
                        temperature_check TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                       noise_check TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                       noise_check TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                       sensor_id   VARCHAR(255) UNIQUE
 );
 
 CREATE TABLE temperature (

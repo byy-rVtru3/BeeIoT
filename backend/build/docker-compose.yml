@@ -1,6 +1,24 @@
 version: "3"
 
 services:
+  mqtt:
+    image: eclipse-mosquitto:latest
+    restart: unless-stopped
+    container_name: mqtt_container
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    ports:
+      - "1883:1883"
+    networks:
+      - app-net
+    healthcheck:
+      test: [ "CMD-SHELL", "mosquitto_sub -h localhost -p 1883 -t '$$SYS/#' -C 1 -W 5 >/dev/null 2>&1 || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   db:
     image: postgres:latest
     restart: always
@@ -74,11 +92,14 @@ services:
       REDIS_ADDR: ${REDIS_ADDR}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       REDIS_DB: ${REDIS_DB}
+      MQTT_HOST: ${MQTT_HOST}
+      MQTT_PORT: ${MQTT_PORT}
     depends_on:
       - db
       - redis
+      - mqtt
     ports:
-      - "127.0.0.1:8000:8000"
+      - "8000:8000"
     networks:
       - app-net
     restart: unless-stopped
