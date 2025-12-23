@@ -7,5 +7,6 @@ import kotlinx.serialization.Serializable
 data class PupaPhaseDto(
     @SerialName("start") val start: String,
     @SerialName("end") val end: String,
+    @SerialName("duration") val duration: String? = null,
     @SerialName("selection") val selection: String
 )

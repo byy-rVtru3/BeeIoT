@@ -137,14 +137,14 @@ fun AppNavigation(
             val hiveViewModel: HiveViewModel = koinViewModel()
             HiveScreen(
                 hiveViewModel,
-                onQueenClick = { navController.navigate(QueenRoute) },
+                onQueenClick = { queenId -> navController.navigate(QueenRoute(queenId)) },
                 onWorksClick = { navController.navigate(WorksListRoute(it)) },
                 onNotificationsClick = { TODO("NotificationsRoute") },
                 onTemperatureClick = { TODO("TemperatureRoute") },
                 onNoiseClick = { TODO("NoiseRoute") },
                 onWeightClick = { TODO("WeightRoute") },
                 onHiveListClick = { navController.navigate(HivesListRoute) },
-                onHiveEditClick = { navController.navigate(HiveEditorRoute) }
+                onHiveEditClick = { hiveId -> navController.navigate(HiveEditorRoute(hiveId)) }
             )
         }
 
