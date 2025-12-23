@@ -44,7 +44,7 @@
     <string name="no_hive">Нет улья</string>
 
     <string name="hive_format">Улей:</string>
-
+    <string name="empty_works_list">Список работ пуст</string>
 
 
 
@@ -90,6 +90,13 @@
     <string name="birth_date_label">Дата рождения</string>
     <string name="ok">ОК</string>
     <string name="available_hives">Доступные ульи</string>
+
+    <!-- Works (Работы) -->
+
+    <string name="add_work_title">Добавление работы</string>
+    <string name="edit_work_title">Редактирование работы</string>
+    <string name="work_title_placeholder">Название работы</string>
+    <string name="work_text_label">Текст работы:</string>
 
 
 </resources>
