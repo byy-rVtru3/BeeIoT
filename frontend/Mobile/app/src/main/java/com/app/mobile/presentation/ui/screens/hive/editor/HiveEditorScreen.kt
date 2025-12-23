@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Sensors
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -36,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import com.app.mobile.R
 import com.app.mobile.presentation.models.hive.HiveEditorModel
 import com.app.mobile.presentation.ui.components.AppTopBar
@@ -50,7 +48,6 @@ import com.app.mobile.presentation.ui.screens.hive.editor.viewmodel.HiveEditorNa
 import com.app.mobile.presentation.ui.screens.hive.editor.viewmodel.HiveEditorUiState
 import com.app.mobile.presentation.ui.screens.hive.editor.viewmodel.HiveEditorViewModel
 import com.app.mobile.ui.theme.Dimens
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun HiveEditorScreen(
@@ -129,15 +126,15 @@ fun HiveEditorContent(
                 )
             }
 
-            // Секция Хабов (Grid)
-            SelectionGridSection(
-                title = stringResource(R.string.available_hubs),
-                items = hiveEditorModel.hubs.map { it.id to it.name },
-                selectedId = hiveEditorModel.connectedHubId,
-                onItemSelected = actions.onAddHubClick,
-                onCreateClick = actions.onCreateHubClick,
-                iconVector = Icons.Rounded.Sensors // Иконка для хаба
-            )
+//            // Секция Хабов (Grid)
+//            SelectionGridSection(
+//                title = stringResource(R.string.available_hubs),
+//                items = hiveEditorModel.hubs.map { it.id to it.name },
+//                selectedId = hiveEditorModel.connectedHubId,
+//                onItemSelected = actions.onAddHubClick,
+//                onCreateClick = actions.onCreateHubClick,
+//                iconVector = Icons.Rounded.Sensors // Иконка для хаба
+//            )
 
             // Секция Маток (Grid)
             SelectionGridSection(

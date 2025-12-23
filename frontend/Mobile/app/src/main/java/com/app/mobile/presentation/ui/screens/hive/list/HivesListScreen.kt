@@ -131,7 +131,7 @@ private fun HivesListContent(
                     }
                 }
                 1 -> {
-                    EmptyStub(text = stringResource(R.string.empty_archive_hives_list_screen))
+                    EmptyStub(text = stringResource(R.string.empty_archive_list_screen))
                 }
             }
         }
@@ -226,7 +226,7 @@ private fun EmptyHivesListScreen(
             val emptyText = if (selectedTab == 0) {
                 stringResource(R.string.empty_hives_list_screen)
             } else {
-                stringResource(R.string.empty_archive_hives_list_screen)
+                stringResource(R.string.empty_archive_list_screen)
 
             }
             Text(

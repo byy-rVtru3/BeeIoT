@@ -30,13 +30,22 @@
     <string name="archive">Архив</string>
     <string name="active_hives">Мои ульи</string>
     <string name="add_hive">Добавить улей</string>
+    <string name="add_queen">Добавить матку</string>
+
     <string name="hive_name">Название улья</string>
     <string name="add">Добавить</string>
     <string name="cancel">Отмена</string>
     <string name="empty_hives_list_screen">Пока нету ульев, чтобы добавить улей нажмите на кнопку "Добавить улей"</string>
-    <string name="empty_archive_hives_list_screen">В архиве пока пусто</string>
+    <string name="empty_queens_list_screen">Пока нету маток, чтобы добавить матку нажмите на кнопку "Добавить матку"</string>
+
+    <string name="empty_archive_list_screen">В архиве пока пусто</string>
     <string name="hive_last_connection_format">Последняя связь\n%1$s</string>
     <string name="hive">Улей</string>
+    <string name="no_hive">Нет улья</string>
+
+    <string name="hive_format">Улей:</string>
+
+
 
 
 
@@ -73,6 +82,14 @@
     <string name="available_hubs">Доступные хабы:</string>
     <string name="available_queens">Доступные матки:</string>
     <string name="save">Сохранить</string>
+
+    <!-- Strings for QueenEditorScreen -->
+    <string name="queen_edit_title">Добавление матки</string>
+    <string name="queen_name_label">Имя матки</string>
+    <string name="queen_name_placeholder">Введите имя матки</string>
+    <string name="birth_date_label">Дата рождения</string>
+    <string name="ok">ОК</string>
+    <string name="available_hives">Доступные ульи</string>
 
 
 </resources>

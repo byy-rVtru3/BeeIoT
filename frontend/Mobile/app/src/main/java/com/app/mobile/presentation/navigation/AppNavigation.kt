@@ -152,8 +152,18 @@ fun AppNavigation(
             val queenViewModel: QueenViewModel = koinViewModel()
             QueenScreen(
                 queenViewModel,
-                onEditClick = {},
-                onHiveClick = {}
+                onEditClick = { queenId ->
+                    navController.navigate(QueenEditorRoute(queenId))
+                },
+                onHiveClick = { hiveId ->
+                    navController.navigate(HiveRoute(hiveId))
+                },
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onDeleteClick = { queenId ->
+                    // Пока ничего не делаем (заглушка)
+                }
             )
         }
 

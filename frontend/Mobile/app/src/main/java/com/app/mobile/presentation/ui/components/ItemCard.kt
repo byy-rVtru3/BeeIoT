@@ -199,7 +199,7 @@ fun QueenCard(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Улей: queen.hiveName",
+                                text = stringResource(R.string.hive_format) + " ${queen.hiveName}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
