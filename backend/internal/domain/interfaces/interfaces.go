@@ -48,3 +48,11 @@ type InMemoryDB interface {
 	GetAllSensors(ctx context.Context) (map[string]int64, error)
 	DeleteSensor(ctx context.Context, sensorID string) error
 }
+
+type PasswordData = string
+type CodeData = string
+
+type PasswordKeeper interface {
+	AddCode(ctx context.Context, email, code, password string, timeLive time.Duration) error
+	GetPassword(ctx context.Context, email string) (CodeData, PasswordData, error)
+}

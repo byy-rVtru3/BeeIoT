@@ -21,9 +21,9 @@ import (
 const serverPort = ":8000"
 
 func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb interfaces.InMemoryDB,
-	mqtt *mqtt.Client, logger zerolog.Logger) {
+	mqtt *mqtt.Client, passwordStore interfaces.PasswordKeeper, logger zerolog.Logger) {
 	r := chi.NewRouter()
-	h, err := handlers.NewHandler(db, sender, inMemDb, mqtt, logger)
+	h, err := handlers.NewHandler(db, sender, inMemDb, mqtt, passwordStore, logger)
 	if err != nil {
 		logger.Error().Err(err).Msg("could not create new handler")
 		return

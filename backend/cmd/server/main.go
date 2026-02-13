@@ -61,5 +61,5 @@ func main() {
 	defer mqttServer.Disconnect()
 
 	logger.Info().Msg("Starting HTTP server...")
-	http.StartServer(db, smtp, redis, mqttServer, logger)
+	http.StartServer(db, smtp, redis, mqttServer, redis, logger)
 }

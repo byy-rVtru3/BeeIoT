@@ -21,8 +21,8 @@ type Handler struct {
 }
 
 func NewHandler(db interfaces.DB, codeSender interfaces.ConfirmSender,
-	inMem interfaces.InMemoryDB, mqtt *mqtt.Client, logger zerolog.Logger) (*Handler, error) {
-	conf, err := confirm.NewConfirm(codeSender)
+	inMem interfaces.InMemoryDB, mqtt *mqtt.Client, passwordStore interfaces.PasswordKeeper, logger zerolog.Logger) (*Handler, error) {
+	conf, err := confirm.NewConfirm(codeSender, passwordStore)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to create confirm service")
 		return nil, err
