@@ -11,7 +11,10 @@ import {
     deleteUser,
 } from '../utils/tasks.js';
 
+// All counters must be declared in init context
 const scenarioErrors = new Counter('read_ops_errors');
+const setupErrors = new Counter('setup_errors');
+const teardownErrors = new Counter('teardown_errors');
 
 export function readOperation() {
     const api = new BeeIoTAPI();
@@ -20,15 +23,15 @@ export function readOperation() {
     const hiveName = generateHiveName('Read');
 
     const metrics = {
-        registrationErrors: new Counter('setup_errors'),
-        confirmationErrors: new Counter('setup_errors'),
-        loginErrors: new Counter('setup_errors'),
-        hiveCreateErrors: new Counter('setup_errors'),
+        registrationErrors: setupErrors,
+        confirmationErrors: setupErrors,
+        loginErrors: setupErrors,
+        hiveCreateErrors: setupErrors,
 
         hiveListErrors: scenarioErrors,
         hiveGetErrors: scenarioErrors,
         calcErrors: scenarioErrors,
-        userDeleteErrors: new Counter('teardown_errors'),
+        userDeleteErrors: teardownErrors,
     };
 
     const regResult = fullUserRegistration(api, email, password, metrics);

@@ -3,6 +3,9 @@ package postgres
 import (
 	"BeeIOT/internal/domain/models/httpType"
 	"context"
+	"errors"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type id = int
@@ -18,7 +21,7 @@ func (db *Postgres) IsExistUser(ctx context.Context, email string) (bool, error)
 	text := `SELECT id FROM users WHERE email=$1;`
 	err := db.pull.QueryRow(ctx, text, email).Scan(&idUser)
 	if err != nil {
-		if err.Error() == "no rows in result set" {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
 		}
 		return false, err
@@ -31,7 +34,7 @@ func (db *Postgres) Login(ctx context.Context, login httpType.Login) (string, er
 	text := `SELECT password FROM users WHERE email=$1;`
 	err := db.pull.QueryRow(ctx, text, login.Email).Scan(&pswd)
 	if err != nil {
-		if err.Error() == "no rows in result set" {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return pswd, nil
 		}
 		return pswd, err
@@ -61,8 +64,5 @@ func (db *Postgres) GetUserById(ctx context.Context, id int) (string, error) {
 func (db *Postgres) ChangeNameUser(ctx context.Context, email string, name string) error {
 	text := `UPDATE users SET name=$1 WHERE email=$2;`
 	_, err := db.pull.Exec(ctx, text, name, email)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }

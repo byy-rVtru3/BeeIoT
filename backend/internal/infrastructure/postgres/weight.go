@@ -18,14 +18,17 @@ func (db *Postgres) NewHiveWeight(ctx context.Context, weight httpType.HiveWeigh
 
 func (db *Postgres) DeleteHiveWeight(ctx context.Context, weight httpType.HiveWeight) error {
 	text := `DELETE FROM weight w
-             USING hives h
-			 INNER JOIN users u ON h.user_id = u.id
-			 WHERE w.hive_id = h.id AND u.email = $1 AND h.name = $2 AND w.recorded_at = $3;`
+             USING hives h, users u
+             WHERE w.hive_id = h.id 
+              AND h.user_id = u.id
+              AND u.email = $1 
+              AND h.name = $2 
+              AND w.recorded_at = $3;`
 	_, err := db.pull.Exec(ctx, text, weight.Email, weight.Hive, weight.Time)
 	return err
 }
 
-func (db *Postgres) getWeightSinceTime(ctx context.Context, hive httpType.Hive, time time.Time) ([]httpType.HiveWeight, error) {
+func (db *Postgres) GetWeightSinceTime(ctx context.Context, hive httpType.Hive, time time.Time) ([]httpType.HiveWeight, error) {
 	text := `SELECT level, recorded_at 
              FROM weight w
              INNER JOIN hives h ON h.id = w.hive_id

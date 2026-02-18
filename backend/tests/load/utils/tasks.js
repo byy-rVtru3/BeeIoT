@@ -80,7 +80,7 @@ export function changePassword(api, email, newPassword, metrics = {}) {
     const getCounter = (key) => metrics.add ? metrics : metrics[key];
     const errors = getCounter('passwordChangeErrors');
 
-    const req = runTask(() => api.requestPasswordChange(email), 'Request Pwd Change', errors);
+    const req = runTask(() => api.requestPasswordChange(email, newPassword), 'Request Pwd Change', errors);
     if (!req.success) return { success: false };
 
     sleep(1);

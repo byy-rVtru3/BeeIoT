@@ -47,7 +47,7 @@ func (h *Handler) GetNoiseAndTemp(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
-	noise, err := h.db.GetNoiseSinceTimeMap(r.Context(), hive.Id, hive.DateNoise)
+	noise, err := h.db.GetNoiseSinceDay(r.Context(), hive.Id, hive.DateNoise)
 	if err != nil {
 		h.logger.Error().Err(err).Str("sensor", data.Sensor).Msg("failed to get noise data")
 		http.Error(w, "внутренняя ошибка сервера", http.StatusInternalServerError)

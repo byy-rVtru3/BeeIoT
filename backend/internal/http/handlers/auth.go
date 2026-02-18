@@ -19,8 +19,8 @@ func (h *Handler) Registration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if exist {
-		h.logger.Warn().Str("email", userData.Email).Msg("user does not exist")
-		http.Error(w, "Пользователь с таким email не зарегистрирован", http.StatusNotFound)
+		h.logger.Warn().Str("email", userData.Email).Msg("user already exist")
+		http.Error(w, "Пользователь с таким email уже существует", http.StatusConflict)
 		return
 	}
 

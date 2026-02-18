@@ -32,7 +32,7 @@ type DB interface {
 		ctx context.Context, hiveId int, time time.Time) ([]dbTypes.HivesTemperatureData, error)
 
 	NewNoise(ctx context.Context, noise httpType.NoiseLevel) error
-	GetNoiseSinceTimeMap(
+	GetNoiseSinceDay(
 		ctx context.Context, id int, date time.Time) (map[time.Time][]dbTypes.HivesNoiseData, error)
 }
 

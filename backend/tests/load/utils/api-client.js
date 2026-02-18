@@ -71,8 +71,8 @@ export class BeeIoTAPI {
         return this.post('CalcQueen', '/calcQueen/calc', data);
     }
 
-    requestPasswordChange(email) {
-        return this.post('RequestPasswordChange', '/auth/change', { email });
+    requestPasswordChange(email, newPassword) {
+        return this.post('RequestPasswordChange', '/auth/change', { email, password: newPassword });
     }
 
     confirmPasswordChange(email, code, password) {

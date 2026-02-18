@@ -10,7 +10,7 @@ import (
 func (db *Postgres) NewTemperature(ctx context.Context, temp httpType.Temperature) error {
 	text := `INSERT INTO temperature (hive_id, level, recorded_at)
              SELECT id, $3, $4
-             from hives h
+             FROM hives h
              INNER JOIN users u ON h.user_id = u.id
              WHERE u.email = $1 AND h.name = $2;`
 	_, err := db.pull.Exec(ctx, text, temp.Email, temp.Hive, temp.Temperature, temp.Time)

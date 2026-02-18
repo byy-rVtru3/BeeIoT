@@ -1,7 +1,7 @@
 CREATE TABLE users (
                        id SERIAL PRIMARY KEY,
                        email TEXT UNIQUE NOT NULL,
-                       name     TEXT NOT NULL,
+                       name     TEXT,
                        password TEXT NOT NULL
 );
 
@@ -11,7 +11,7 @@ CREATE TABLE hives (
                        name TEXT NOT NULL,
                        temperature_check TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                        noise_check TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                       sensor_id   TEXT UNIQUE
+                       sensor_id   TEXT UNIQUE,
                        status      BOOLEAN DEFAULT TRUE
 );
 
