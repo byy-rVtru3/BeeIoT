@@ -8,16 +8,21 @@ import (
 )
 
 func (db *Postgres) NewHive(ctx context.Context, email, nameHive string) error {
+
 	text := `INSERT INTO hives (user_id, name)
-                         VALUES ((SELECT id FROM users WHERE email = $1), $2);`
+             SELECT id, $2 
+             FROM users 
+             WHERE email = $1`
 	_, err := db.pull.Exec(ctx, text, email, nameHive)
 	return err
 }
 
 func (db *Postgres) DeleteHive(ctx context.Context, email, nameHive string) error {
-	text := `DELETE FROM hives 
-			 WHERE user_id = (SELECT id FROM users WHERE email = $1) 
-			 AND name = $2;`
+	text := `DELETE FROM hives h
+			 USING users u
+			 WHERE h.user_id = u.id
+			   AND u.email = $1
+		       AND h.name = $2;`
 	_, err := db.pull.Exec(ctx, text, email, nameHive)
 	return err
 }
@@ -27,10 +32,15 @@ func (db *Postgres) GetHives(ctx context.Context, email string) ([]dbTypes.Hive,
 	var rows pgx.Rows
 	var err error
 	if email == "" {
-		text = `SELECT id, name, (SELECT email FROM users WHERE id = user_id), temperature_check, noise_check FROM hives;`
+		text = `SELECT h.id, h.name, u.email, h.temperature_check, h.noise_check
+		        FROM hives h
+		        JOIN users u ON h.user_id = u.id;`
 		rows, err = db.pull.Query(ctx, text)
 	} else {
-		text = `SELECT id, name, (SELECT email FROM users WHERE id = user_id), temperature_check, noise_check FROM hives WHERE user_id = (SELECT id FROM users WHERE email = $1);`
+		text = `SELECT h.id, h.name, u.email, h.temperature_check, h.noise_check
+                FROM hives h
+                INNER JOIN users u ON h.user_id = u.id
+                WHERE u.email = $1;`
 		rows, err = db.pull.Query(ctx, text, email)
 	}
 	if err != nil {
@@ -50,7 +60,9 @@ func (db *Postgres) GetHives(ctx context.Context, email string) ([]dbTypes.Hive,
 }
 
 func (db *Postgres) GetHiveByName(ctx context.Context, email, nameHive string) (dbTypes.Hive, error) {
-	text := `SELECT id, name, (SELECT email FROM users WHERE id = user_id), temperature_check, noise_check FROM hives WHERE user_id = (SELECT id FROM users WHERE email = $1) AND name = $2;`
+	text := `SELECT h.id, h.name, u.email, h.temperature_check, h.noise_check FROM hives h
+        	 INNER JOIN users u ON h.user_id = u.id
+             WHERE h.name = $2 AND u.email = $1;`
 	row := db.pull.QueryRow(ctx, text, email, nameHive)
 	var hive dbTypes.Hive
 	err := row.Scan(&hive.Id, &hive.NameHive, &hive.Email, &hive.DateTemperature, &hive.DateNoise)

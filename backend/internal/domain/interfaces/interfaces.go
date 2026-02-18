@@ -18,6 +18,7 @@ type DB interface {
 	ChangePassword(ctx context.Context, user httpType.ChangePassword) error
 	DeleteUser(ctx context.Context, email string) error
 	GetUserById(ctx context.Context, id int) (string, error)
+	ChangeNameUser(ctx context.Context, email string, name string) error
 
 	NewHive(ctx context.Context, email, nameHive string) error
 	GetHives(ctx context.Context, email string) ([]dbTypes.Hive, error)

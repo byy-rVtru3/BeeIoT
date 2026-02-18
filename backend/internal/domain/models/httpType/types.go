@@ -7,6 +7,7 @@ import "time"
 type Registration struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	Name     string `json:"name"`
 }
 
 type Login struct {
@@ -47,7 +48,6 @@ type HiveWeight struct {
 	Time   time.Time `json:"time"`
 	Email  string    `json:"email"`
 	Hive   string    `json:"hive"`
-	Hash   string    `json:"hash"` // заглушка
 }
 
 type Temperature struct {
@@ -57,20 +57,9 @@ type Temperature struct {
 	Hive        string    `json:"hive"`
 }
 
-// Заглушка
 type Hive struct {
 	Email    string `json:"email"`
-	Hash     string `json:"hash"`
 	NameHive string `json:"name"`
-}
-
-// Заглушка
-type Task struct {
-	Email string    `json:"email"`
-	Hash  string    `json:"hash"`
-	Hive  string    `json:"hive"`
-	Name  string    `json:"name"`
-	Time  time.Time `json:"time"`
 }
 
 type CreateHive struct {

@@ -9,8 +9,7 @@ import (
 )
 
 type Postgres struct {
-	pull    *pgxpool.Pool
-	errChan chan<- error
+	pull *pgxpool.Pool
 }
 
 func (db *Postgres) createConnectPath() (string, error) {
@@ -37,11 +36,17 @@ func NewDB() (*Postgres, error) {
 	db := &Postgres{}
 	path, err := db.createConnectPath()
 	if err != nil {
-		return db, err
+		return nil, err
 	}
-	db.pull, err = pgxpool.New(context.Background(), path)
+	conf, err := pgxpool.ParseConfig(path)
 	if err != nil {
-		return db, err
+		return nil, err
+	}
+	conf.MaxConns = 30
+	conf.MinConns = 10
+	db.pull, err = pgxpool.NewWithConfig(context.Background(), conf)
+	if err != nil {
+		return nil, err
 	}
 	return db, nil
 }

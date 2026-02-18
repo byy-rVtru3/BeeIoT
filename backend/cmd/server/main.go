@@ -47,8 +47,8 @@ func main() {
 	logger.Info().Msg("Starting analyzers...")
 	analyzersCtx, cancel := context.WithCancel(context.WithValue(context.Background(), "logger", logger))
 	defer cancel()
-	go temperature.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
-	go noise.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
+	temperature.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
+	noise.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
 
 	logger.Info().Msg("Initializing MQTT...")
 	mqttServer, err := mqtt.NewMQTTClient(db, redis, logger)

@@ -12,6 +12,7 @@ CREATE TABLE hives (
                        temperature_check TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                        noise_check TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                        sensor_id   TEXT UNIQUE
+                       status      BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE temperature (
@@ -33,14 +34,4 @@ CREATE TABLE noise (
                        hive_id INTEGER REFERENCES hives(id) ON DELETE CASCADE,
                        level FLOAT NOT NULL,
                        recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE tasks (
-                       id SERIAL PRIMARY KEY,
-                       hive_id INTEGER REFERENCES hives(id) ON DELETE CASCADE,
-                       title TEXT NOT NULL,
-                       description TEXT,
-                       status TEXT DEFAULT 'pending',
-                       due_date TIMESTAMP,
-                       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

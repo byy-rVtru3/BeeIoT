@@ -28,14 +28,16 @@ func NewAnalyzer(ctx context.Context, period time.Duration, db interfaces.DB, in
 func (a *Analyzer) Start() {
 	ticker := time.NewTicker(a.period)
 	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			a.analyzeNoise()
-		case <-a.ctx.Done():
-			return
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				a.analyzeNoise()
+			case <-a.ctx.Done():
+				return
+			}
 		}
-	}
+	}()
 }
 
 func (a *Analyzer) analyzeNoise() {
