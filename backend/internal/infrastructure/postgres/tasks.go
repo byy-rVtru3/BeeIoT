@@ -14,7 +14,7 @@ func (db *Postgres) NewTask(ctx context.Context, task httpType.Task) error {
 				(SELECT task_id FROM name_tasks WHERE name = $4),
 				$5
 			 );`
-	_, err := db.conn.Exec(ctx, text, task.Email, task.Hash, task.Hive, task.Name, task.Time)
+	_, err := db.pull.Exec(ctx, text, task.Email, task.Hash, task.Hive, task.Name, task.Time)
 	return err
 }
 
@@ -28,7 +28,7 @@ func (db *Postgres) DeleteTask(ctx context.Context, task httpType.Task) error {
 				 WHERE u.email = $1 AND SUBSTRING(u.password, 1, 10) = $2 
 				 AND h.name = $3 AND nt.name = $4
 			 );`
-	_, err := db.conn.Exec(ctx, text, task.Email, task.Hash, task.Hive, task.Name)
+	_, err := db.pull.Exec(ctx, text, task.Email, task.Hash, task.Hive, task.Name)
 	return err
 }
 
@@ -39,7 +39,7 @@ func (db *Postgres) GetTasksByUserID(ctx context.Context, task httpType.Task) ([
 			 JOIN name_tasks nt ON t.name_tasks_id = nt.task_id
 			 JOIN users u ON h.user_id = u.user_id
 			 WHERE u.email = $1 AND SUBSTRING(u.password, 1, 10) = $2;`
-	rows, err := db.conn.Query(ctx, text, task.Email, task.Hash)
+	rows, err := db.pull.Query(ctx, text, task.Email, task.Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (db *Postgres) GetTasksByHiveID(ctx context.Context, task httpType.Task) ([
 			 JOIN name_tasks nt ON t.name_tasks_id = nt.task_id
 			 JOIN users u ON h.user_id = u.user_id
 			 WHERE h.name = $1 AND u.email = $2 AND SUBSTRING(u.password, 1, 10) = $3;`
-	rows, err := db.conn.Query(ctx, text, task.Hive, task.Email, task.Hash)
+	rows, err := db.pull.Query(ctx, text, task.Hive, task.Email, task.Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (db *Postgres) getTasksSinceTime(ctx context.Context, task httpType.Task, s
 
 	sinceTimeMicros := sinceTime.UnixNano() / 1000
 
-	rows, err := db.conn.Query(ctx, text, task.Hive, task.Email, task.Hash, sinceTimeMicros)
+	rows, err := db.pull.Query(ctx, text, task.Hive, task.Email, task.Hash, sinceTimeMicros)
 	if err != nil {
 		return nil, err
 	}

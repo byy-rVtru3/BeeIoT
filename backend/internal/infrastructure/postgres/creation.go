@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Postgres struct {
-	conn    *pgx.Conn
+	pull    *pgxpool.Pool
 	errChan chan<- error
 }
 
@@ -39,13 +39,13 @@ func NewDB() (*Postgres, error) {
 	if err != nil {
 		return db, err
 	}
-	db.conn, err = pgx.Connect(context.Background(), path)
+	db.pull, err = pgxpool.New(context.Background(), path)
 	if err != nil {
 		return db, err
 	}
 	return db, nil
 }
 
-func (db *Postgres) CloseDB() error {
-	return db.conn.Close(context.Background())
+func (db *Postgres) CloseDB() {
+	db.pull.Close()
 }

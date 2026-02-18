@@ -1,8 +1,6 @@
-version: "3"
-
 services:
   mqtt:
-    image: eclipse-mosquitto:latest
+    image: eclipse-mosquitto:2.0.15
     restart: unless-stopped
     container_name: mqtt_container
     volumes:
@@ -20,7 +18,7 @@ services:
       retries: 3
 
   db:
-    image: postgres:latest
+    image: postgres:16
     restart: always
     shm_size: 128m
     container_name: db_container
@@ -32,7 +30,7 @@ services:
       - db_data:/var/lib/postgresql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "127.0.0.1:5432:5432"
+      - "5432:5432" # чтобы goland определил структуру БД, в проде убрать открытый порт для безопасности
     networks:
       - app-net
     healthcheck:
@@ -40,14 +38,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-
-  adminer: # классная штука для работы с БД (кажется)
-    image: adminer
-    restart: always
-    networks:
-      - app-net
-    ports:
-      - "127.0.0.1:8080:8080"
 
   redis:
     image: redis:7-alpine
@@ -95,9 +85,12 @@ services:
       MQTT_HOST: ${MQTT_HOST}
       MQTT_PORT: ${MQTT_PORT}
     depends_on:
-      - db
-      - redis
-      - mqtt
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mqtt:
+        condition: service_healthy
     ports:
       - "80:8000"
     networks:

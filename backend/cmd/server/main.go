@@ -25,9 +25,7 @@ func main() {
 		logger.Error().Err(err).Msg("Failed to connect to the database")
 		return
 	}
-	defer func() {
-		_ = db.CloseDB()
-	}()
+	defer db.CloseDB()
 
 	logger.Info().Msg("Initializing SMTP...")
 	smtp, err := smtp2.NewSMTP()

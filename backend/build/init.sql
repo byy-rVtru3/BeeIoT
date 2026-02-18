@@ -1,16 +1,17 @@
 CREATE TABLE users (
                        id SERIAL PRIMARY KEY,
-                       email VARCHAR(255) UNIQUE NOT NULL,
-                       password VARCHAR(255) NOT NULL
+                       email TEXT UNIQUE NOT NULL,
+                       name     TEXT NOT NULL,
+                       password TEXT NOT NULL
 );
 
 CREATE TABLE hives (
                        id SERIAL PRIMARY KEY,
                        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-                       name VARCHAR(255) NOT NULL,
+                       name TEXT NOT NULL,
                        temperature_check TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                        noise_check TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                       sensor_id   VARCHAR(255) UNIQUE
+                       sensor_id   TEXT UNIQUE
 );
 
 CREATE TABLE temperature (
@@ -37,9 +38,9 @@ CREATE TABLE noise (
 CREATE TABLE tasks (
                        id SERIAL PRIMARY KEY,
                        hive_id INTEGER REFERENCES hives(id) ON DELETE CASCADE,
-                       title VARCHAR(255) NOT NULL,
+                       title TEXT NOT NULL,
                        description TEXT,
-                       status VARCHAR(50) DEFAULT 'pending',
+                       status TEXT DEFAULT 'pending',
                        due_date TIMESTAMP,
                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

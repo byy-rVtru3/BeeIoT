@@ -13,7 +13,7 @@ func (db *Postgres) NewNoise(ctx context.Context, noise httpType.NoiseLevel) err
 				(SELECT id FROM hives WHERE name = $2 AND user_id = (SELECT id FROM users WHERE email = $1)),
 				$3, $4
 			 );`
-	_, err := db.conn.Exec(ctx, text, noise.Email, noise.Hive, noise.Level, noise.Time)
+	_, err := db.pull.Exec(ctx, text, noise.Email, noise.Hive, noise.Level, noise.Time)
 	return err
 }
 
@@ -21,7 +21,7 @@ func (db *Postgres) DeleteNoise(ctx context.Context, noise httpType.NoiseLevel) 
 	text := `DELETE FROM noise 
 			 WHERE hive_id = (SELECT id FROM hives WHERE name = $2 AND user_id = (SELECT id FROM users WHERE email = $1))
 			 AND recorded_at = $3;`
-	_, err := db.conn.Exec(ctx, text, noise.Email, noise.Hive, noise.Time)
+	_, err := db.pull.Exec(ctx, text, noise.Email, noise.Hive, noise.Time)
 	return err
 }
 
@@ -30,7 +30,7 @@ func (db *Postgres) GetNoiseSinceTime(
 	text := `SELECT level, recorded_at FROM noise 
 			 WHERE hive_id = (SELECT id FROM hives WHERE name = $2 AND user_id = (SELECT id FROM users WHERE email = $1))
 			 AND recorded_at >= $3;`
-	rows, err := db.conn.Query(ctx, text, email, nameHive, time)
+	rows, err := db.pull.Query(ctx, text, email, nameHive, time)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (db *Postgres) GetNoiseSinceTimeMap(
 	text := `SELECT level, recorded_at FROM noise
 			 WHERE hive_id = $1
 			 AND recorded_at >= $2;`
-	rows, err := db.conn.Query(ctx, text, id, date)
+	rows, err := db.pull.Query(ctx, text, id, date)
 	if err != nil {
 		return nil, err
 	}

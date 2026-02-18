@@ -13,7 +13,7 @@ func (db *Postgres) NewHiveWeight(ctx context.Context, weight httpType.HiveWeigh
 				(SELECT id FROM hives WHERE name = $3 AND user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2)),
 				$4, $5
 			 );`
-	_, err := db.conn.Exec(ctx, text, weight.Email, weight.Hash, weight.Hive, weight.Weight, weight.Time)
+	_, err := db.pull.Exec(ctx, text, weight.Email, weight.Hash, weight.Hive, weight.Weight, weight.Time)
 	return err
 }
 
@@ -22,7 +22,7 @@ func (db *Postgres) DeleteHiveWeight(ctx context.Context, weight httpType.HiveWe
 			 WHERE user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2)
 			 AND hive_id = (SELECT id FROM hives WHERE name = $3 AND user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2))
 			 AND time = $4;`
-	_, err := db.conn.Exec(ctx, text, weight.Email, weight.Hash, weight.Hive, weight.Time)
+	_, err := db.pull.Exec(ctx, text, weight.Email, weight.Hash, weight.Hive, weight.Time)
 	return err
 }
 
@@ -31,7 +31,7 @@ func (db *Postgres) getHiveWeightsSinceTime(ctx context.Context, hive httpType.H
 			 WHERE user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2)
 			 AND hive_id = (SELECT id FROM hives WHERE name = $3 AND user_id = (SELECT id FROM users WHERE email = $1 AND SUBSTRING(password, 1, 10) = $2))
 			 AND time >= $4;`
-	rows, err := db.conn.Query(ctx, text, hive.Email, hive.Hash, hive.NameHive, time)
+	rows, err := db.pull.Query(ctx, text, hive.Email, hive.Hash, hive.NameHive, time)
 	if err != nil {
 		return nil, err
 	}

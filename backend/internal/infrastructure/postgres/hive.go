@@ -10,7 +10,7 @@ import (
 func (db *Postgres) NewHive(ctx context.Context, email, nameHive string) error {
 	text := `INSERT INTO hives (user_id, name)
                          VALUES ((SELECT id FROM users WHERE email = $1), $2);`
-	_, err := db.conn.Exec(ctx, text, email, nameHive)
+	_, err := db.pull.Exec(ctx, text, email, nameHive)
 	return err
 }
 
@@ -18,7 +18,7 @@ func (db *Postgres) DeleteHive(ctx context.Context, email, nameHive string) erro
 	text := `DELETE FROM hives 
 			 WHERE user_id = (SELECT id FROM users WHERE email = $1) 
 			 AND name = $2;`
-	_, err := db.conn.Exec(ctx, text, email, nameHive)
+	_, err := db.pull.Exec(ctx, text, email, nameHive)
 	return err
 }
 
@@ -28,10 +28,10 @@ func (db *Postgres) GetHives(ctx context.Context, email string) ([]dbTypes.Hive,
 	var err error
 	if email == "" {
 		text = `SELECT id, name, (SELECT email FROM users WHERE id = user_id), temperature_check, noise_check FROM hives;`
-		rows, err = db.conn.Query(ctx, text)
+		rows, err = db.pull.Query(ctx, text)
 	} else {
 		text = `SELECT id, name, (SELECT email FROM users WHERE id = user_id), temperature_check, noise_check FROM hives WHERE user_id = (SELECT id FROM users WHERE email = $1);`
-		rows, err = db.conn.Query(ctx, text, email)
+		rows, err = db.pull.Query(ctx, text, email)
 	}
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (db *Postgres) GetHives(ctx context.Context, email string) ([]dbTypes.Hive,
 
 func (db *Postgres) GetHiveByName(ctx context.Context, email, nameHive string) (dbTypes.Hive, error) {
 	text := `SELECT id, name, (SELECT email FROM users WHERE id = user_id), temperature_check, noise_check FROM hives WHERE user_id = (SELECT id FROM users WHERE email = $1) AND name = $2;`
-	row := db.conn.QueryRow(ctx, text, email, nameHive)
+	row := db.pull.QueryRow(ctx, text, email, nameHive)
 	var hive dbTypes.Hive
 	err := row.Scan(&hive.Id, &hive.NameHive, &hive.Email, &hive.DateTemperature, &hive.DateNoise)
 	if err != nil {
@@ -63,7 +63,7 @@ func (db *Postgres) GetHiveByName(ctx context.Context, email, nameHive string) (
 func (db *Postgres) UpdateHive(ctx context.Context, nameHive string, hive dbTypes.Hive) error {
 	text := `UPDATE hives SET name = $1 
                          WHERE user_id = (SELECT id FROM users WHERE email = $2) AND name = $3;`
-	_, err := db.conn.Exec(ctx, text, hive.NameHive, hive.Email, nameHive)
+	_, err := db.pull.Exec(ctx, text, hive.NameHive, hive.Email, nameHive)
 	return err
 }
 
@@ -71,7 +71,7 @@ func (db *Postgres) GetEmailHiveBySensorID(ctx context.Context, sensorID string)
 	text := `SELECT u.email, h.name FROM users u
 			 JOIN hives h ON h.user_id = u.id
 			 WHERE h.sensor_id = $1;`
-	row := db.conn.QueryRow(ctx, text, sensorID)
+	row := db.pull.QueryRow(ctx, text, sensorID)
 	var email, hiveName string
 	err := row.Scan(&email, &hiveName)
 	if err != nil {

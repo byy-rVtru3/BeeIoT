@@ -13,7 +13,7 @@ func (db *Postgres) NewTemperature(ctx context.Context, temp httpType.Temperatur
 				(SELECT id FROM hives WHERE name = $2 AND user_id = (SELECT id FROM users WHERE email = $1)),
 				$3, $4
 			 );`
-	_, err := db.conn.Exec(ctx, text, temp.Email, temp.Hive, temp.Temperature, temp.Time)
+	_, err := db.pull.Exec(ctx, text, temp.Email, temp.Hive, temp.Temperature, temp.Time)
 	return err
 }
 
@@ -21,7 +21,7 @@ func (db *Postgres) DeleteTemperature(ctx context.Context, temp httpType.Tempera
 	text := `DELETE FROM temperature 
 			 WHERE hive_id = (SELECT id FROM hives WHERE name = $2 AND user_id = (SELECT id FROM users WHERE email = $1))
 			 AND recorded_at = $3;`
-	_, err := db.conn.Exec(ctx, text, temp.Email, temp.Hive, temp.Time)
+	_, err := db.pull.Exec(ctx, text, temp.Email, temp.Hive, temp.Time)
 	return err
 }
 
@@ -29,7 +29,7 @@ func (db *Postgres) GetTemperaturesSinceTime(ctx context.Context, hive dbTypes.H
 	text := `SELECT level, recorded_at FROM temperature 
 			 WHERE hive_id = (SELECT id FROM hives WHERE name = $2 AND user_id = (SELECT id FROM users WHERE email = $1))
 			 AND recorded_at >= $3;`
-	rows, err := db.conn.Query(ctx, text, hive.Email, hive.NameHive, time)
+	rows, err := db.pull.Query(ctx, text, hive.Email, hive.NameHive, time)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (db *Postgres) GetTemperaturesSinceTimeById(ctx context.Context, hiveId int
 	text := `SELECT level, recorded_at FROM temperature
             WHERE hive_id = $1
 			AND recorded_at >= $2;`
-	rows, err := db.conn.Query(ctx, text, hiveId, time)
+	rows, err := db.pull.Query(ctx, text, hiveId, time)
 	if err != nil {
 		return nil, err
 	}
