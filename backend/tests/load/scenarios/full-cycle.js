@@ -62,7 +62,7 @@ export function fullCycle() {
     sleep(1);
 
     // 8. Калькулятор матки
-    calculateQueen(api, { start_date: "2026-02-11" }, metrics.calcErrors);
+    calculateQueen(api, token, { start_date: "2026-02-11" }, metrics.calcErrors);
     sleep(1);
 
     // 11-12. Смена пароля

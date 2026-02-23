@@ -12,7 +12,8 @@ func (db *Postgres) NewTemperature(ctx context.Context, temp httpType.Temperatur
              SELECT id, $3, $4
              FROM hives h
              INNER JOIN users u ON h.user_id = u.id
-             WHERE u.email = $1 AND h.name = $2;`
+             WHERE u.email = $1 AND h.name = $2
+             ON CONFLICT (hive_id, recorded_at) DO NOTHING;`
 	_, err := db.pull.Exec(ctx, text, temp.Email, temp.Hive, temp.Temperature, temp.Time)
 	return err
 }

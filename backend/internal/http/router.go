@@ -50,7 +50,7 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.With(m.CheckAuth).Delete("/logout", h.Logout)
 		})
 		r.Route("/calcQueen", func(r chi.Router) {
-			r.Post("/calc", h.QueenCalculator)
+			r.With(m.CheckAuth).Post("/calc", h.QueenCalculator)
 		})
 		r.Route("/hive", func(r chi.Router) {
 			r.Use(m.CheckAuth)

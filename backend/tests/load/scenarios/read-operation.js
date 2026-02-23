@@ -47,7 +47,7 @@ export function readOperation() {
     for (let i = 0; i < 10; i++) {
         listHives(api, token, metrics.hiveListErrors);
         getHive(api, token, hiveName, metrics.hiveGetErrors);
-        calculateQueen(api, { start_date: "2026-05-01" }, metrics.calcErrors);
+        calculateQueen(api, token, { start_date: "2026-05-01" }, metrics.calcErrors);
         sleep(0.5);
     }
 

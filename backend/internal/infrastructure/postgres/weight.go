@@ -11,7 +11,8 @@ func (db *Postgres) NewHiveWeight(ctx context.Context, weight httpType.HiveWeigh
              SELECT h.id, $1, $2
              FROM hives h
              INNER JOIN users u ON h.user_id = u.id
-			 WHERE u.email = $3 AND h.name = $4;`
+			 WHERE u.email = $3 AND h.name = $4
+			 ON CONFLICT (hive_id, recorded_at) DO NOTHING;`
 	_, err := db.pull.Exec(ctx, text, weight.Weight, weight.Time, weight.Email, weight.Hive)
 	return err
 }

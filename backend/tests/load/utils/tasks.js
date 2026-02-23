@@ -64,8 +64,8 @@ export function updateHive(api, token, data, errors) {
     return runTask(() => api.updateHive(token, data), 'Update Hive', errors);
 }
 
-export function calculateQueen(api, data, errors) {
-    return runTask(() => api.calcQueen(data), 'Calc Queen', errors);
+export function calculateQueen(api, token, data, errors) {
+    return runTask(() => api.calcQueen(data, token), 'Calc Queen', errors);
 }
 
 export function deleteHive(api, token, name, errors) {
