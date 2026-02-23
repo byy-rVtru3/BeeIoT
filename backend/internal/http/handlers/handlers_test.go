@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"BeeIOT/internal/domain/interfaces"
+	"BeeIOT/internal/domain/models/dbTypes"
 	"BeeIOT/internal/domain/models/httpType"
 	"BeeIOT/internal/domain/passwords" // Added import
 	"bytes"
@@ -184,6 +185,40 @@ func (m *MockDB) Registration(_ context.Context, _ httpType.Registration) error 
 	return nil
 }
 
+func (m *MockDB) NewHive(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
+func (m *MockDB) GetHives(_ context.Context, _ string) ([]dbTypes.Hive, error) {
+	return []dbTypes.Hive{{Id: 1, NameHive: "Test Hive"}}, nil
+}
+
+func (m *MockDB) GetHiveByName(_ context.Context, _ string, _ string) (dbTypes.Hive, error) {
+	return dbTypes.Hive{Id: 1, NameHive: "Test Hive"}, nil
+}
+
+func (m *MockDB) UpdateHive(_ context.Context, _ string, _ dbTypes.Hive) error {
+	return nil
+}
+
+func (m *MockDB) DeleteHive(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
+func (m *MockDB) GetEmailHiveBySensorID(_ context.Context, _ string) (string, string, error) {
+	return "test@example.com", "Test Hive", nil
+}
+
+func (m *MockDB) GetNoiseSinceDay(_ context.Context, _ int, _ time.Time) (map[time.Time][]dbTypes.HivesNoiseData, error) {
+	return map[time.Time][]dbTypes.HivesNoiseData{
+		time.Now(): {{Level: 50.0}},
+	}, nil
+}
+
+func (m *MockDB) GetTemperaturesSinceTimeById(_ context.Context, _ int, _ time.Time) ([]dbTypes.HivesTemperatureData, error) {
+	return []dbTypes.HivesTemperatureData{{Temperature: 25.0}}, nil
+}
+
 type MockConfirmSender struct {
 	LastEmail string
 	LastCode  string
@@ -303,3 +338,238 @@ func TestRefreshToken(t *testing.T) {
 		t.Errorf("Confirmation code mismatch")
 	}
 }
+
+func TestCreateHive(t *testing.T) {
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	h := &Handler{logger: logger, db: mockDB}
+
+	ctx := context.WithValue(context.Background(), "email", "test@example.com")
+	body := []byte(`{"name": "New Hive"}`)
+	req := httptest.NewRequest("POST", "/api/hive/create", bytes.NewBuffer(body))
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	h.CreateHive(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+}
+
+func TestGetHives(t *testing.T) {
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	h := &Handler{logger: logger, db: mockDB}
+
+	ctx := context.WithValue(context.Background(), "email", "test@example.com")
+	req := httptest.NewRequest("GET", "/api/hives", nil)
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	h.GetHives(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+}
+
+func TestGetHive(t *testing.T) {
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	h := &Handler{logger: logger, db: mockDB}
+
+	ctx := context.WithValue(context.Background(), "email", "test@example.com")
+	req := httptest.NewRequest("GET", "/api/hive?name=Test%20Hive", nil)
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	h.GetHive(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+}
+
+func TestUpdateHive(t *testing.T) {
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	h := &Handler{logger: logger, db: mockDB}
+
+	ctx := context.WithValue(context.Background(), "email", "test@example.com")
+	body := []byte(`{"old_name": "Old Hive", "new_name": "New Hive"}`)
+	req := httptest.NewRequest("POST", "/api/hive/update", bytes.NewBuffer(body))
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	h.UpdateHive(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+}
+
+func TestDeleteHive(t *testing.T) {
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	h := &Handler{logger: logger, db: mockDB}
+
+	ctx := context.WithValue(context.Background(), "email", "test@example.com")
+	body := []byte(`{"name": "Test Hive"}`)
+	req := httptest.NewRequest("DELETE", "/api/hive/delete", bytes.NewBuffer(body))
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	h.DeleteHive(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+}
+
+func TestConfirmRegistration(t *testing.T) {
+	t.Setenv("JWT_SECRET", "testsecret")
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	mockSender := &MockConfirmSender{}
+	mockInMem := &MockInMemoryDB{}
+	mockPasswordKeeper := &MockPasswordKeeper{}
+
+	h, err := NewHandler(mockDB, mockSender, mockInMem, nil, mockPasswordKeeper, logger)
+	if err != nil {
+		t.Fatalf("NewHandler failed: %v", err)
+	}
+
+	// Step 1: Generate code
+	email := "test@example.com"
+	password := "password123"
+	code, _ := h.conf.NewCode(email, password)
+
+	// Step 2: Confirm registration
+	body, _ := json.Marshal(httpType.Confirm{
+		Email: email,
+		Code:  code,
+	})
+	req := httptest.NewRequest("POST", "/api/auth/confirm", bytes.NewBuffer(body))
+	w := httptest.NewRecorder()
+
+	h.ConfirmRegistration(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+}
+
+func TestConfirmChangePassword(t *testing.T) {
+	t.Setenv("JWT_SECRET", "testsecret")
+	logger := zerolog.Nop()
+	mockDB := &MockDB{ExistUserResult: true} // User must exist
+	mockSender := &MockConfirmSender{}
+	mockInMem := &MockInMemoryDB{}
+	mockPasswordKeeper := &MockPasswordKeeper{}
+
+	h, err := NewHandler(mockDB, mockSender, mockInMem, nil, mockPasswordKeeper, logger)
+	if err != nil {
+		t.Fatalf("NewHandler failed: %v", err)
+	}
+
+	// Step 1: Generate code
+	email := "test@example.com"
+	password := "newpassword123"
+	code, _ := h.conf.NewCode(email, password)
+
+	// Step 2: Confirm change password
+	body, _ := json.Marshal(httpType.Confirm{
+		Email: email,
+		Code:  code,
+	})
+	req := httptest.NewRequest("POST", "/api/auth/confirm/password", bytes.NewBuffer(body))
+	w := httptest.NewRecorder()
+
+	h.ConfirmChangePassword(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+}
+
+func TestChangePassword(t *testing.T) {
+	t.Setenv("JWT_SECRET", "testsecret")
+	logger := zerolog.Nop()
+	mockDB := &MockDB{ExistUserResult: true}
+	mockSender := &MockConfirmSender{}
+	mockInMem := &MockInMemoryDB{}
+	mockPasswordKeeper := &MockPasswordKeeper{}
+
+	h, err := NewHandler(mockDB, mockSender, mockInMem, nil, mockPasswordKeeper, logger)
+	if err != nil {
+		t.Fatalf("NewHandler failed: %v", err)
+	}
+
+	body := []byte(`{"email": "test@example.com", "password": "newpassword"}`)
+	req := httptest.NewRequest("POST", "/api/auth/change/password", bytes.NewBuffer(body))
+	w := httptest.NewRecorder()
+
+	h.ChangePassword(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+
+	if mockSender.LastEmail != "test@example.com" {
+		t.Errorf("Confirmation code email mismatch")
+	}
+}
+
+func TestQueenCalculator(t *testing.T) {
+	logger := zerolog.Nop()
+	h := &Handler{logger: logger}
+
+	body := []byte(`{"start_date": "2023-05-01"}`)
+	req := httptest.NewRequest("POST", "/api/queen/calc", bytes.NewBuffer(body))
+	w := httptest.NewRecorder()
+
+	h.QueenCalculator(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+
+	var resp Response
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+
+	// Basic check if calendar data is present
+	dataMap, ok := resp.Data.(map[string]interface{})
+	if !ok {
+		t.Errorf("Expected data map, got %T", resp.Data)
+	} else if dataMap["start_date"] != "2023-05-01" {
+		t.Errorf("Expected start_date 2023-05-01, got %v", dataMap["start_date"])
+	}
+}
+
+func TestGetNoiseAndTemp(t *testing.T) {
+	t.Setenv("JWT_SECRET", "testsecret")
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	h, err := NewHandler(mockDB, nil, nil, nil, nil, logger)
+	if err != nil {
+		t.Fatalf("NewHandler failed: %v", err)
+	}
+
+	body := []byte(`{"sensor": "sensor1"}`)
+	req := httptest.NewRequest("POST", "/api/mqtt/data", bytes.NewBuffer(body))
+	w := httptest.NewRecorder()
+
+	h.GetNoiseAndTemp(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+}
+
+// TestMQTTSendConfig is disabled because of difficulty mocking concrete mqtt.Client struct
+// func TestMQTTSendConfig(t *testing.T) {
+// 	...
+// }
