@@ -12,7 +12,7 @@ import com.app.mobile.presentation.ui.screens.hive.details.HiveRoute
 class HiveViewModel(
     savedStateHandle: SavedStateHandle,
     private val getHiveUseCase: GetHiveUseCase
-) : BaseViewModel<HiveUiState, HiveNavigationEvent>(HiveUiState.Loading) {
+) : BaseViewModel<HiveUiState, HiveEvent>(HiveUiState.Loading) {
     private val route = savedStateHandle.toRoute<HiveRoute>()
 
     private val hiveId = route.hiveId
@@ -26,25 +26,30 @@ class HiveViewModel(
         updateState { HiveUiState.Loading }
         launch {
             val hive = getHiveUseCase(hiveId)
+            if (hive == null) {
+                sendEvent(HiveEvent.ShowSnackBar("Улей не найден"))
+                sendEvent(HiveEvent.NavigateToHiveList)
+                return@launch
+            }
             updateState {
-                hive
-                    ?.let { HiveUiState.Content(it.toUiModel()) }
-                    ?: HiveUiState.Error("Улей не найден")
+                hive.let { HiveUiState.Content(it.toUiModel()) }
             }
         }
     }
 
+    fun resetError() = loadHive()
+
     fun onTemperatureClick() =
-        navigateWithId(HiveNavigationEvent::NavigateToTemperatureByHive)
+        navigateWithId(HiveEvent::NavigateToTemperatureByHive)
 
     fun onNoiseClick() =
-        navigateWithId(HiveNavigationEvent::NavigateToNoiseByHive)
+        navigateWithId(HiveEvent::NavigateToNoiseByHive)
 
     fun onWeightClick() =
-        navigateWithId(HiveNavigationEvent::NavigateToWeightByHive)
+        navigateWithId(HiveEvent::NavigateToWeightByHive)
 
     fun onNotificationsClick() =
-        navigateWithId(HiveNavigationEvent::NavigateToNotificationByHive)
+        navigateWithId(HiveEvent::NavigateToNotificationByHive)
 
     fun onQueenClick() {
         val state = currentState
@@ -52,25 +57,25 @@ class HiveViewModel(
             val queen = state.hive.queen
             if (queen is QueenUi.Present) {
                 launch {
-                    sendEvent(HiveNavigationEvent.NavigateToQueenByHive(queen.queen.id))
+                    sendEvent(HiveEvent.NavigateToQueenByHive(queen.queen.id))
                 }
             }
         }
     }
 
     fun onWorksClick() =
-        navigateWithId(HiveNavigationEvent::NavigateToWorkByHive)
+        navigateWithId(HiveEvent::NavigateToWorkByHive)
 
     fun onHiveListClick() {
         launch {
-            sendEvent(HiveNavigationEvent.NavigateToHiveList)
+            sendEvent(HiveEvent.NavigateToHiveList)
         }
     }
 
     fun onHiveEditClick() =
-        navigateWithId(HiveNavigationEvent::NavigateToHiveEdit)
+        navigateWithId(HiveEvent::NavigateToHiveEdit)
 
-    private inline fun navigateWithId(crossinline navEvent: (String) -> HiveNavigationEvent) {
+    private inline fun navigateWithId(crossinline navEvent: (String) -> HiveEvent) {
         (currentState as? HiveUiState.Content)?.let {
             launch {
                 sendEvent(navEvent(hiveId))

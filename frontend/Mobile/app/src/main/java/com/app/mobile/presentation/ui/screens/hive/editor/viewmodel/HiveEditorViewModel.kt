@@ -27,7 +27,7 @@ class HiveEditorViewModel(
     private val saveHiveUseCase: SaveHiveUseCase,
     private val addHiveToQueenUseCase: AddHiveToQueenUseCase,
     private val addHiveToHubUseCase: AddHiveToHubUseCase
-) : BaseViewModel<HiveEditorUiState, HiveEditorNavigationEvent>(HiveEditorUiState.Loading) {
+) : BaseViewModel<HiveEditorUiState, HiveEditorEvent>(HiveEditorUiState.Loading) {
 
     private val route = savedStateHandle.toRoute<HiveEditorRoute>()
     private val hiveId = route.hiveId
@@ -58,6 +58,7 @@ class HiveEditorViewModel(
         }
     }
 
+    fun resetError() = loadHive()
     fun onNameChange(name: String) {
         val state = currentState
         if (state is HiveEditorUiState.Content) {
@@ -95,7 +96,7 @@ class HiveEditorViewModel(
     fun onCreateQueenClick() {
         if (currentState is HiveEditorUiState.Content) {
             sendEvent(
-                HiveEditorNavigationEvent.NavigateToCreateQueen
+                HiveEditorEvent.NavigateToCreateQueen
             )
         }
     }
@@ -103,7 +104,7 @@ class HiveEditorViewModel(
     fun onCreateHubClick() {
         if (currentState is HiveEditorUiState.Content) {
             sendEvent(
-                HiveEditorNavigationEvent.NavigateToCreateHub
+                HiveEditorEvent.NavigateToCreateHub
             )
         }
     }
@@ -114,7 +115,7 @@ class HiveEditorViewModel(
             launch {
                 updateState { HiveEditorUiState.Loading }
                 saveHiveUseCase(state.hiveEditorModel.toDomain())
-                sendEvent(HiveEditorNavigationEvent.NavigateBack)
+                sendEvent(HiveEditorEvent.NavigateBack)
             }
         }
     }

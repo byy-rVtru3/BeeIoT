@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 class ConfirmationViewModel(
     savedStateHandle: SavedStateHandle,
     private val confirmationUserUseCase: ConfirmationUserUseCase
-) : BaseViewModel<ConfirmationUiState, ConfirmationNavigationEvent>(ConfirmationUiState.Loading) {
+) : BaseViewModel<ConfirmationUiState, ConfirmationEvent>(ConfirmationUiState.Loading) {
 
     private val route = savedStateHandle.toRoute<ConfirmationRoute>()
     private val email = route.email
@@ -79,16 +79,18 @@ class ConfirmationViewModel(
 
                 when (result) {
                     is ConfirmationResultUi.Success -> {
-                        sendEvent(ConfirmationNavigationEvent.NavigateToAuthorization)
+                        sendEvent(ConfirmationEvent.NavigateToAuthorization)
                     }
 
                     is ConfirmationResultUi.Error -> {
-                        updateState { ConfirmationUiState.Error(result.message) }
+                        sendEvent(ConfirmationEvent.ShowSnackBar(result.message))
                     }
                 }
             }
         }
     }
+
+    fun resetError() = createConfirmationModelUi()
 
     fun createConfirmationModelUi() {
         val model = ConfirmationModelUi(email = email, code = "", type = type)
@@ -157,10 +159,5 @@ class ConfirmationViewModel(
                 }
             }
         }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        timerJob?.cancel()
     }
 }

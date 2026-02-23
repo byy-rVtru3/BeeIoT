@@ -7,9 +7,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -28,7 +32,7 @@ import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.components.TopBarAction
 import com.app.mobile.presentation.ui.screens.accountinfo.models.AccountInfoActions
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoDialogState
-import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoNavigationEvent
+import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoEvent
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoUiState
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoViewModel
 import com.app.mobile.ui.theme.Dimens
@@ -36,160 +40,170 @@ import com.app.mobile.ui.theme.MobileTheme
 
 @Composable
 fun AccountInfoScreen(
-    accountInfoViewModel: AccountInfoViewModel,
-    onDeleteClick: () -> Unit,
-    onBackClick: () -> Unit
+	accountInfoViewModel: AccountInfoViewModel,
+	onDeleteClick: () -> Unit,
+	onBackClick: () -> Unit
 ) {
 
-    val accountInfoUiState by accountInfoViewModel.uiState.collectAsStateWithLifecycle()
+	val accountInfoUiState by accountInfoViewModel.uiState.collectAsStateWithLifecycle()
+	val snackbarHostState = remember { SnackbarHostState() }
 
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        accountInfoViewModel.getAccountInfo()
-    }
+	LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+		accountInfoViewModel.getAccountInfo()
+	}
 
-    ObserveAsEvents(accountInfoViewModel.event) { event ->
-        when (event) {
-            is AccountInfoNavigationEvent.NavigateToRegistration -> onDeleteClick()
-            is AccountInfoNavigationEvent.NavigateBack -> onBackClick()
-        }
-    }
+	ObserveAsEvents(accountInfoViewModel.event) { event ->
+		when (event) {
+			is AccountInfoEvent.NavigateToRegistration -> onDeleteClick()
+			is AccountInfoEvent.NavigateBack           -> onBackClick()
 
-    when (val currentState = accountInfoUiState) {
-        is AccountInfoUiState.Loading -> FullScreenProgressIndicator()
-        is AccountInfoUiState.Error -> ErrorMessage(currentState.message, {})
-        is AccountInfoUiState.Content -> {
-            val actions = AccountInfoActions(
-                onNameClick = accountInfoViewModel::onNameClick,
-                onEmailClick = accountInfoViewModel::onEmailClick,
-                onPasswordClick = accountInfoViewModel::onPasswordClick,
-                onDeleteClick = accountInfoViewModel::onDeleteAccountClick
-            )
-            AccountInfoContent(
-                userInfo = currentState.userInfo,
-                actions = actions,
-                onBackClick = onBackClick
-            )
-        }
-    }
+			is AccountInfoEvent.ShowSnackBar           -> {
+				snackbarHostState.showSnackbar(
+					event.message,
+					duration = SnackbarDuration.Short
+				)
+			}
+		}
+	}
 
-    val accountInfoDialogState by accountInfoViewModel.accountInfoDialogState.collectAsStateWithLifecycle()
+	when (val currentState = accountInfoUiState) {
+		is AccountInfoUiState.Loading -> FullScreenProgressIndicator()
+		is AccountInfoUiState.Error   -> ErrorMessage(currentState.message, onRetry = accountInfoViewModel::resetError)
 
-    when (val state = accountInfoDialogState) {
-        is AccountInfoDialogState.SetName -> {
-            //Name dialog
-        }
+		is AccountInfoUiState.Content -> {
+			val actions = AccountInfoActions(
+				onNameClick = accountInfoViewModel::onNameClick,
+				onEmailClick = accountInfoViewModel::onEmailClick,
+				onPasswordClick = accountInfoViewModel::onPasswordClick,
+				onDeleteClick = accountInfoViewModel::onDeleteAccountClick
+			)
+			AccountInfoContent(
+				userInfo = currentState.userInfo,
+				snackbarHostState = snackbarHostState,
+				actions = actions,
+				onBackClick = onBackClick
+			)
+		}
+	}
 
-        is AccountInfoDialogState.SetEmail -> {
-            //Email dialog
-        }
+	val accountInfoDialogState by accountInfoViewModel.accountInfoDialogState.collectAsStateWithLifecycle()
 
-        is AccountInfoDialogState.SetPassword -> {
-            //Password dialog
-        }
+	when (val state = accountInfoDialogState) {
+		is AccountInfoDialogState.SetName     -> {
+			//Name dialog
+		}
 
-        is AccountInfoDialogState.Hidden -> {
-            //Hidden dialog
-        }
-    }
+		is AccountInfoDialogState.SetEmail    -> {
+			//Email dialog
+		}
+
+		is AccountInfoDialogState.SetPassword -> {
+			//Password dialog
+		}
+
+		is AccountInfoDialogState.Hidden      -> {
+			//Hidden dialog
+		}
+	}
 }
 
 @Composable
 private fun AccountInfoContent(
-    userInfo: UserInfoModel,
-    actions: AccountInfoActions,
-    onBackClick: () -> Unit
+	userInfo: UserInfoModel,
+	snackbarHostState: SnackbarHostState,
+	actions: AccountInfoActions,
+	onBackClick: () -> Unit
 ) {
-    Scaffold(
-        topBar = {
-            AppTopBar(
-                title = stringResource(R.string.account),
-                onBackClick = onBackClick,
-                hasBackground = false,
-                action = TopBarAction.Delete(onClick = actions.onDeleteClick)
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding) // Важно: учитываем высоту TopBar
-                .padding(Dimens.ScreenContentPadding),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
+	Scaffold(
+		topBar = {
+			AppTopBar(
+				title = stringResource(R.string.account),
+				onBackClick = onBackClick,
+				hasBackground = false,
+				action = TopBarAction.Delete(onClick = actions.onDeleteClick)
+			)
+		},
+		snackbarHost = { SnackbarHost(snackbarHostState) },
+		containerColor = MaterialTheme.colorScheme.background
+	) { innerPadding ->
+		Column(
+			modifier = Modifier
+				.fillMaxSize()
+				.padding(innerPadding) // Важно: учитываем высоту TopBar
+				.padding(Dimens.ScreenContentPadding),
+			horizontalAlignment = Alignment.CenterHorizontally,
+			verticalArrangement = Arrangement.Top
+		) {
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = Dimens.AccountInfoTextFieldsHorizontalPadding
-                    ),
-                verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingMedium),
-            ) {
-                NameText(userInfo.name, actions.onNameClick)
+			Column(
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(
+						horizontal = Dimens.AccountInfoTextFieldsHorizontalPadding
+					),
+				verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingMedium),
+			) {
+				NameText(userInfo.name, actions.onNameClick)
 
-                EmailText(userInfo.email, actions.onEmailClick)
+				EmailText(userInfo.email, actions.onEmailClick)
 
-                PasswordText(userInfo.password, actions.onPasswordClick)
+				PasswordText(userInfo.password, actions.onPasswordClick)
 
-                Text(
-                    text = stringResource(R.string.hint_account_info),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+				Text(
+					text = stringResource(R.string.hint_account_info),
+					style = MaterialTheme.typography.bodyMedium,
+					color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+					textAlign = TextAlign.Center,
+					modifier = Modifier.fillMaxWidth()
+				)
+			}
 
-
-        }
-    }
+		}
+	}
 }
 
 @Composable
 private fun NameText(name: String, onNameClick: () -> Unit) {
-    ClickableProfileField(
-        label = stringResource(R.string.name),
-        value = name,
-        onClick = onNameClick
-    )
+	ClickableProfileField(
+		label = stringResource(R.string.name),
+		value = name,
+		onClick = onNameClick
+	)
 }
 
 @Composable
 private fun EmailText(email: String, onEmailClick: () -> Unit) {
-    ClickableProfileField(
-        label = stringResource(R.string.email),
-        value = email,
-        onClick = onEmailClick
-    )
+	ClickableProfileField(
+		label = stringResource(R.string.email),
+		value = email,
+		onClick = onEmailClick
+	)
 }
 
 @Composable
 private fun PasswordText(password: String, onPasswordClick: () -> Unit) {
-    ClickableProfileField(
-        label = stringResource(R.string.password),
-        value = password,
-        onClick = onPasswordClick
-    )
+	ClickableProfileField(
+		label = stringResource(R.string.password),
+		value = password,
+		onClick = onPasswordClick
+	)
 }
-
 
 @Preview(showBackground = true)
 @Composable
 fun AccountInfoContentPreview() {
-    MobileTheme {
-        val userInfo = UserInfoModel(
-            name = "Иван Иванов",
-            email = "ivan@example.com",
-            password = "••••••••"
-        )
-        val actions = AccountInfoActions(
-            onNameClick = {},
-            onEmailClick = {},
-            onPasswordClick = {},
-            onDeleteClick = {}
-        )
-        AccountInfoContent(userInfo, actions, {})
-    }
+	MobileTheme {
+		val userInfo = UserInfoModel(
+			name = "Иван Иванов",
+			email = "ivan@example.com",
+			password = "••••••••"
+		)
+		val actions = AccountInfoActions(
+			onNameClick = {},
+			onEmailClick = {},
+			onPasswordClick = {},
+			onDeleteClick = {}
+		)
+		AccountInfoContent(userInfo, SnackbarHostState(), actions, {})
+	}
 }
