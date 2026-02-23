@@ -8,7 +8,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
@@ -16,12 +15,12 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.mobile.R
 import com.app.mobile.presentation.models.hive.HivePreview
-import com.app.mobile.presentation.ui.components.CustomFloatingActionButton
+import com.app.mobile.presentation.ui.components.EmptyStub
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.HiveItemCard
-import com.app.mobile.presentation.ui.components.SelectorTopBar
 import com.app.mobile.presentation.ui.components.ObserveAsEvents
+import com.app.mobile.presentation.ui.components.TabbedScreenScaffold
 import com.app.mobile.presentation.ui.screens.hive.list.models.HivesListActions
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListNavigationEvent
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListUiState
@@ -89,26 +88,14 @@ private fun HivesListContent(
 ) {
     val tabs = listOf(stringResource(R.string.active_hives), stringResource(R.string.archive))
 
-    Scaffold(
-        topBar = {
-            SelectorTopBar(
-                tabs = tabs,
-                selectedTabIndex = selectedTab,
-                onTabSelected = onTabSelected
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
-            .exclude(WindowInsets.navigationBars),
-        floatingActionButton = {
-            if (selectedTab == 0) {
-                CustomFloatingActionButton(
-                    onClick = actions.onCreateHiveClick,
-                    icon = Icons.Filled.Add,
-                    contentDescription = stringResource(R.string.add_hive)
-                )
-            }
-        }
+    TabbedScreenScaffold(
+        tabs = tabs,
+        selectedTabIndex = selectedTab,
+        onTabSelected = onTabSelected,
+        showFabOnTab = 0,
+        fabIcon = Icons.Filled.Add,
+        fabContentDescription = stringResource(R.string.add_hive),
+        onFabClick = actions.onCreateHiveClick
     ) { innerPadding ->
         when (selectedTab) {
             0 -> {
@@ -116,38 +103,25 @@ private fun HivesListContent(
                     HivesList(
                         hives = hives,
                         actions = actions,
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = innerPadding
                     )
                 } else {
                     EmptyStub(
                         text = stringResource(R.string.empty_hives_list_screen),
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = innerPadding
                     )
                 }
             }
             1 -> {
                 EmptyStub(
                     text = stringResource(R.string.empty_archive_list_screen),
-                    modifier = Modifier.padding(innerPadding)
+                    modifier = innerPadding
                 )
             }
         }
     }
 }
 
-@Composable
-private fun EmptyStub(text: String, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-        )
-    }
-}
 @Composable
 private fun HivesList(
     hives: List<HivePreview>,
@@ -193,43 +167,24 @@ private fun EmptyHivesListScreen(
 ) {
     val tabs = listOf(stringResource(R.string.active_hives), stringResource(R.string.archive))
 
-    Scaffold(
-        topBar = {
-            SelectorTopBar(
-                tabs = tabs,
-                selectedTabIndex = selectedTab,
-                onTabSelected = onTabSelected
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        floatingActionButton = {
-            if (selectedTab == 0) {
-                CustomFloatingActionButton(
-                    onClick = onCreateHiveClick,
-                    icon = Icons.Filled.Add,
-                    contentDescription = stringResource(R.string.add_hive)
-                )
-            }
-        }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentAlignment = Alignment.Center
-        ) {
-            val emptyText = if (selectedTab == 0) {
-                stringResource(R.string.empty_hives_list_screen)
-            } else {
-                stringResource(R.string.empty_archive_list_screen)
+    val emptyText = if (selectedTab == 0) {
+        stringResource(R.string.empty_hives_list_screen)
+    } else {
+        stringResource(R.string.empty_archive_list_screen)
+    }
 
-            }
-            Text(
-                text = emptyText,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-        }
+    TabbedScreenScaffold(
+        tabs = tabs,
+        selectedTabIndex = selectedTab,
+        onTabSelected = onTabSelected,
+        showFabOnTab = 0,
+        fabIcon = Icons.Filled.Add,
+        fabContentDescription = stringResource(R.string.add_hive),
+        onFabClick = onCreateHiveClick
+    ) { padding ->
+        EmptyStub(
+            text = emptyText,
+            modifier = padding
+        )
     }
 }

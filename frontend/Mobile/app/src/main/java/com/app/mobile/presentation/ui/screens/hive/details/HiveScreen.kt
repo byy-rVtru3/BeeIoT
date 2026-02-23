@@ -92,6 +92,7 @@ fun HiveScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun HiveContent(
     hive: HiveUi,
@@ -122,14 +123,15 @@ private fun HiveContent(
                 verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
             ) {
                 SectionTitle(title = stringResource(R.string.section_main_info))
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     InfoCard(
                         title = stringResource(R.string.label_name),
                         value = hive.name,
-                        modifier = Modifier.weight(0.8f)
+                        modifier = Modifier.weight(0.6f).fillMaxWidth(0.48f)
                     )
 
                     val hubName = if (hive.connectedHub is HubUi.Present) {
@@ -140,7 +142,7 @@ private fun HiveContent(
                     InfoCard(
                         title = stringResource(R.string.label_connected_hub),
                         value = hubName,
-                        modifier = Modifier.weight(1.2f)
+                        modifier = Modifier.weight(1f).fillMaxWidth(0.48f)
                     )
                 }
 
@@ -156,28 +158,28 @@ private fun HiveContent(
                 }
             }
 
-//            Column(
-//                modifier = Modifier.fillMaxWidth(),
-//                verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
-//            ) {
-//                SectionHeaderWithAction(
-//                    title = stringResource(R.string.notifications),
-//                    actionText = stringResource(R.string.see_all),
-//                    onActionClick = actions.onNotificationClick
-//                )
-//
-//                if (hive.notifications.isNotEmpty()) {
-//                    Column(verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)) {
-//                        hive.notifications.take(2).forEach { notification ->
-//                            DetailsItemCard(
-//                                title = stringResource(R.string.notification), // Заглушка, пока модель не обновится
-//                                description = notification.message,
-//                                footer = notification.dateTime
-//                            )
-//                        }
-//                    }
-//                }
-//            }
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
+            ) {
+                SectionHeaderWithAction(
+                    title = stringResource(R.string.notifications),
+                    actionText = stringResource(R.string.see_all),
+                    onActionClick = actions.onNotificationClick
+                )
+
+                if (hive.notifications.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)) {
+                        hive.notifications.take(2).forEach { notification ->
+                            DetailsItemCard(
+                                title = stringResource(R.string.notification),
+                                description = notification.message,
+                                footer = notification.dateTime
+                            )
+                        }
+                    }
+                }
+            }
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -206,3 +208,4 @@ private fun HiveContent(
         }
     }
 }
+

@@ -31,6 +31,7 @@ import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoD
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoNavigationEvent
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoUiState
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoViewModel
+import com.app.mobile.ui.theme.Alpha
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
 
@@ -136,7 +137,7 @@ private fun AccountInfoContent(
                 Text(
                     text = stringResource(R.string.hint_account_info),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = Alpha.Medium),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )

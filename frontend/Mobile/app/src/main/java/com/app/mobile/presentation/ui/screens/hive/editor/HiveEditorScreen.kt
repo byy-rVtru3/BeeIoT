@@ -28,10 +28,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -127,14 +128,14 @@ fun HiveEditorContent(
             }
 
 //            // Секция Хабов (Grid)
-//            SelectionGridSection(
-//                title = stringResource(R.string.available_hubs),
-//                items = hiveEditorModel.hubs.map { it.id to it.name },
-//                selectedId = hiveEditorModel.connectedHubId,
-//                onItemSelected = actions.onAddHubClick,
-//                onCreateClick = actions.onCreateHubClick,
-//                iconVector = Icons.Rounded.Sensors // Иконка для хаба
-//            )
+            SelectionGridSection(
+                title = stringResource(R.string.available_hubs),
+                items = hiveEditorModel.hubs.map { it.id to it.name },
+                selectedId = hiveEditorModel.connectedHubId,
+                onItemSelected = actions.onAddHubClick,
+                onCreateClick = actions.onCreateHubClick,
+                iconVector = ImageVector.vectorResource(R.drawable.ic_sensors),
+            )
 
             // Секция Маток (Grid)
             SelectionGridSection(
@@ -213,7 +214,7 @@ private fun ItemSelectionCard(
     modifier: Modifier = Modifier
 ) {
     val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-    val borderWidth = if (isSelected) 2.dp else 0.dp
+    val borderWidth = if (isSelected) Dimens.BorderWidthNormal else Dimens.Null
 
     Surface(
         onClick = onClick,
@@ -221,8 +222,8 @@ private fun ItemSelectionCard(
         color = MaterialTheme.colorScheme.surface,
         border = if (isSelected) BorderStroke(borderWidth, borderColor) else null,
         modifier = modifier
-            .height(80.dp)     // Фиксированная высота как на макете
-            .widthIn(min = 100.dp) // Минимальная ширина
+            .height(Dimens.SelectionGridItemHeight)
+            .widthIn(min = Dimens.SelectionGridItemMinWidth)
     ) {
         Box(
             modifier = Modifier.padding(Dimens.ItemCardPadding)
@@ -243,16 +244,11 @@ private fun ItemSelectionCard(
                     contentDescription = null,
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
-                        .size(24.dp),
+                        .size(Dimens.IconSizeMedium),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
 
-            // Индикатор выбранности (опционально, если бордера мало)
-            /* if (isSelected) {
-               Icon(...)
-            }
-            */
         }
     }
 }
@@ -267,8 +263,8 @@ private fun AddItemCard(
         shape = RoundedCornerShape(Dimens.ItemCardRadius),
         color = MaterialTheme.colorScheme.surface,
         modifier = modifier
-            .height(80.dp)
-            .widthIn(min = 100.dp)
+            .height(Dimens.SelectionGridItemHeight)
+            .widthIn(min = Dimens.SelectionGridItemMinWidth)
     ) {
         Box(
             contentAlignment = Alignment.Center,
@@ -277,14 +273,14 @@ private fun AddItemCard(
             // Кружок с плюсиком
             Surface(
                 shape = CircleShape,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                border = BorderStroke(Dimens.BorderWidthThin, MaterialTheme.colorScheme.primary),
                 color = MaterialTheme.colorScheme.surface
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Add,
                     contentDescription = stringResource(R.string.add),
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(4.dp)
+                    modifier = Modifier.padding(Dimens.TimelineItemSpacing)
                 )
             }
         }

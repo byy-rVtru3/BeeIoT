@@ -19,7 +19,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,6 +30,7 @@ import com.app.mobile.presentation.ui.components.*
 import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenNavigationEvent
 import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenUiState
 import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenViewModel
+import com.app.mobile.ui.theme.Alpha
 import com.app.mobile.ui.theme.Dimens
 
 @Composable
@@ -69,6 +69,7 @@ fun QueenScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun QueenContent(
     queen: QueenUiModel,
@@ -82,7 +83,6 @@ private fun QueenContent(
             AppTopBar(
                 title = stringResource(R.string.queen),
                 onBackClick = onBackClick,
-                // Меняем Edit на Delete
                 action = TopBarAction.Delete(onClick = onDeleteClick)
             )
         },
@@ -111,23 +111,25 @@ private fun QueenContent(
                         .fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
                 ) {
-                    Row(
+                    FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         InfoCard(
                             title = stringResource(R.string.label_name),
                             value = queen.name,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f).fillMaxWidth(0.48f)
                         )
 
                         val hiveName = queen.hive?.name ?: stringResource(R.string.no_hive)
                         val hiveModifier = if (queen.hive != null) {
                             Modifier
                                 .weight(1f)
+                                .fillMaxWidth(0.48f)
                                 .clickable { onHiveClick() }
                         } else {
-                            Modifier.weight(1f)
+                            Modifier.weight(1f).fillMaxWidth(0.48f)
                         }
 
                         InfoCard(
@@ -141,7 +143,7 @@ private fun QueenContent(
                     QueenStatusSection(queen)
                 }
                 // 3. Заголовок раздела
-                SectionTitle(title = "График развития")
+                SectionTitle(title = stringResource(R.string.queen_timeline_title))
             }
 
             // --- СКРОЛЛЯЩИЙСЯ СПИСОК (Timeline) ---
@@ -162,7 +164,7 @@ private fun QueenContent(
             } else {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "Нет данных о развитии",
+                        text = stringResource(R.string.queen_timeline_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -201,7 +203,7 @@ private fun QueenStatusSection(queen: QueenUiModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = currentStage?.title ?: "Старт",
+                    text = currentStage?.title ?: stringResource(R.string.queen_stage_start),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -227,7 +229,7 @@ private fun QueenStatusSection(queen: QueenUiModel) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = if (progress >= 1f) "Завершено" else "В процессе",
+                    text = if (progress >= 1f) stringResource(R.string.queen_stage_completed) else stringResource(R.string.queen_stage_in_progress),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -254,16 +256,16 @@ private fun TimelineItemView(item: TimelineItem) {
 
     val iconTint = if (isToday) MaterialTheme.colorScheme.onPrimary
     else if (isCompleted) MaterialTheme.colorScheme.primary
-    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = Alpha.Medium)
 
     val iconBg = if (isToday) MaterialTheme.colorScheme.primary
-    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = Alpha.Medium)
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(Dimens.ItemCardRadius),
         color = containerColor,
-        shadowElevation = if (isToday) 2.dp else 0.dp
+        shadowElevation = if (isToday) Dimens.Size2 else Dimens.Null
     ) {
         Row(
             modifier = Modifier
@@ -273,7 +275,7 @@ private fun TimelineItemView(item: TimelineItem) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(Dimens.TimelineIconSize)
                     .clip(CircleShape)
                     .background(iconBg),
                 contentAlignment = Alignment.Center
@@ -307,7 +309,7 @@ private fun TimelineItemView(item: TimelineItem) {
                 }
 
                 if (item.description.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Dimens.TimelineItemSpacing))
                     Text(
                         text = item.description,
                         style = MaterialTheme.typography.bodySmall,
@@ -317,12 +319,12 @@ private fun TimelineItemView(item: TimelineItem) {
             }
 
             if (isCompleted && !isToday) {
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(Dimens.ItemCardTextPadding))
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = "Completed",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(Dimens.IconSizeSmall)
                 )
             }
         }

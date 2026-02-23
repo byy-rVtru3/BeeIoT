@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import com.app.mobile.R
 import com.app.mobile.presentation.validators.ValidationError
 import com.app.mobile.presentation.validators.toErrorMessage
+import com.app.mobile.ui.theme.Alpha
 import com.app.mobile.ui.theme.Dimens
 
 @Composable
@@ -82,7 +83,7 @@ fun CustomTextField(
                         Text(
                             text = placeholder,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.Medium)
                         )
                     }
                     innerTextField()
@@ -182,7 +183,7 @@ fun PasswordTextField(
                 } else {
                     stringResource(R.string.show_password)
                 },
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.Low),
                 modifier = Modifier
                     .size(Dimens.TextFieldIconSize)
                     .clickable { passwordVisible = !passwordVisible }
@@ -265,7 +266,7 @@ fun ClickableProfileField(
     modifier: Modifier = Modifier
 ) {
     val bottomLineColor = MaterialTheme.colorScheme.outline
-    val labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+    val labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.Medium)
     val valueColor = MaterialTheme.colorScheme.onSurface
 
     Column(

@@ -5,9 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
@@ -81,26 +79,14 @@ fun QueenListContent(
         stringResource(R.string.archive)
     )
 
-    Scaffold(
-        topBar = {
-            SelectorTopBar(
-                tabs = tabs,
-                selectedTabIndex = selectedTab,
-                onTabSelected = onTabSelected
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
-            .exclude(WindowInsets.navigationBars),
-        floatingActionButton = {
-            if (selectedTab == 0) {
-                CustomFloatingActionButton(
-                    onClick = actions.onAddClick,
-                    icon = Icons.Filled.Add,
-                    contentDescription = stringResource(R.string.add_queen)
-                )
-            }
-        }
+    TabbedScreenScaffold(
+        tabs = tabs,
+        selectedTabIndex = selectedTab,
+        onTabSelected = onTabSelected,
+        showFabOnTab = 0,
+        fabIcon = Icons.Filled.Add,
+        fabContentDescription = stringResource(R.string.add_queen),
+        onFabClick = actions.onAddClick
     ) { innerPadding ->
         when (selectedTab) {
             0 -> {
@@ -108,12 +94,12 @@ fun QueenListContent(
                     QueensList(
                         queens = queens,
                         actions = actions,
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = innerPadding
                     )
                 } else {
                     EmptyStub(
                         text = stringResource(R.string.empty_queens_list_screen),
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = innerPadding
                     )
                 }
             }
@@ -121,7 +107,7 @@ fun QueenListContent(
                 // Заглушка для архива
                 EmptyStub(
                     text = stringResource(R.string.empty_archive_list_screen),
-                    modifier = Modifier.padding(innerPadding)
+                    modifier = innerPadding
                 )
             }
         }
@@ -158,19 +144,4 @@ private fun QueenItem(queen: QueenPreviewModel, onQueenClick: (String) -> Unit) 
         onClick = { onQueenClick(queen.id) },
         displayMode = QueenCardDisplayMode.SHOW_HIVE
     )
-}
-
-@Composable
-private fun EmptyStub(text: String, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-    }
 }
