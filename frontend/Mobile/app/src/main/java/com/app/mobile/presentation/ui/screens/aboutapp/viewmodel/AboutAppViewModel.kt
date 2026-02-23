@@ -4,7 +4,7 @@ import android.util.Log
 import com.app.mobile.presentation.ui.components.BaseViewModel
 
 class AboutAppViewModel() :
-    BaseViewModel<AboutAppUiState, AboutAppNavigationEvent>(AboutAppUiState.Content) {
+    BaseViewModel<AboutAppUiState, AboutAppEvent>(AboutAppUiState.Content) {
 
     override fun handleError(exception: Throwable) {
         AboutAppUiState.Error(exception.message ?: "Unknown error")
@@ -13,7 +13,9 @@ class AboutAppViewModel() :
 
     fun onBackClick() {
         launch {
-            sendEvent(AboutAppNavigationEvent.NavigateBack)
+            sendEvent(AboutAppEvent.NavigateBack)
         }
     }
+
+    fun resetError() = onBackClick()
 }

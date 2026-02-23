@@ -8,7 +8,7 @@ import com.app.mobile.presentation.ui.components.BaseViewModel
 
 class SettingsViewModel(
     private val logoutUseCase: LogoutAccountUseCase
-) : BaseViewModel<SettingsUiState, SettingsNavigationEvent>(SettingsUiState.Content) {
+) : BaseViewModel<SettingsUiState, SettingsEvent>(SettingsUiState.Content) {
 
     override fun handleError(exception: Throwable) {
         updateState { SettingsUiState.Error(exception.message ?: "Unknown error") }
@@ -17,7 +17,7 @@ class SettingsViewModel(
 
     fun onAccountInfoClick() {
         if (currentState is SettingsUiState.Content) {
-            sendEvent(SettingsNavigationEvent.NavigateToAccountInfo)
+            sendEvent(SettingsEvent.NavigateToAccountInfo)
         }
     }
 
@@ -28,21 +28,25 @@ class SettingsViewModel(
 
                 when (val result = logoutUseCase().toUiModel()) {
                     is LogoutResultUi.Success -> {
-                        sendEvent(SettingsNavigationEvent.NavigateToAuthorization)
+                        sendEvent(SettingsEvent.NavigateToAuthorization)
                     }
 
                     is LogoutResultUi.Error -> {
-                        updateState { SettingsUiState.Error(result.message) }
-
+                        sendEvent(SettingsEvent.ShowSnackBar(result.message))
+                        updateState { SettingsUiState.Content }
                     }
                 }
             }
         }
     }
 
+    fun resetError() {
+        updateState { SettingsUiState.Content }
+    }
+
     fun onAboutAppClick() {
         if (currentState is SettingsUiState.Content) {
-            sendEvent(SettingsNavigationEvent.NavigateToAboutApp)
+            sendEvent(SettingsEvent.NavigateToAboutApp)
         }
     }
 }
