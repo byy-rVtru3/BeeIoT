@@ -1,0 +1,190 @@
+====== НАГРУЗОЧНОЕ ТЕСТИРОВАНИЕ BeeIoT API ======
+
+Метрики: Код ответа (должен быть успешным) + Время отклика
+
+
+=== 1. РЕГИСТРАЦИЯ ПОЛЬЗОВАТЕЛЯ ===
+POST /auth/registration
+Content-Type: application/json
+Body:
+{
+  "email": "loadtest{N}@example.com",
+  "password": "Test1234567890"
+}
+Ожидаемый код: 200
+Проверка: status == 200, response_time < 2000ms
+
+
+=== 2. ПОДТВЕРЖДЕНИЕ РЕГИСТРАЦИИ ===
+POST /auth/confirm/registration
+Content-Type: application/json
+Body:
+{
+  "email": "loadtest{N}@example.com",
+  "code": "123456",
+  "password": "Test1234567890"
+}
+Ожидаемый код: 200
+Проверка: status == 200, response_time < 2000ms
+
+
+=== 3. АВТОРИЗАЦИЯ ===
+POST /auth/login
+Content-Type: application/json
+Body:
+{
+  "email": "loadtest{N}@example.com",
+  "password": "Test1234567890"
+}
+Ожидаемый код: 200
+Проверка: status == 200, response_time < 2000ms, token существует
+Сохранить: token из response.data.token
+
+
+=== 4. СОЗДАНИЕ УЛЬЯ ===
+POST /hive/create
+Authorization: Bearer {token}
+Content-Type: application/json
+Body:
+{
+  "name": "Улей-{N}"
+}
+Ожидаемый код: 200
+Проверка: status == 200, response_time < 2000ms
+
+
+=== 5. ПОЛУЧЕНИЕ СПИСКА УЛЬЕВ ===
+GET /hive/list
+Authorization: Bearer {token}
+Ожидаемый код: 200
+Проверка: status == 200, response_time < 2000ms
+
+
+=== 6. ПОЛУЧЕНИЕ КОНКРЕТНОГО УЛЬЯ ===
+GET /hive?name=Улей-{N}
+Authorization: Bearer {token}
+Ожидаемый код: 200
+Проверка: status == 200, response_time < 1000ms
+
+
+=== 7. ОБНОВЛЕНИЕ УЛЬЯ ===
+PUT /hive/update
+Authorization: Bearer {token}
+Content-Type: application/json
+Body:
+{
+  "old_name": "Улей-{N}",
+  "new_name": "Улей-{N}-updated"
+}
+Ожидаемый код: 200
+Проверка: status == 200, response_time < 1000ms
+
+
+=== 8. КАЛЬКУЛЯТОР КАЛЕНДАРЯ МАТКИ ===
+POST /calcQueen/calc
+Content-Type: application/json
+Body:
+{
+  "start_date": "2026-02-11"
+}
+Ожидаемый код: 200
+Проверка: status == 200, response_time < 500ms
+
+=== 11. СМЕНА ПАРОЛЯ (ЗАПРОС КОДА) ===
+POST /auth/change
+Content-Type: application/json
+Body:
+{
+  "email": "loadtest{N}@example.com",
+  "password": "NewPassword123"
+}
+Ожидаемый код: 200
+Проверка: status == 200, response_time < 2000ms
+
+
+=== 12. ПОДТВЕРЖДЕНИЕ СМЕНЫ ПАРОЛЯ ===
+POST /auth/confirm/password
+Content-Type: application/json
+Body:
+{
+  "email": "loadtest{N}@example.com",
+  "code": "123456",
+  "password": "NewPassword123"
+}
+Ожидаемый код: 200
+Проверка: status == 200, response_time < 1000ms
+
+
+=== 13. ВЫХОД ===
+DELETE /auth/logout
+Authorization: Bearer {token}
+Ожидаемый код: 200
+Проверка: status == 200, response_time < 500ms
+
+
+=== 14. ПОВТОРНАЯ АВТОРИЗАЦИЯ (С НОВЫМ ПАРОЛЕМ) ===
+POST /auth/login
+Content-Type: application/json
+Body:
+{
+  "email": "loadtest{N}@example.com",
+  "password": "NewPassword123"
+}
+Ожидаемый код: 200
+Проверка: status == 200, response_time < 1000ms
+Сохранить: новый token
+
+
+=== 15. УДАЛЕНИЕ УЛЬЯ ===
+DELETE /hive/delete
+Authorization: Bearer {token}
+Content-Type: application/json
+Body:
+{
+  "name": "Улей-{N}-updated"
+}
+Ожидаемый код: 200
+Проверка: status == 200, response_time < 1000ms
+
+
+=== 16. УДАЛЕНИЕ ПОЛЬЗОВАТЕЛЯ ===
+DELETE /auth/delete/user
+Authorization: Bearer {token}
+Ожидаемый код: 200
+Проверка: status == 200, response_time < 1000ms
+
+
+====== СЦЕНАРИИ НАГРУЗКИ ======
+
+СЦЕНАРИЙ 1: Базовый поток (1 пользователь)
+Шаги: 1 → 2 → 3 → 4 → 5 → 6 → 16
+Цель: Проверка базовой функциональности
+
+СЦЕНАРИЙ 2: Полный цикл (1 пользователь)
+Шаги: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 11 → 12 → 14 → 15 → 16
+Цель: Проверка всех функций
+
+СЦЕНАРИЙ 4: Чтение данных (авторизованный пользователь)
+Повторять: 5 → 6 → 8 (100-1000 раз)
+Цель: Тестирование read-операций
+
+СЦЕНАРИЙ 5: Создание/удаление (авторизованный пользователь)
+Повторять: 4 → 5 → 15 (50-500 раз)
+Цель: Тестирование write-операций
+
+Коды успеха:
+- 200: Успешный запрос
+- 500: Ошибка сервера (отслеживать количество)
+- 401/403: Ошибки авторизации (не должно быть при корректных токенах)
+
+
+====== НАГРУЗКА =======
+
+Должен выдерживать до 125 пользователей одновременно при кол-ве запросов до 30 в секунду одновременно
+
+====== ЗАМЕЧАНИЯ ======
+
+{N} - заменять на уникальный номер пользователя (1, 2, 3, ...)
+{token} - JWT токен из ответа авторизации
+Коды подтверждения (123456) - в реальности придут на email, но для теста их надо замокать.
+Финальные коды ответа могут меняться, поэтому следует проверять не код 200, а код 2xx (где x - любая цифра)

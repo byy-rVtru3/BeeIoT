@@ -21,9 +21,9 @@ import (
 const serverPort = ":8000"
 
 func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb interfaces.InMemoryDB,
-	mqtt *mqtt.Client, logger zerolog.Logger) {
+	mqtt *mqtt.Client, passwordStore interfaces.PasswordKeeper, logger zerolog.Logger) {
 	r := chi.NewRouter()
-	h, err := handlers.NewHandler(db, sender, inMemDb, mqtt, logger)
+	h, err := handlers.NewHandler(db, sender, inMemDb, mqtt, passwordStore, logger)
 	if err != nil {
 		logger.Error().Err(err).Msg("could not create new handler")
 		return
@@ -50,7 +50,7 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.With(m.CheckAuth).Delete("/logout", h.Logout)
 		})
 		r.Route("/calcQueen", func(r chi.Router) {
-			r.Post("/calc", h.QueenCalculator)
+			r.With(m.CheckAuth).Post("/calc", h.QueenCalculator)
 		})
 		r.Route("/hive", func(r chi.Router) {
 			r.Use(m.CheckAuth)

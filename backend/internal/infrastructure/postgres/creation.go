@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Postgres struct {
-	conn    *pgx.Conn
-	errChan chan<- error
+	pull *pgxpool.Pool
 }
 
 func (db *Postgres) createConnectPath() (string, error) {
@@ -37,15 +36,21 @@ func NewDB() (*Postgres, error) {
 	db := &Postgres{}
 	path, err := db.createConnectPath()
 	if err != nil {
-		return db, err
+		return nil, err
 	}
-	db.conn, err = pgx.Connect(context.Background(), path)
+	conf, err := pgxpool.ParseConfig(path)
 	if err != nil {
-		return db, err
+		return nil, err
+	}
+	conf.MaxConns = 30
+	conf.MinConns = 10
+	db.pull, err = pgxpool.NewWithConfig(context.Background(), conf)
+	if err != nil {
+		return nil, err
 	}
 	return db, nil
 }
 
-func (db *Postgres) CloseDB() error {
-	return db.conn.Close(context.Background())
+func (db *Postgres) CloseDB() {
+	db.pull.Close()
 }

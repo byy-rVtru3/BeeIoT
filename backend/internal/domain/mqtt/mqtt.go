@@ -75,13 +75,13 @@ func (m *Client) onConnectionLost(_ mqtt.Client, err error) {
 }
 
 func (m *Client) SubscribeToTopics() {
-	token := m.client.Subscribe("/device/+/data", 1, m.handleDeviceDataTest)
+	token := m.client.Subscribe("/device/+/data", 1, m.handleDeviceData)
 	if token.Wait() && token.Error() != nil {
 		m.logger.Error().Err(token.Error()).Str("topic", "data").Msg("failed to subscribe to topic")
 	} else {
 		m.logger.Info().Str("topic", "data").Msg("subscribed to topic successfully")
 	}
-	token = m.client.Subscribe("/device/+/status", 1, m.handleDeviceStatusTest)
+	token = m.client.Subscribe("/device/+/status", 1, m.handleDeviceStatus)
 	if token.Wait() && token.Error() != nil {
 		m.logger.Error().Err(token.Error()).Str("topic", "status").Msg("failed to subscribe to topic")
 	} else {

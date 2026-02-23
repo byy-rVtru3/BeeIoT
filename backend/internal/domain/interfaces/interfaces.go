@@ -18,6 +18,7 @@ type DB interface {
 	ChangePassword(ctx context.Context, user httpType.ChangePassword) error
 	DeleteUser(ctx context.Context, email string) error
 	GetUserById(ctx context.Context, id int) (string, error)
+	ChangeNameUser(ctx context.Context, email string, name string) error
 
 	NewHive(ctx context.Context, email, nameHive string) error
 	GetHives(ctx context.Context, email string) ([]dbTypes.Hive, error)
@@ -31,7 +32,7 @@ type DB interface {
 		ctx context.Context, hiveId int, time time.Time) ([]dbTypes.HivesTemperatureData, error)
 
 	NewNoise(ctx context.Context, noise httpType.NoiseLevel) error
-	GetNoiseSinceTimeMap(
+	GetNoiseSinceDay(
 		ctx context.Context, id int, date time.Time) (map[time.Time][]dbTypes.HivesNoiseData, error)
 }
 
@@ -47,4 +48,12 @@ type InMemoryDB interface {
 	ExistSensor(ctx context.Context, sensorID string) (bool, error)
 	GetAllSensors(ctx context.Context) (map[string]int64, error)
 	DeleteSensor(ctx context.Context, sensorID string) error
+}
+
+type PasswordData = string
+type CodeData = string
+
+type PasswordKeeper interface {
+	AddCode(ctx context.Context, email, code, password string, timeLive time.Duration) error
+	GetPassword(ctx context.Context, email string) (CodeData, PasswordData, error)
 }

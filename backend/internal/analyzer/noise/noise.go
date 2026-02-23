@@ -28,14 +28,16 @@ func NewAnalyzer(ctx context.Context, period time.Duration, db interfaces.DB, in
 func (a *Analyzer) Start() {
 	ticker := time.NewTicker(a.period)
 	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			a.analyzeNoise()
-		case <-a.ctx.Done():
-			return
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				a.analyzeNoise()
+			case <-a.ctx.Done():
+				return
+			}
 		}
-	}
+	}()
 }
 
 func (a *Analyzer) analyzeNoise() {
@@ -47,7 +49,7 @@ func (a *Analyzer) analyzeNoise() {
 		return
 	}
 	for _, hive := range hives {
-		SchumeikoDataMap, err := a.db.GetNoiseSinceTimeMap(a.ctx, hive.Id, computingStartTime)
+		SchumeikoDataMap, err := a.db.GetNoiseSinceDay(a.ctx, hive.Id, computingStartTime)
 		if err != nil {
 			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Msg("failed to get noise since time map")
 			continue

@@ -6,7 +6,7 @@ RUN go mod download
 
 
 
-RUN go build -o /beeIoT ./cmd/server/main.go
+RUN go build -o /beeIoT ./cmd/server/test/main_load.go
 
 FROM alpine:3.19
 WORKDIR /app

@@ -1,18 +1,40 @@
-package client
+package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 )
 
-// Структуры для API запросов/ответов
+type APIClient struct {
+	BaseURL string
+	Client  *http.Client
+	Token   string
+	Email   string
+	Name    string
+}
+
+type Response struct {
+	Status  string                 `json:"status"`
+	Message string                 `json:"message"`
+	Data    map[string]interface{} `json:"data,omitempty"`
+}
+
 type RegistrationRequest struct {
 	Email    string `json:"email"`
+	Name     string `json:"name"`
 	Password string `json:"password"`
+}
+
+type ConfirmRequest struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
 }
 
 type LoginRequest struct {
@@ -20,267 +42,238 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-type LoginResponse struct {
-	Token string `json:"token"`
-}
-
 type ChangePasswordRequest struct {
-	OldPassword string `json:"old_password"`
-	NewPassword string `json:"new_password"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-type QueenCalendarRequest struct {
-	StartDate string `json:"start_date"`
-}
-
-type QueenCalendarResponse struct {
-	StartDate string `json:"start_date"`
-	EggPhase  struct {
-		Standing string `json:"standing"`
-		Tilted   string `json:"tilted"`
-		Lying    string `json:"lying"`
-	} `json:"egg_phase"`
-	LarvaPhase struct {
-		Start  string `json:"start"`
-		Day1   string `json:"day1"`
-		Day2   string `json:"day2"`
-		Day3   string `json:"day3"`
-		Day4   string `json:"day4"`
-		Day5   string `json:"day5"`
-		Sealed string `json:"sealed"`
-	} `json:"larva_phase"`
-	PupaPhase struct {
-		Start     string `json:"start"`
-		End       string `json:"end"`
-		Duration  string `json:"duration"`
-		Selection string `json:"selection"`
-	} `json:"pupa_phase"`
-	QueenPhase struct {
-		EmergenceStart      string `json:"emergence_start"`
-		EmergenceEnd        string `json:"emergence_end"`
-		MaturationStart     string `json:"maturation_start"`
-		MaturationEnd       string `json:"maturation_end"`
-		MatingFlightStart   string `json:"mating_flight_start"`
-		MatingFlightEnd     string `json:"mating_flight_end"`
-		InseminationStart   string `json:"insemination_start"`
-		InseminationEnd     string `json:"insemination_end"`
-		EggLayingCheckStart string `json:"egg_laying_check_start"`
-		EggLayingCheckEnd   string `json:"egg_laying_check_end"`
-	} `json:"queen_phase"`
-}
-
-type HiveResponse struct {
-	ID          int    `json:"id"`
-	Name        string `json:"name"`
-	Location    string `json:"location"`
-	Description string `json:"description"`
-}
-
-type CreateHiveRequest struct {
-	Name        string `json:"name"`
-	Location    string `json:"location"`
-	Description string `json:"description"`
-}
-
-// HTTP клиент для тестирования
-type TestClient struct {
-	baseURL    string
-	httpClient *http.Client
-	authToken  string
-}
-
-func NewTestClient(baseURL string) *TestClient {
-	return &TestClient{
-		baseURL: baseURL,
-		httpClient: &http.Client{
+func NewAPIClient(baseURL string) *APIClient {
+	return &APIClient{
+		BaseURL: baseURL,
+		Client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
 	}
 }
 
-func (c *TestClient) makeRequest(method, endpoint string, body interface{}, headers map[string]string) (*http.Response, []byte, error) {
+// RunFullAuthFlow выполняет полный цикл аутентификации
+func (c *APIClient) RunFullAuthFlow() error {
+	// Генерация уникального email с timestamp
+	timestamp := time.Now().Unix()
+	c.Email = "i.statsenko@g.nsu.ru"
+	c.Name = fmt.Sprintf("TestUser_%d", timestamp)
+	oldPassword := "SecurePassword123!"
+	newPassword := "NewSecurePassword456!"
+
+	// Шаг 1: Регистрация
+	fmt.Println("📝 Шаг 1: Регистрация пользователя")
+	fmt.Printf("   Email: %s\n", c.Email)
+	fmt.Printf("   Name: %s\n", c.Name)
+	if err := c.Register(c.Email, c.Name, oldPassword); err != nil {
+		return fmt.Errorf("регистрация: %w", err)
+	}
+
+	// Шаг 2: Подтверждение регистрации
+	fmt.Println("\n✉️  Шаг 2: Подтверждение регистрации")
+	code := c.readCodeFromConsole("Введите код подтверждения из email для регистрации")
+	if err := c.ConfirmRegistration(c.Email, code); err != nil {
+		return fmt.Errorf("подтверждение регистрации: %w", err)
+	}
+
+	// Шаг 3: Логин
+	fmt.Println("\n🔐 Шаг 3: Вход в систему")
+	if err := c.Login(c.Email, oldPassword); err != nil {
+		return fmt.Errorf("логин: %w", err)
+	}
+	fmt.Printf("   ✓ Получен JWT токен: %s...\n", c.Token[:50])
+
+	// Шаг 4: Смена пароля
+	fmt.Println("\n🔑 Шаг 4: Смена пароля")
+	if err := c.ChangePassword(c.Email, newPassword); err != nil {
+		return fmt.Errorf("смена пароля: %w", err)
+	}
+
+	// Шаг 5: Подтверждение смены пароля
+	fmt.Println("\n✉️  Шаг 5: Подтверждение смены пароля")
+	code = c.readCodeFromConsole("Введите код подтверждения из email для смены пароля")
+	if err := c.ConfirmPasswordChange(c.Email, code); err != nil {
+		return fmt.Errorf("подтверждение смены пароля: %w", err)
+	}
+
+	// Шаг 6: Повторный логин с новым паролем
+	fmt.Println("\n🔐 Шаг 6: Вход с новым паролем")
+	if err := c.Login(c.Email, newPassword); err != nil {
+		return fmt.Errorf("логин с новым паролем: %w", err)
+	}
+	fmt.Printf("   ✓ Получен новый JWT токен: %s...\n", c.Token[:50])
+
+	// Шаг 7: Выход из системы
+	fmt.Println("\n🚪 Шаг 7: Выход из системы")
+	if err := c.Logout(); err != nil {
+		return fmt.Errorf("выход: %w", err)
+	}
+
+	return nil
+}
+
+// Register регистрирует нового пользователя
+func (c *APIClient) Register(email, name, password string) error {
+	reqBody := RegistrationRequest{
+		Email:    email,
+		Name:     name,
+		Password: password,
+	}
+
+	resp, err := c.doRequest("POST", "/api/auth/registration", reqBody, false)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("   ✓ %s\n", resp.Message)
+	return nil
+}
+
+// ConfirmRegistration подтверждает регистрацию кодом
+func (c *APIClient) ConfirmRegistration(email, code string) error {
+	reqBody := ConfirmRequest{
+		Email: email,
+		Code:  code,
+	}
+
+	resp, err := c.doRequest("POST", "/api/auth/confirm/registration", reqBody, false)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("   ✓ %s\n", resp.Message)
+	return nil
+}
+
+// Login выполняет вход в систему
+func (c *APIClient) Login(email, password string) error {
+	reqBody := LoginRequest{
+		Email:    email,
+		Password: password,
+	}
+
+	resp, err := c.doRequest("POST", "/api/auth/login", reqBody, false)
+	if err != nil {
+		return err
+	}
+
+	// Извлекаем токен из ответа
+	if tokenData, ok := resp.Data["token"].(string); ok {
+		c.Token = tokenData
+	} else {
+		return fmt.Errorf("токен не найден в ответе")
+	}
+
+	fmt.Printf("   ✓ %s\n", resp.Message)
+	return nil
+}
+
+// ChangePassword инициирует смену пароля
+func (c *APIClient) ChangePassword(email, newPassword string) error {
+	reqBody := ChangePasswordRequest{
+		Email:    email,
+		Password: newPassword,
+	}
+
+	resp, err := c.doRequest("POST", "/api/auth/change", reqBody, false)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("   ✓ %s\n", resp.Message)
+	return nil
+}
+
+// ConfirmPasswordChange подтверждает смену пароля кодом
+func (c *APIClient) ConfirmPasswordChange(email, code string) error {
+	reqBody := ConfirmRequest{
+		Email: email,
+		Code:  code,
+	}
+
+	resp, err := c.doRequest("POST", "/api/auth/confirm/password", reqBody, false)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("   ✓ %s\n", resp.Message)
+	return nil
+}
+
+// Logout выходит из системы (требует токен)
+func (c *APIClient) Logout() error {
+	resp, err := c.doRequest("DELETE", "/api/auth/logout", nil, true)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("   ✓ %s\n", resp.Message)
+	c.Token = "" // Очищаем токен
+	return nil
+}
+
+// doRequest выполняет HTTP запрос
+func (c *APIClient) doRequest(method, path string, body interface{}, useAuth bool) (*Response, error) {
 	var reqBody io.Reader
 	if body != nil {
 		jsonData, err := json.Marshal(body)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to marshal request body: %w", err)
+			return nil, fmt.Errorf("marshal json: %w", err)
 		}
 		reqBody = bytes.NewBuffer(jsonData)
 	}
 
-	req, err := http.NewRequest(method, c.baseURL+endpoint, reqBody)
+	url := c.BaseURL + path
+	req, err := http.NewRequest(method, url, reqBody)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("создание запроса: %w", err)
 	}
 
-	// Устанавливаем заголовки
 	req.Header.Set("Content-Type", "application/json")
-	for key, value := range headers {
-		req.Header.Set(key, value)
+
+	// Добавляем токен авторизации если требуется
+	if useAuth && c.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.Token)
 	}
 
-	// Добавляем токен авторизации если есть
-	if c.authToken != "" {
-		req.Header.Set("Authorization", "Bearer "+c.authToken)
-	}
-
-	resp, err := c.httpClient.Do(req)
+	// Выполняем запрос
+	httpResp, err := c.Client.Do(req)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to make request: %w", err)
+		return nil, fmt.Errorf("выполнение запроса: %w", err)
 	}
-	defer resp.Body.Close()
+	defer httpResp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	// Читаем ответ
+	respBody, err := io.ReadAll(httpResp.Body)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read response body: %w", err)
+		return nil, fmt.Errorf("чтение ответа: %w", err)
 	}
 
-	return resp, respBody, nil
+	// Проверяем статус код
+	if httpResp.StatusCode < 200 || httpResp.StatusCode >= 300 {
+		return nil, fmt.Errorf("HTTP %d: %s", httpResp.StatusCode, string(respBody))
+	}
+
+	// Парсим JSON ответ
+	var resp Response
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, fmt.Errorf("парсинг json: %w (body: %s)", err, string(respBody))
+	}
+
+	return &resp, nil
 }
 
-func (c *TestClient) Register(email, password string) error {
-	req := RegistrationRequest{
-		Email:    email,
-		Password: password,
-	}
+// readCodeFromConsole читает код подтверждения из консоли
+func (c *APIClient) readCodeFromConsole(prompt string) string {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Printf("   %s: ", prompt)
 
-	resp, _, err := c.makeRequest("POST", "/api/auth/register", req, nil)
-	if err != nil {
-		return err
-	}
+	code, _ := reader.ReadString('\n')
+	code = strings.TrimSpace(code)
 
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("registration failed with status %d", resp.StatusCode)
-	}
-
-	return nil
-}
-
-func (c *TestClient) Login(email, password string) error {
-	req := LoginRequest{
-		Email:    email,
-		Password: password,
-	}
-
-	resp, body, err := c.makeRequest("POST", "/api/auth/login", req, nil)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("login failed with status %d: %s", resp.StatusCode, string(body))
-	}
-
-	var loginResp LoginResponse
-	if err := json.Unmarshal(body, &loginResp); err != nil {
-		return fmt.Errorf("failed to parse login response: %w", err)
-	}
-
-	c.authToken = loginResp.Token
-	return nil
-}
-
-func (c *TestClient) ChangePassword(oldPassword, newPassword string) error {
-	req := ChangePasswordRequest{
-		OldPassword: oldPassword,
-		NewPassword: newPassword,
-	}
-
-	resp, body, err := c.makeRequest("PUT", "/api/auth/password", req, nil)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("change password failed with status %d: %s", resp.StatusCode, string(body))
-	}
-
-	return nil
-}
-
-func (c *TestClient) GetQueenCalendar(startDate string) (*QueenCalendarResponse, error) {
-	req := QueenCalendarRequest{
-		StartDate: startDate,
-	}
-
-	resp, body, err := c.makeRequest("POST", "/api/queen/calendar", req, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("get queen calendar failed with status %d: %s", resp.StatusCode, string(body))
-	}
-
-	var calendar QueenCalendarResponse
-	if err := json.Unmarshal(body, &calendar); err != nil {
-		return nil, fmt.Errorf("failed to parse calendar response: %w", err)
-	}
-
-	return &calendar, nil
-}
-
-func (c *TestClient) CreateHive(name, location, description string) (*HiveResponse, error) {
-	req := CreateHiveRequest{
-		Name:        name,
-		Location:    location,
-		Description: description,
-	}
-
-	resp, body, err := c.makeRequest("POST", "/api/hive", req, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("create hive failed with status %d: %s", resp.StatusCode, string(body))
-	}
-
-	var hive HiveResponse
-	if err := json.Unmarshal(body, &hive); err != nil {
-		return nil, fmt.Errorf("failed to parse hive response: %w", err)
-	}
-
-	return &hive, nil
-}
-
-func (c *TestClient) GetHives() ([]HiveResponse, error) {
-	resp, body, err := c.makeRequest("GET", "/api/hive", nil, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("get hives failed with status %d: %s", resp.StatusCode, string(body))
-	}
-
-	var hives []HiveResponse
-	if err := json.Unmarshal(body, &hives); err != nil {
-		return nil, fmt.Errorf("failed to parse hives response: %w", err)
-	}
-
-	return hives, nil
-}
-
-func (c *TestClient) DeleteUser() error {
-	resp, body, err := c.makeRequest("DELETE", "/api/auth/user", nil, nil)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("delete user failed with status %d: %s", resp.StatusCode, string(body))
-	}
-
-	return nil
-}
-
-// MakeRequest экспортированный метод для внешнего использования
-func (c *TestClient) MakeRequest(method, endpoint string, body interface{}, headers map[string]string) (*http.Response, []byte, error) {
-	return c.makeRequest(method, endpoint, body, headers)
-}
-
-// GetAuthToken возвращает текущий токен аутентификации
-func (c *TestClient) GetAuthToken() string {
-	return c.authToken
+	return code
 }

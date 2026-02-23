@@ -8,28 +8,22 @@ import (
 )
 
 func (db *Postgres) NewTemperature(ctx context.Context, temp httpType.Temperature) error {
-	text := `INSERT INTO temperature (hive_id, level, recorded_at) 
-			 VALUES (
-				(SELECT id FROM hives WHERE name = $2 AND user_id = (SELECT id FROM users WHERE email = $1)),
-				$3, $4
-			 );`
-	_, err := db.conn.Exec(ctx, text, temp.Email, temp.Hive, temp.Temperature, temp.Time)
-	return err
-}
-
-func (db *Postgres) DeleteTemperature(ctx context.Context, temp httpType.Temperature) error {
-	text := `DELETE FROM temperature 
-			 WHERE hive_id = (SELECT id FROM hives WHERE name = $2 AND user_id = (SELECT id FROM users WHERE email = $1))
-			 AND recorded_at = $3;`
-	_, err := db.conn.Exec(ctx, text, temp.Email, temp.Hive, temp.Time)
+	text := `INSERT INTO temperature (hive_id, level, recorded_at)
+             SELECT id, $3, $4
+             FROM hives h
+             INNER JOIN users u ON h.user_id = u.id
+             WHERE u.email = $1 AND h.name = $2
+             ON CONFLICT (hive_id, recorded_at) DO NOTHING;`
+	_, err := db.pull.Exec(ctx, text, temp.Email, temp.Hive, temp.Temperature, temp.Time)
 	return err
 }
 
 func (db *Postgres) GetTemperaturesSinceTime(ctx context.Context, hive dbTypes.Hive, time time.Time) ([]dbTypes.HivesTemperatureData, error) {
-	text := `SELECT level, recorded_at FROM temperature 
-			 WHERE hive_id = (SELECT id FROM hives WHERE name = $2 AND user_id = (SELECT id FROM users WHERE email = $1))
-			 AND recorded_at >= $3;`
-	rows, err := db.conn.Query(ctx, text, hive.Email, hive.NameHive, time)
+	text := `SELECT level, recorded_at FROM temperature n
+             INNER JOIN hives h ON n.hive_id = h.id
+             INNER JOIN users u ON h.user_id = u.id
+             WHERE h.name = $2 AND u.email = $1 AND n.recorded_at >= $3;`
+	rows, err := db.pull.Query(ctx, text, hive.Email, hive.NameHive, time)
 	if err != nil {
 		return nil, err
 	}
@@ -48,9 +42,9 @@ func (db *Postgres) GetTemperaturesSinceTime(ctx context.Context, hive dbTypes.H
 
 func (db *Postgres) GetTemperaturesSinceTimeById(ctx context.Context, hiveId int, time time.Time) ([]dbTypes.HivesTemperatureData, error) {
 	text := `SELECT level, recorded_at FROM temperature
-            WHERE hive_id = $1
-			AND recorded_at >= $2;`
-	rows, err := db.conn.Query(ctx, text, hiveId, time)
+             WHERE hive_id = $1
+			 AND recorded_at >= $2;`
+	rows, err := db.pull.Query(ctx, text, hiveId, time)
 	if err != nil {
 		return nil, err
 	}
