@@ -84,6 +84,7 @@ class ConfirmationViewModel(
 
                     is ConfirmationResultUi.Error -> {
                         sendEvent(ConfirmationEvent.ShowSnackBar(result.message))
+                        updateState { ConfirmationUiState.Content(model) }
                     }
                 }
             }
