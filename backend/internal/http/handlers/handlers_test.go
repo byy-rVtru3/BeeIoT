@@ -197,7 +197,7 @@ func (m *MockDB) GetHiveByName(_ context.Context, _ string, _ string) (dbTypes.H
 	return dbTypes.Hive{Id: 1, NameHive: "Test Hive"}, nil
 }
 
-func (m *MockDB) UpdateHive(_ context.Context, _ string, _ dbTypes.Hive) error {
+func (m *MockDB) UpdateHive(_ context.Context, _, _, _ string) error {
 	return nil
 }
 

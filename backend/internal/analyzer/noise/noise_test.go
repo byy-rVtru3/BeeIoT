@@ -30,6 +30,10 @@ func (m *MockDB) GetUserById(_ context.Context, _ int) (string, error) {
 	return m.MockEmail, nil
 }
 
+func (m *MockDB) UpdateHiveNoiseCheck(_ context.Context, _ int, _ time.Time) error {
+	return nil
+}
+
 type MockInMemoryDB struct {
 	interfaces.InMemoryDB
 	Notifications []httpType.NotificationData

@@ -52,9 +52,8 @@ func (a *Analyzer) analyzeTemperature() {
 			continue
 		}
 		a.temperatureAnalysis(data, hive)
-		hive.DateTemperature = time.Now()
-		if a.db.UpdateHive(a.ctx, hive.NameHive, hive) != nil {
-			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Msg("failed to update hive")
+		if a.db.UpdateHiveTemperatureCheck(a.ctx, hive.Id, time.Now()) != nil {
+			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Msg("failed to update hive temperature check")
 		}
 	}
 }

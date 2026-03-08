@@ -6,28 +6,34 @@ import (
 	"time"
 )
 
-type Hive struct { // вот эту пиздень надо изменить, чтобы она всю инфу о улье хранила
-	Id              int       `json:"id"`
-	NameHive        string    `json:"name"`
-	Email           string    `json:"email"`
-	DateTemperature time.Time `json:"temperature_check"`
-	DateNoise       time.Time `json:"noise_check"`
+type Hive struct {
+	Id              int
+	NameHive        string
+	Email           string
+	DateTemperature time.Time
+	DateNoise       time.Time
+	SensorID        string
+	Status          bool
 }
 
 type Task struct {
-	Name  string    `json:"name"`
-	Time  time.Time `json:"time"`
-	Email string    `json:"email"`
-	Hive  string    `json:"hive"`
+	Name  string
+	Time  time.Time
+	Email string
+	Hive  string
 }
 
 type HivesTemperatureData struct {
-	Id          int       `json:"id"`
-	Date        time.Time `json:"temperature_check"`
-	Temperature float64   `json:"temperature"`
+	Date        time.Time
+	Temperature float64
 }
 
 type HivesNoiseData struct {
-	Date  time.Time `json:"noise_check"`
-	Level float64   `json:"level"`
+	Date  time.Time
+	Level float64
+}
+
+type HivesWeightData struct {
+	Weight float64
+	Date   time.Time
 }

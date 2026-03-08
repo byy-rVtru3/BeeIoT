@@ -26,7 +26,7 @@ func (m *MockDB) GetTemperaturesSinceTimeById(ctx context.Context, hiveId int, t
 	return m.TempData, nil
 }
 
-func (m *MockDB) UpdateHive(ctx context.Context, nameHive string, hive dbTypes.Hive) error {
+func (m *MockDB) UpdateHiveTemperatureCheck(ctx context.Context, hiveId int, t time.Time) error {
 	return nil
 }
 

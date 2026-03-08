@@ -55,7 +55,9 @@ func (a *Analyzer) analyzeNoise() {
 			continue
 		}
 		a.analyzeDay(SchumeikoDataMap, hive, computingStartTime)
-		hive.DateNoise = computingStartTime
+		if err := a.db.UpdateHiveNoiseCheck(a.ctx, hive.Id, computingStartTime); err != nil {
+			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Msg("failed to update hive noise check")
+		}
 	}
 }
 

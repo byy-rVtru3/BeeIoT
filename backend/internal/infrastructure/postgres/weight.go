@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"BeeIOT/internal/domain/models/dbTypes"
 	"BeeIOT/internal/domain/models/httpType"
 	"context"
 	"time"
@@ -29,7 +30,7 @@ func (db *Postgres) DeleteHiveWeight(ctx context.Context, weight httpType.HiveWe
 	return err
 }
 
-func (db *Postgres) GetWeightSinceTime(ctx context.Context, hive httpType.Hive, time time.Time) ([]httpType.HiveWeight, error) {
+func (db *Postgres) GetWeightSinceTime(ctx context.Context, hive httpType.Hive, time time.Time) ([]dbTypes.HivesWeightData, error) {
 	text := `SELECT level, recorded_at 
              FROM weight w
              INNER JOIN hives h ON h.id = w.hive_id
@@ -40,10 +41,10 @@ func (db *Postgres) GetWeightSinceTime(ctx context.Context, hive httpType.Hive, 
 		return nil, err
 	}
 	defer rows.Close()
-	var weights []httpType.HiveWeight
+	var weights []dbTypes.HivesWeightData
 	for rows.Next() {
-		var weight httpType.HiveWeight
-		err := rows.Scan(&weight.Weight, &weight.Time)
+		var weight dbTypes.HivesWeightData
+		err := rows.Scan(&weight.Weight, &weight.Date)
 		if err != nil {
 			return nil, err
 		}

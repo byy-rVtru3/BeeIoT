@@ -26,6 +26,10 @@ type ChangePassword struct {
 	Password string `json:"password"`
 }
 
+type ChangeName struct {
+	Name string `json:"name"`
+}
+
 type NotificationData struct {
 	Text     string `json:"text"`
 	NameHive string `json:"name"`
@@ -62,6 +66,16 @@ type Hive struct {
 	NameHive string `json:"name"`
 }
 
+type HiveResponse struct {
+	Id              int    `json:"id"`
+	NameHive        string `json:"name"`
+	Email           string `json:"email"`
+	DateTemperature string `json:"date_temperature"`
+	DateNoise       string `json:"date_noise"`
+	SensorID        string `json:"sensor_id"`
+	Status          bool   `json:"status"`
+}
+
 type CreateHive struct {
 	Name string `json:"name"`
 }
@@ -73,4 +87,19 @@ type UpdateHive struct {
 
 type DeleteHive struct {
 	Name string `json:"name"`
+}
+
+type NoiseLevelResponse struct {
+	Date  time.Time `json:"date"`
+	Level float64   `json:"level"`
+}
+
+type WeightResponse struct {
+	Date   time.Time `json:"date"`
+	Weight float64   `json:"weight"`
+}
+
+type TemperatureResponse struct {
+	Date        time.Time `json:"date"`
+	Temperature float64   `json:"temperature"`
 }

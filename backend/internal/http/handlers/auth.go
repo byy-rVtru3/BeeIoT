@@ -235,3 +235,26 @@ func (h *Handler) checkExistenceUser(w http.ResponseWriter, r *http.Request, ema
 	}
 	return true
 }
+
+func (h *Handler) ChangeName(w http.ResponseWriter, r *http.Request) {
+	email, err := h.getEmailFromContext(w, r)
+	if err != nil {
+		return
+	}
+	var newName httpType.ChangeName
+	if err := h.readBodyJSON(w, r, &newName); err != nil {
+		return
+	}
+	if newName.Name == "" {
+		h.logger.Warn().Str("email", email).Msg("empty new name")
+		http.Error(w, "Имя не должно быть пустым", http.StatusBadRequest)
+		return
+	}
+	if err = h.db.ChangeNameUser(r.Context(), email, newName.Name); err != nil {
+		h.logger.Error().Err(err).Str("email", email).Msg("failed to change user name")
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
+	}
+
+	h.writeBodyJSON(w, "Имя успешно изменено", nil)
+}

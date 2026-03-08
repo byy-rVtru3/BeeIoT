@@ -19,7 +19,7 @@ func (db *Postgres) NewNoise(ctx context.Context, noise httpType.NoiseLevel) err
 }
 
 func (db *Postgres) GetNoiseSinceTime(
-	ctx context.Context, email, nameHive string, time time.Time) ([]httpType.NoiseLevel, error) {
+	ctx context.Context, email, nameHive string, time time.Time) ([]dbTypes.HivesNoiseData, error) {
 	text := `SELECT level, recorded_at FROM noise n
              INNER JOIN hives h ON n.hive_id = h.id
 	         INNER JOIN users u ON h.user_id = u.id
@@ -29,10 +29,10 @@ func (db *Postgres) GetNoiseSinceTime(
 		return nil, err
 	}
 	defer rows.Close()
-	var noiseLevels []httpType.NoiseLevel
+	var noiseLevels []dbTypes.HivesNoiseData
 	for rows.Next() {
-		var noise httpType.NoiseLevel
-		err := rows.Scan(&noise.Level, &noise.Time)
+		var noise dbTypes.HivesNoiseData
+		err := rows.Scan(&noise.Level, &noise.Date)
 		if err != nil {
 			return nil, err
 		}
