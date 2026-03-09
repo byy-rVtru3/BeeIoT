@@ -1,5 +1,9 @@
 package com.app.mobile.presentation.ui.screens.settings
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,6 +45,16 @@ fun SettingsScreen(
 	val settingsUiState by settingsViewModel.uiState.collectAsStateWithLifecycle()
 	val snackBarHostState = remember { SnackbarHostState() }
 
+	val permissionLauncher = rememberLauncherForActivityResult(
+		contract = ActivityResultContracts.RequestPermission()
+	) { isGranted ->
+		if (isGranted) {
+			settingsViewModel.onAcceptNotificationPrompt()
+		} else {
+			settingsViewModel.onDeclineNotificationPrompt()
+		}
+	}
+
 	ObserveAsEvents(settingsViewModel.event) { event ->
 		when (event) {
 			is SettingsEvent.NavigateToAccountInfo -> onAccountInfoClick()
@@ -65,6 +79,22 @@ fun SettingsScreen(
 				onAboutAppClick = settingsViewModel::onAboutAppClick,
 				onLogoutClick = settingsViewModel::onLogoutClick
 			)
+
+			if (state.showNotificationPrompt) {
+				NotificationBottomSheet(
+					onEnableClick = {
+						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+							permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+						} else {
+							settingsViewModel.onAcceptNotificationPrompt()
+						}
+					},
+					onDeclineClick = {
+						settingsViewModel.onDeclineNotificationPrompt()
+					}
+				)
+			}
+
 			SettingsContent(actions, snackBarHostState)
 		}
 

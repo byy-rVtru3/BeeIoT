@@ -1,8 +1,8 @@
 package com.app.mobile.di
 
 import androidx.room.Room
-import com.app.mobile.data.database.AppConverters
-import com.app.mobile.data.database.AppDatabase
+import com.app.mobile.data.datastore.AppConverters
+import com.app.mobile.data.datastore.AppDatabase
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 

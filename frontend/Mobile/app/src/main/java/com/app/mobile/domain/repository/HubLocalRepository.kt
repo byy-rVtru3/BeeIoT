@@ -1,6 +1,6 @@
 package com.app.mobile.domain.repository
 
-import com.app.mobile.data.database.entity.HubEntity
+import com.app.mobile.data.datastore.entity.HubEntity
 import com.app.mobile.domain.models.hives.HubDomain
 
 interface HubLocalRepository {

@@ -1,7 +1,7 @@
 package com.app.mobile.domain.mappers
 
-import com.app.mobile.data.database.entity.NotificationEntity
-import com.app.mobile.data.database.entity.NotificationType
+import com.app.mobile.data.datastore.entity.NotificationEntity
+import com.app.mobile.data.datastore.entity.NotificationType
 import com.app.mobile.domain.models.hives.NotificationDomain
 import com.app.mobile.domain.models.hives.NotificationDomainType
 import com.app.mobile.presentation.models.hive.NotificationTypeUi

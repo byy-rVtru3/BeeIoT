@@ -1,5 +1,6 @@
 package com.app.mobile.data.api
 
+import com.app.mobile.data.api.models.PushTokenCreationModel
 import com.app.mobile.data.api.models.ResponseApiModel
 import com.app.mobile.data.api.models.queen.CalcQueenRequest
 import com.app.mobile.data.api.models.queen.QueenCalendarResponse
@@ -18,5 +19,8 @@ interface AuthApiClient {
 
     @POST("calcQueen/calc")
     suspend fun calcQueen(@Body calcQueenRequest: CalcQueenRequest): Response<QueenCalendarResponse>
+
+    @POST("/api/gateway/notification/push/token")
+    suspend fun registerPushToken(@Body pushTokenCreation: PushTokenCreationModel): Response<ResponseApiModel>
 
 }

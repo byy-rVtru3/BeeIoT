@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "797133145253",
+    "project_id": "beeiot-c2a36",
+    "storage_bucket": "beeiot-c2a36.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:797133145253:android:6333107471baf4e996f94c",
+        "android_client_info": {
+          "package_name": "com.app.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJcxtFSbbtPS8_0AyyScI3QEA6u1I7SiE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:797133145253:android:32f4ee8049a79d8096f94c",
+        "android_client_info": {
+          "package_name": "com.app.mobile.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJcxtFSbbtPS8_0AyyScI3QEA6u1I7SiE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
