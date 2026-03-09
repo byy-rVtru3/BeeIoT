@@ -1,7 +1,7 @@
 package com.app.mobile.data.repository
 
-import com.app.mobile.data.database.dao.UserDao
-import com.app.mobile.data.database.mappers.toEntity
+import com.app.mobile.data.datastore.dao.UserDao
+import com.app.mobile.data.datastore.mappers.toEntity
 import com.app.mobile.domain.mappers.toDomain
 import com.app.mobile.domain.models.UserDomain
 import com.app.mobile.domain.repository.UserLocalRepository

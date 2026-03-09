@@ -1,6 +1,6 @@
 package com.app.mobile.domain.mappers
 
-import com.app.mobile.data.database.entity.WorkEntity
+import com.app.mobile.data.datastore.entity.WorkEntity
 import com.app.mobile.domain.models.hives.WorkDomain
 import com.app.mobile.presentation.models.hive.WorkUi
 

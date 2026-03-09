@@ -61,12 +61,13 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AppNavigation(
+    startDestination: Any,
     modifier: Modifier = Modifier,
     navController: NavHostController,
 ) {
     NavHost(
         navController = navController,
-        startDestination = AuthorizationRoute,
+        startDestination = startDestination,
         modifier = modifier
     ) {
         animatedComposable<RegistrationRoute> {

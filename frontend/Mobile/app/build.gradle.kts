@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.google.devtools.ksp)
+    alias(libs.plugins.gms.google.services)
 }
 
 configurations.all {
@@ -82,6 +83,13 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
+    //worker
+    implementation(libs.androidx.work.runtime)
+
+    //Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.messaging)
 
     //DataStore
     implementation(libs.androidx.datastore.preferences)

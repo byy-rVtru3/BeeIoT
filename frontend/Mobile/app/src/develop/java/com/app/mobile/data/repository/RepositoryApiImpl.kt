@@ -1,6 +1,7 @@
 package com.app.mobile.data.repository
 
 import android.content.Context
+import com.app.mobile.data.api.models.PushTokenCreationModel
 import com.app.mobile.data.mock.MockDataProvider
 import com.app.mobile.domain.models.authorization.AuthorizationModel
 import com.app.mobile.domain.models.authorization.AuthorizationRequestResult
@@ -10,6 +11,7 @@ import com.app.mobile.domain.models.delete.DeleteRequestResult
 import com.app.mobile.domain.models.hives.queen.QueenCalendarRequestResult
 import com.app.mobile.domain.models.hives.queen.QueenRequestModel
 import com.app.mobile.domain.models.logout.LogoutRequestResult
+import com.app.mobile.domain.models.notifications.PushTokenRequestResult
 import com.app.mobile.domain.models.registration.RegistrationModel
 import com.app.mobile.domain.models.registration.RegistrationRequestResult
 import com.app.mobile.domain.repository.RepositoryApi
@@ -60,6 +62,11 @@ class RepositoryApiImpl(private val context: Context) : RepositoryApi {
         delay(100)
         val queenLifecycle = MockDataProvider.getQueenLifecycle(context)
         return QueenCalendarRequestResult.Success(queenLifecycle)
+    }
+
+    override suspend fun registerPushToken(pushTokenCreation: PushTokenCreationModel): PushTokenRequestResult {
+        delay(100)
+        return PushTokenRequestResult.Success
     }
 }
 

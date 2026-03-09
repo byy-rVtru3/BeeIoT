@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.app.mobile.presentation.navigation.AppNavigation
@@ -21,44 +22,47 @@ import com.app.mobile.presentation.ui.screens.queen.list.QueenListRoute
 import com.app.mobile.presentation.ui.screens.settings.SettingsRoute
 
 @Composable
-fun AppHost() {
-    val navController = rememberNavController()
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
+fun AppHost(
+	startDestination: Any,
+	navController: NavHostController
+) {
+	val navBackStackEntry by navController.currentBackStackEntryAsState()
+	val currentDestination = navBackStackEntry?.destination
 
-    val showBottomBar = currentDestination?.let { dest ->
-        dest.hasRoute<HivesListRoute>() || dest.hasRoute<SettingsRoute>() || dest.hasRoute<QueenListRoute>()
-    } ?: false
+	val showBottomBar = currentDestination?.let { dest ->
+		dest.hasRoute<HivesListRoute>() || dest.hasRoute<SettingsRoute>() || dest.hasRoute<QueenListRoute>()
+	} ?: false
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            AnimatedVisibility(
-                visible = showBottomBar,
-                enter = slideInVertically { it },
-                exit = slideOutVertically { it }
-            ) {
-                AppBottomBar(
-                    currentDestination = currentDestination,
-                    onNavigate = { route ->
-                        navController.navigate(route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                )
-            }
-        }
-    ) { innerPadding ->
-        AppNavigation(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .consumeWindowInsets(innerPadding),
-            navController = navController
-        )
-    }
+	Scaffold(
+		modifier = Modifier.fillMaxSize(),
+		bottomBar = {
+			AnimatedVisibility(
+				visible = showBottomBar,
+				enter = slideInVertically { it },
+				exit = slideOutVertically { it }
+			) {
+				AppBottomBar(
+					currentDestination = currentDestination,
+					onNavigate = { route ->
+						navController.navigate(route) {
+							popUpTo(navController.graph.findStartDestination().id) {
+								saveState = true
+							}
+							launchSingleTop = true
+							restoreState = true
+						}
+					}
+				)
+			}
+		}
+	) { innerPadding ->
+		AppNavigation(
+			startDestination = startDestination,
+			modifier = Modifier
+				.fillMaxSize()
+				.padding(innerPadding)
+				.consumeWindowInsets(innerPadding),
+			navController = navController
+		)
+	}
 }

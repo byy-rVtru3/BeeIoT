@@ -98,7 +98,7 @@
     <string name="work_title_placeholder">Название работы</string>
     <string name="work_text_label">Текст работы:</string>
     <string name="work_text_placeholder">Опишите выполненную работу</string>
-    
+
     <!-- Queen Timeline (График развития матки) -->
     <string name="queen_timeline_title">График развития</string>
     <string name="queen_timeline_empty">Нет данных о развитии</string>
@@ -106,5 +106,14 @@
     <string name="queen_stage_completed">Завершено</string>
     <string name="queen_stage_in_progress">В процессе</string>
 
+	<!--    Notifications-->
+	<string name="default_notification_channel_id">Важные события на пасеке</string>
+	<string name="regular_channel">События</string>
+	<string name="critical_channel">Экстренные</string>
+	<string name="summary_notification_text">Напоминания</string>
+	<string name="turn_on_notifications">Включить уведомления</string>
+	<string name="notifications_title">Будьте в курсе событий!</string>
+	<string name="notifications_description">Разрешите уведомления, чтобы вовремя узнавать о важных событиях на пасеке: изменениях веса улья, падении температуры или необходимости осмотра маток.</string>
+	<string name="turn_off_notifications">Позже</string>
 
 </resources>
