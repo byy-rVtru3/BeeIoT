@@ -7,9 +7,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -21,7 +25,7 @@ import com.app.mobile.presentation.ui.components.AppTopBar
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.ObserveAsEvents
-import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppNavigationEvent
+import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppEvent
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppUiState
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppViewModel
 import com.app.mobile.ui.theme.Dimens
@@ -30,57 +34,66 @@ import com.app.mobile.ui.theme.MobileTheme
 @Composable
 fun AboutAppScreen(aboutAppViewModel: AboutAppViewModel, onBackClick: () -> Unit) {
 
-    val aboutAppUiState by aboutAppViewModel.uiState.collectAsStateWithLifecycle()
+	val aboutAppUiState by aboutAppViewModel.uiState.collectAsStateWithLifecycle()
+	val snackbarHostState = remember { SnackbarHostState() }
 
-    ObserveAsEvents(aboutAppViewModel.event) { event ->
-        when (event) {
-            is AboutAppNavigationEvent.NavigateBack -> onBackClick()
-        }
-    }
+	ObserveAsEvents(aboutAppViewModel.event) { event ->
+		when (event) {
+			is AboutAppEvent.NavigateBack -> onBackClick()
 
-    when (val state = aboutAppUiState) {
-        is AboutAppUiState.Content -> AboutAppContent(onBackClick)
-        is AboutAppUiState.Error -> ErrorMessage(state.message, {})
-        is AboutAppUiState.Loading -> FullScreenProgressIndicator()
+			is AboutAppEvent.ShowSnackBar -> {
+				snackbarHostState.showSnackbar(
+					event.message,
+					duration = SnackbarDuration.Short
+				)
+			}
+		}
+	}
 
-    }
+	when (val state = aboutAppUiState) {
+		is AboutAppUiState.Content -> AboutAppContent(onBackClick, snackbarHostState)
+		is AboutAppUiState.Error   -> ErrorMessage(state.message, {})
+		is AboutAppUiState.Loading -> FullScreenProgressIndicator()
+
+	}
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AboutAppContent(onBackClick: () -> Unit) {
-    Scaffold(
-        topBar = {
-            AppTopBar(
-                title = stringResource(R.string.about),
-                hasBackground = false,
-                onBackClick = onBackClick
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(Dimens.ScreenContentPadding),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            Text(
-                text = stringResource(R.string.app_info),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Start
-            )
-        }
-    }
+private fun AboutAppContent(onBackClick: () -> Unit, snackbarHostState: SnackbarHostState) {
+	Scaffold(
+		topBar = {
+			AppTopBar(
+				title = stringResource(R.string.about),
+				hasBackground = false,
+				onBackClick = onBackClick
+			)
+		},
+		snackbarHost = { SnackbarHost(snackbarHostState) },
+		containerColor = MaterialTheme.colorScheme.background
+	) { innerPadding ->
+		Column(
+			modifier = Modifier
+				.fillMaxSize()
+				.padding(innerPadding)
+				.padding(Dimens.ScreenContentPadding),
+			horizontalAlignment = Alignment.CenterHorizontally,
+			verticalArrangement = Arrangement.Top
+		) {
+			Text(
+				text = stringResource(R.string.app_info),
+				style = MaterialTheme.typography.bodyMedium,
+				color = MaterialTheme.colorScheme.onBackground,
+				textAlign = TextAlign.Start
+			)
+		}
+	}
 }
 
 @Preview(showBackground = true)
 @Composable
 fun AboutAppContentPreview() {
-    MobileTheme {
-        AboutAppContent(onBackClick = {})
-    }
+	MobileTheme {
+		AboutAppContent(onBackClick = {}, snackbarHostState = remember { SnackbarHostState() })
+	}
 }

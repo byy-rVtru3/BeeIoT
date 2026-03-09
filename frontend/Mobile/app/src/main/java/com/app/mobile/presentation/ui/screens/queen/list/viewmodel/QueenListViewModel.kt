@@ -11,7 +11,7 @@ import kotlinx.coroutines.awaitAll
 class QueenListViewModel(
     private val getQueensUseCase: GetQueensUseCase,
     private val getHivePreviewUseCase: GetHivePreviewUseCase
-) : BaseViewModel<QueenListUiState, QueenListNavigationEvent>(QueenListUiState.Loading) {
+) : BaseViewModel<QueenListUiState, QueenListEvent>(QueenListUiState.Loading) {
 
     override fun handleError(exception: Throwable) {
         updateState { QueenListUiState.Error(exception.message ?: "Unknown error") }
@@ -38,13 +38,15 @@ class QueenListViewModel(
 
     fun onQueenClick(queenId: String) {
         if (currentState is QueenListUiState.Content) {
-            sendEvent(QueenListNavigationEvent.NavigateToQueen(queenId))
+            sendEvent(QueenListEvent.NavigateToQueen(queenId))
         }
     }
 
     fun onAddClick() {
         if (currentState is QueenListUiState.Content) {
-            sendEvent(QueenListNavigationEvent.NavigateToAddQueen)
+            sendEvent(QueenListEvent.NavigateToAddQueen)
         }
     }
+
+    fun resetError() = loadQueens()
 }

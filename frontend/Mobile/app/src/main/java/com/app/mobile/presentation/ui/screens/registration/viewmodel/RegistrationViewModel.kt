@@ -10,141 +10,146 @@ import com.app.mobile.presentation.models.account.TypeConfirmationUi
 import com.app.mobile.presentation.ui.components.BaseViewModel
 
 class RegistrationViewModel(
-    private val registrationAccountUseCase: RegistrationAccountUseCase,
-    private val createUserAccountUseCase: CreateUserAccountUseCase
-) : BaseViewModel<RegistrationUiState, RegistrationNavigationEvent>(RegistrationUiState.Loading) {
+	private val registrationAccountUseCase: RegistrationAccountUseCase,
+	private val createUserAccountUseCase: CreateUserAccountUseCase
+) : BaseViewModel<RegistrationUiState, RegistrationEvent>(RegistrationUiState.Loading) {
 
-    override fun handleError(exception: Throwable) {
-        updateState { RegistrationUiState.Error(exception.message ?: "Unknown error") }
-        Log.e("RegistrationViewModel", exception.message.toString())
-    }
+	override fun handleError(exception: Throwable) {
+		updateState { RegistrationUiState.Error(exception.message ?: "Unknown error") }
+		Log.e("RegistrationViewModel", exception.message.toString())
+	}
 
-    // Используем новый helper для валидации
-    private val formValidator = RegistrationFormValidator()
+	// Используем новый helper для валидации
+	private val formValidator = RegistrationFormValidator()
 
-    fun onEmailChange(email: String) {
-        val state = currentState
-        if (state is RegistrationUiState.Content) {
-            val validationResult = formValidator.validateEmail(email)
+	fun onEmailChange(email: String) {
+		val state = currentState
+		if (state is RegistrationUiState.Content) {
+			val validationResult = formValidator.validateEmail(email)
 
-            val updatedFormState = state.formState.copy(
-                email = validationResult.data,
-                emailError = null
-            )
+			val updatedFormState = state.formState.copy(
+				email = validationResult.data,
+				emailError = null
+			)
 
-            updateState { state.copy(formState = updatedFormState) }
-        }
-    }
+			updateState { state.copy(formState = updatedFormState) }
+		}
+	}
 
-    fun onNameChange(name: String) {
-        val state = currentState
-        if (state is RegistrationUiState.Content) {
-            val validationResult = formValidator.validateName(name)
+	fun onNameChange(name: String) {
+		val state = currentState
+		if (state is RegistrationUiState.Content) {
+			val validationResult = formValidator.validateName(name)
 
-            val updatedFormState = state.formState.copy(
-                name = validationResult.data,
-                nameError = null
-            )
+			val updatedFormState = state.formState.copy(
+				name = validationResult.data,
+				nameError = null
+			)
 
-            updateState { state.copy(formState = updatedFormState) }
-        }
-    }
+			updateState { state.copy(formState = updatedFormState) }
+		}
+	}
 
-    fun onPasswordChange(password: String) {
-        val state = currentState
-        if (state is RegistrationUiState.Content) {
-            val validationResult = formValidator.validatePassword(password)
+	fun onPasswordChange(password: String) {
+		val state = currentState
+		if (state is RegistrationUiState.Content) {
+			val validationResult = formValidator.validatePassword(password)
 
-            val updatedFormState = state.formState.copy(
-                password = validationResult.data,
-                passwordError = null
-            )
+			val updatedFormState = state.formState.copy(
+				password = validationResult.data,
+				passwordError = null
+			)
 
-            updateState { state.copy(formState = updatedFormState) }
-        }
-    }
+			updateState { state.copy(formState = updatedFormState) }
+		}
+	}
 
-    fun onRepeatPasswordChange(repeatPassword: String) {
-        val state = currentState
-        if (state is RegistrationUiState.Content) {
-            val validationResult = formValidator.validateRepeatPassword(
-                state.formState.password,
-                repeatPassword
-            )
+	fun onRepeatPasswordChange(repeatPassword: String) {
+		val state = currentState
+		if (state is RegistrationUiState.Content) {
+			val validationResult = formValidator.validateRepeatPassword(
+				state.formState.password,
+				repeatPassword
+			)
 
-            val updatedFormState = state.formState.copy(
-                repeatPassword = validationResult.data,
-                repeatPasswordError = null
-            )
+			val updatedFormState = state.formState.copy(
+				repeatPassword = validationResult.data,
+				repeatPasswordError = null
+			)
 
-            updateState { state.copy(formState = updatedFormState) }
-        }
-    }
+			updateState { state.copy(formState = updatedFormState) }
+		}
+	}
 
-    fun onRegisterClick() {
-        val state = currentState
-        if (state is RegistrationUiState.Content) {
-            // Валидируем форму через helper - чисто и просто!
-            val (validatedFormState, hasErrors) = formValidator.validateAndApply(state.formState)
+	fun onRegisterClick() {
+		val state = currentState
+		if (state is RegistrationUiState.Content) {
+			// Валидируем форму через helper - чисто и просто!
+			val (validatedFormState, hasErrors) = formValidator.validateAndApply(state.formState)
 
-            if (hasErrors) {
-                // Применяем ошибки к состоянию
-                updateState { state.copy(formState = validatedFormState) }
-                Log.w("RegistrationViewModel", "Form validation failed")
-                return
-            }
+			if (hasErrors) {
+				// Применяем ошибки к состоянию
+				updateState { state.copy(formState = validatedFormState) }
+				Log.w("RegistrationViewModel", "Form validation failed")
+				return
+			}
 
-            // Валидация прошла успешно - показываем Loading
-            updateState { RegistrationUiState.Loading }
+			// Валидация прошла успешно - показываем Loading
+			updateState { RegistrationUiState.Loading }
 
-            // Создаем модель для отправки из валидированной формы
-            val registrationModel = state.registrationModelUi.copy(
-                name = validatedFormState.name,
-                email = validatedFormState.email,
-                password = validatedFormState.password,
-                repeatPassword = validatedFormState.repeatPassword
-            )
+			// Создаем модель для отправки из валидированной формы
+			val registrationModel = state.registrationModelUi.copy(
+				name = validatedFormState.name,
+				email = validatedFormState.email,
+				password = validatedFormState.password,
+				repeatPassword = validatedFormState.repeatPassword
+			)
 
-            launch {
-                val response = registrationAccountUseCase(
-                    registrationModel.toDomain()
-                ).toUiModel()
+			launch {
+				val response = registrationAccountUseCase(
+					registrationModel.toDomain()
+				).toUiModel()
 
-                when (response) {
-                    is RegistrationResultUi.Success -> {
-                        sendEvent(
-                            RegistrationNavigationEvent.NavigateToConfirmation(
-                                email = validatedFormState.email,
-                                type = TypeConfirmationUi.REGISTRATION
-                            )
-                        )
-                    }
+				when (response) {
+					is RegistrationResultUi.Success -> {
+						sendEvent(
+							RegistrationEvent.NavigateToConfirmation(
+								email = validatedFormState.email,
+								type = TypeConfirmationUi.REGISTRATION
+							)
+						)
+					}
 
-                    is RegistrationResultUi.Error -> {
-                        updateState { RegistrationUiState.Error(response.message) }
-                    }
-                }
-            }
-        }
-    }
+					is RegistrationResultUi.Error   -> {
+						sendEvent(RegistrationEvent.ShowSnackBar(response.message))
+						updateState { RegistrationUiState.Content(state.registrationModelUi, validatedFormState) }
+					}
+				}
+			}
+		}
+	}
 
-    fun createUserAccount() {
-        launch {
-            val user = createUserAccountUseCase().toUiModel()
+	fun resetError() {
+		createUserAccount()
+	}
 
-            val initialFormState = RegistrationFormState(
-                name = user.name,
-                email = user.email,
-                password = user.password,
-                repeatPassword = user.repeatPassword
-            )
+	fun createUserAccount() {
+		launch {
+			val user = createUserAccountUseCase().toUiModel()
 
-            updateState {
-                RegistrationUiState.Content(
-                    registrationModelUi = user,
-                    formState = initialFormState
-                )
-            }
-        }
-    }
+			val initialFormState = RegistrationFormState(
+				name = user.name,
+				email = user.email,
+				password = user.password,
+				repeatPassword = user.repeatPassword
+			)
+
+			updateState {
+				RegistrationUiState.Content(
+					registrationModelUi = user,
+					formState = initialFormState
+				)
+			}
+		}
+	}
 }

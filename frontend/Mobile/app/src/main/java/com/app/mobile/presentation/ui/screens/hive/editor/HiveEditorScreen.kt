@@ -22,10 +22,14 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -45,87 +49,98 @@ import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.screens.hive.editor.models.HiveEditorActions
-import com.app.mobile.presentation.ui.screens.hive.editor.viewmodel.HiveEditorNavigationEvent
+import com.app.mobile.presentation.ui.screens.hive.editor.viewmodel.HiveEditorEvent
 import com.app.mobile.presentation.ui.screens.hive.editor.viewmodel.HiveEditorUiState
 import com.app.mobile.presentation.ui.screens.hive.editor.viewmodel.HiveEditorViewModel
 import com.app.mobile.ui.theme.Dimens
 
 @Composable
 fun HiveEditorScreen(
-    hiveEditorViewModel: HiveEditorViewModel,
-    onBackClick: () -> Unit,
-    onCreateQueenClick: () -> Unit,
-    onCreateHubClick: () -> Unit
+	hiveEditorViewModel: HiveEditorViewModel,
+	onBackClick: () -> Unit,
+	onCreateQueenClick: () -> Unit,
+	onCreateHubClick: () -> Unit
 ) {
-    val hiveEditorUiState by hiveEditorViewModel.uiState.collectAsStateWithLifecycle()
+	val hiveEditorUiState by hiveEditorViewModel.uiState.collectAsStateWithLifecycle()
+	val snackbarHostState = remember { SnackbarHostState() }
 
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        hiveEditorViewModel.loadHive()
-    }
+	LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+		hiveEditorViewModel.loadHive()
+	}
 
-    ObserveAsEvents(hiveEditorViewModel.event) { event ->
-        when (event) {
-            is HiveEditorNavigationEvent.NavigateToCreateQueen -> onCreateQueenClick()
-            is HiveEditorNavigationEvent.NavigateToCreateHub -> onCreateHubClick()
-            is HiveEditorNavigationEvent.NavigateBack -> onBackClick()
-        }
-    }
+	ObserveAsEvents(hiveEditorViewModel.event) { event ->
+		when (event) {
+			is HiveEditorEvent.NavigateToCreateQueen -> onCreateQueenClick()
+			is HiveEditorEvent.NavigateToCreateHub   -> onCreateHubClick()
+			is HiveEditorEvent.NavigateBack          -> onBackClick()
 
-    when (val state = hiveEditorUiState) {
-        is HiveEditorUiState.Loading -> FullScreenProgressIndicator()
-        is HiveEditorUiState.Error -> ErrorMessage(state.message, onRetry = {})
-        is HiveEditorUiState.Content -> {
-            val actions = HiveEditorActions(
-                onNameChange = hiveEditorViewModel::onNameChange,
-                onCreateQueenClick = hiveEditorViewModel::onCreateQueenClick,
-                onCreateHubClick = hiveEditorViewModel::onCreateHubClick,
-                onAddQueenClick = hiveEditorViewModel::onQueenAdd,
-                onAddHubClick = hiveEditorViewModel::onHubAdd,
-                onSaveClick = hiveEditorViewModel::onSaveClick
-            )
-            HiveEditorContent(state.hiveEditorModel, actions, onBackClick)
-        }
-    }
+			is HiveEditorEvent.ShowSnackBar          -> {
+				snackbarHostState.showSnackbar(
+					message = event.message,
+					duration = SnackbarDuration.Short
+				)
+			}
+		}
+	}
+
+	when (val state = hiveEditorUiState) {
+		is HiveEditorUiState.Loading -> FullScreenProgressIndicator()
+		is HiveEditorUiState.Error   -> ErrorMessage(state.message, onRetry = {})
+
+		is HiveEditorUiState.Content -> {
+			val actions = HiveEditorActions(
+				onNameChange = hiveEditorViewModel::onNameChange,
+				onCreateQueenClick = hiveEditorViewModel::onCreateQueenClick,
+				onCreateHubClick = hiveEditorViewModel::onCreateHubClick,
+				onAddQueenClick = hiveEditorViewModel::onQueenAdd,
+				onAddHubClick = hiveEditorViewModel::onHubAdd,
+				onSaveClick = hiveEditorViewModel::onSaveClick
+			)
+			HiveEditorContent(state.hiveEditorModel, snackbarHostState, actions, onBackClick)
+		}
+	}
 }
 
 @Composable
 fun HiveEditorContent(
-    hiveEditorModel: HiveEditorModel,
-    actions: HiveEditorActions,
-    onBackClick: () -> Unit
+	hiveEditorModel: HiveEditorModel,
+	snackbarHostState: SnackbarHostState,
+	actions: HiveEditorActions,
+	onBackClick: () -> Unit
 ) {
-    Scaffold(
-        topBar = {
-            AppTopBar(
-                title = stringResource(R.string.hive_edit_title), // Убедись, что строка есть в ресурсах
-                onBackClick = onBackClick
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(Dimens.ScreenContentPadding),
-            verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingLarge)
-        ) {
+	Scaffold(
+		topBar = {
+			AppTopBar(
+				title = stringResource(R.string.hive_edit_title), // Убедись, что строка есть в ресурсах
+				onBackClick = onBackClick
+			)
+		},
+		snackbarHost = { SnackbarHost(snackbarHostState) },
+		containerColor = MaterialTheme.colorScheme.surfaceVariant
+	) { innerPadding ->
+		Column(
+			modifier = Modifier
+				.padding(innerPadding)
+				.fillMaxSize()
+				.verticalScroll(rememberScrollState())
+				.padding(Dimens.ScreenContentPadding),
+			verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingLarge)
+		) {
 
-            // Поле ввода названия
-            Column(verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)) {
-                Text(
-                    text = stringResource(R.string.hive_name_label),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                CustomTextField(
-                    value = hiveEditorModel.name,
-                    onValueChange = actions.onNameChange,
-                    placeholder = stringResource(R.string.hive_name_placeholder),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+			// Поле ввода названия
+			Column(verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)) {
+				Text(
+					text = stringResource(R.string.hive_name_label),
+					style = MaterialTheme.typography.labelLarge,
+					color = MaterialTheme.colorScheme.onSurfaceVariant
+				)
+				CustomTextField(
+					value = hiveEditorModel.name,
+					onValueChange = actions.onNameChange,
+					placeholder = stringResource(R.string.hive_name_placeholder),
+					modifier = Modifier.fillMaxWidth()
+				)
+			}
 
 //            // Секция Хабов (Grid)
             SelectionGridSection(
@@ -137,81 +152,81 @@ fun HiveEditorContent(
                 iconVector = ImageVector.vectorResource(R.drawable.ic_sensors),
             )
 
-            // Секция Маток (Grid)
-            SelectionGridSection(
-                title = stringResource(R.string.available_queens),
-                items = hiveEditorModel.queens.map { it.id to it.name },
-                selectedId = hiveEditorModel.connectedQueenId,
-                onItemSelected = actions.onAddQueenClick,
-                onCreateClick = actions.onCreateQueenClick,
-                // Тут можно добавить другую логику отображения, если нужно больше полей
-            )
+			// Секция Маток (Grid)
+			SelectionGridSection(
+				title = stringResource(R.string.available_queens),
+				items = hiveEditorModel.queens.map { it.id to it.name },
+				selectedId = hiveEditorModel.connectedQueenId,
+				onItemSelected = actions.onAddQueenClick,
+				onCreateClick = actions.onCreateQueenClick,
+				// Тут можно добавить другую логику отображения, если нужно больше полей
+			)
 
-            Spacer(modifier = Modifier.weight(1f))
+			Spacer(modifier = Modifier.weight(1f))
 
-            PrimaryButton(
-                text = stringResource(R.string.save),
-                onClick = actions.onSaveClick,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-    }
+			PrimaryButton(
+				text = stringResource(R.string.save),
+				onClick = actions.onSaveClick,
+				modifier = Modifier.fillMaxWidth()
+			)
+		}
+	}
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SelectionGridSection(
-    title: String,
-    items: List<Pair<String, String>>, // ID, Name
-    selectedId: String?,
-    onItemSelected: (String) -> Unit,
-    onCreateClick: () -> Unit,
-    iconVector: androidx.compose.ui.graphics.vector.ImageVector? = null
+	title: String,
+	items: List<Pair<String, String>>, // ID, Name
+	selectedId: String?,
+	onItemSelected: (String) -> Unit,
+	onCreateClick: () -> Unit,
+	iconVector: androidx.compose.ui.graphics.vector.ImageVector? = null
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+	Column(
+		modifier = Modifier.fillMaxWidth(),
+		verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
+	) {
+		Text(
+			text = title,
+			style = MaterialTheme.typography.titleMedium,
+			color = MaterialTheme.colorScheme.onSurface
+		)
 
-        // FlowRow автоматически переносит элементы на новую строку
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
-            verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
-        ) {
-            // Рендерим существующие элементы
-            items.forEach { (id, name) ->
-                val isSelected = id == selectedId
-                ItemSelectionCard(
-                    name = name,
-                    isSelected = isSelected,
-                    iconVector = iconVector,
-                    onClick = { onItemSelected(id) },
-                    modifier = Modifier.weight(1f, fill = false) // fill=false чтобы не растягивались уродливо
-                )
-            }
+		// FlowRow автоматически переносит элементы на новую строку
+		FlowRow(
+			modifier = Modifier.fillMaxWidth(),
+			horizontalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
+			verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
+		) {
+			// Рендерим существующие элементы
+			items.forEach { (id, name) ->
+				val isSelected = id == selectedId
+				ItemSelectionCard(
+					name = name,
+					isSelected = isSelected,
+					iconVector = iconVector,
+					onClick = { onItemSelected(id) },
+					modifier = Modifier.weight(1f, fill = false) // fill=false чтобы не растягивались уродливо
+				)
+			}
 
-            // Кнопка добавления (+)
-            AddItemCard(
-                onClick = onCreateClick,
-                modifier = Modifier.weight(1f, fill = false)
-            )
-        }
-    }
+			// Кнопка добавления (+)
+			AddItemCard(
+				onClick = onCreateClick,
+				modifier = Modifier.weight(1f, fill = false)
+			)
+		}
+	}
 }
 
 @Composable
 private fun ItemSelectionCard(
-    name: String,
-    isSelected: Boolean,
-    iconVector: androidx.compose.ui.graphics.vector.ImageVector?,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+	name: String,
+	isSelected: Boolean,
+	iconVector: androidx.compose.ui.graphics.vector.ImageVector?,
+	onClick: () -> Unit,
+	modifier: Modifier = Modifier
 ) {
     val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
     val borderWidth = if (isSelected) Dimens.BorderWidthNormal else Dimens.Null
@@ -255,8 +270,8 @@ private fun ItemSelectionCard(
 
 @Composable
 private fun AddItemCard(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+	onClick: () -> Unit,
+	modifier: Modifier = Modifier
 ) {
     Surface(
         onClick = onClick,

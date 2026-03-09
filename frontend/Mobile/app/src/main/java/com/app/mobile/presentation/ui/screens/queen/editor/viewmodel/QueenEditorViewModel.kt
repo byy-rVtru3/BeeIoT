@@ -25,7 +25,7 @@ class QueenEditorViewModel(
     private val getHivesPreviewUseCase: GetHivesPreviewUseCase,
     private val calcQueenCalendarUseCase: CalcQueenCalendarUseCase,
     private val saveQueenUseCase: SaveQueenUseCase
-) : BaseViewModel<QueenEditorUiState, QueenEditorNavigationEvent>(QueenEditorUiState.Loading) {
+) : BaseViewModel<QueenEditorUiState, QueenEditorEvent>(QueenEditorUiState.Loading) {
 
     private val route = savedStateHandle.toRoute<QueenEditorRoute>()
     private val queenId = route.queenId
@@ -80,6 +80,7 @@ class QueenEditorViewModel(
         }
     }
 
+    fun resetError() = loadQueen()
     fun onSaveClick() {
         val state = currentState
         if (state is QueenEditorUiState.Content) {
@@ -91,14 +92,13 @@ class QueenEditorViewModel(
                                 .toDomain() // так себе но пойдет
                                 .toDomain(result.queenLifecycle)
                         )
-                        sendEvent(QueenEditorNavigationEvent.NavigateBack)
+                        sendEvent(QueenEditorEvent.NavigateBack)
                     }
 
                     is QueenCalendarRequestResult.Error -> {
-                        updateState { QueenEditorUiState.Error(result.message) }
+                        sendEvent(QueenEditorEvent.ShowSnackBar(result.message))
                     }
                 }
-
             }
         }
     }

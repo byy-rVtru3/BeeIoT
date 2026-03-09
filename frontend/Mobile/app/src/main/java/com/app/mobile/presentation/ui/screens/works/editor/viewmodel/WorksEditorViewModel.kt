@@ -17,7 +17,7 @@ class WorksEditorViewModel(
     private val createWorkUseCase: CreateWorkUseCase,
     private val getWorkUseCase: GetWorkUseCase,
     private val saveWorkUseCase: SaveWorkUseCase
-) : BaseViewModel<WorksEditorUiState, WorksEditorNavigationEvent>(WorksEditorUiState.Loading) {
+) : BaseViewModel<WorksEditorUiState, WorksEditorEvent>(WorksEditorUiState.Loading) {
 
     private val route = savedStateHandle.toRoute<WorkEditorRoute>()
     private val hiveId = route.hiveId
@@ -64,9 +64,11 @@ class WorksEditorViewModel(
             launch {
                 saveWorkUseCase(state.work.toDomain())
                 sendEvent(
-                    WorksEditorNavigationEvent.NavigateToWorksList(state.work.hiveId)
+                    WorksEditorEvent.NavigateToWorksList(state.work.hiveId)
                 )
             }
         }
     }
+
+    fun resetError() = loadWork()
 }

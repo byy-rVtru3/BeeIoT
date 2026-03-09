@@ -13,7 +13,7 @@ fun <T> ObserveAsEvents(
     flow: kotlinx.coroutines.flow.Flow<T>,
     key1: Any? = null,
     key2: Any? = null,
-    onEvent: (T) -> Unit
+    onEvent: suspend (T) -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
 

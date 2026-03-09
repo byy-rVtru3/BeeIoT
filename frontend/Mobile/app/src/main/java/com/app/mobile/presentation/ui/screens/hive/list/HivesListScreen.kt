@@ -1,13 +1,27 @@
 package com.app.mobile.presentation.ui.screens.hive.list
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
@@ -20,71 +34,87 @@ import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.HiveItemCard
 import com.app.mobile.presentation.ui.components.ObserveAsEvents
+import com.app.mobile.presentation.ui.components.SelectorTopBar
 import com.app.mobile.presentation.ui.components.TabbedScreenScaffold
 import com.app.mobile.presentation.ui.screens.hive.list.models.HivesListActions
-import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListNavigationEvent
+import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListEvent
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListUiState
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListViewModel
 import com.app.mobile.ui.theme.Dimens
 
 @Composable
 fun HivesListScreen(
-    hivesListViewModel: HivesListViewModel,
-    onHiveClick: (String) -> Unit,
-    onCreateHiveClick: () -> Unit
+	hivesListViewModel: HivesListViewModel,
+	onHiveClick: (String) -> Unit,
+	onCreateHiveClick: () -> Unit
 ) {
-    val hivesListUiState by hivesListViewModel.uiState.collectAsStateWithLifecycle()
-    val selectedTab by hivesListViewModel.selectedTab.collectAsStateWithLifecycle()
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        hivesListViewModel.loadHives()
-    }
+	val hivesListUiState by hivesListViewModel.uiState.collectAsStateWithLifecycle()
 
-    ObserveAsEvents(hivesListViewModel.event) { event ->
-        when (event) {
-            is HivesListNavigationEvent.NavigateToHive -> {
-                onHiveClick(event.hiveId)
-            }
+	val snackbarHostState = remember { SnackbarHostState() }
 
-            is HivesListNavigationEvent.NavigateToCreateHive -> {
-                onCreateHiveClick()
-            }
-        }
-    }
+	val selectedTab by hivesListViewModel.selectedTab.collectAsStateWithLifecycle()
+	LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+		hivesListViewModel.loadHives()
+	}
 
-    when (val state = hivesListUiState) {
-        is HivesListUiState.Loading -> FullScreenProgressIndicator()
+	ObserveAsEvents(hivesListViewModel.event) { event ->
+		when (event) {
+			is HivesListEvent.NavigateToHive -> {
+				onHiveClick(event.hiveId)
+			}
 
-        is HivesListUiState.Error -> ErrorMessage(
-            message = state.message,
-            onRetry = hivesListViewModel::onRetry
-        )
+			is HivesListEvent.NavigateToCreateHive -> {
+				onCreateHiveClick()
+			}
 
-        is HivesListUiState.Empty -> EmptyHivesListScreen(
-            selectedTab = selectedTab,
-            onTabSelected = hivesListViewModel::onTabSelected,
-            onCreateHiveClick = hivesListViewModel::onCreateHiveClick
-        )
+			is HivesListEvent.ShowSnackBar -> {
+				snackbarHostState.showSnackbar(
+					event.message,
+					duration = SnackbarDuration.Short
+				)
+			}
+		}
+	}
 
-        is HivesListUiState.Content -> {
-            val actions = HivesListActions(
-                onHiveClick = hivesListViewModel::onHiveClick,
-                onCreateHiveClick = hivesListViewModel::onCreateHiveClick
-            )
-            HivesListContent(
-                state.hives, actions,
-                selectedTab = selectedTab,
-                onTabSelected = hivesListViewModel::onTabSelected
-            )
-        }
-    }
+	when (val state = hivesListUiState) {
+		is HivesListUiState.Loading -> FullScreenProgressIndicator()
+
+		is HivesListUiState.Error   -> ErrorMessage(
+			message = state.message,
+			onRetry = hivesListViewModel::onRetry
+		)
+
+		is HivesListUiState.Empty   -> EmptyHivesListScreen(
+			selectedTab = selectedTab,
+			onTabSelected = hivesListViewModel::onTabSelected,
+			onCreateHiveClick = hivesListViewModel::onCreateHiveClick
+		)
+
+		is HivesListUiState.Content -> {
+			val actions = HivesListActions(
+				onHiveClick = hivesListViewModel::onHiveClick,
+				onCreateHiveClick = hivesListViewModel::onCreateHiveClick
+			)
+			HivesListContent(
+				state.hives,
+				snackbarHostState,
+				actions,
+				selectedTab = selectedTab,
+				onTabSelected = hivesListViewModel::onTabSelected
+			)
+		}
+	}
 
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HivesListContent(
-    hives: List<HivePreview>, actions: HivesListActions, selectedTab: Int,
-    onTabSelected: (Int) -> Unit
+	hives: List<HivePreview>,
+	snackbarHostState: SnackbarHostState,
+	actions: HivesListActions,
+	selectedTab: Int,
+	onTabSelected: (Int) -> Unit
 ) {
     val tabs = listOf(stringResource(R.string.active_hives), stringResource(R.string.archive))
 
@@ -124,46 +154,46 @@ private fun HivesListContent(
 
 @Composable
 private fun HivesList(
-    hives: List<HivePreview>,
-    actions: HivesListActions,
-    modifier: Modifier = Modifier
+	hives: List<HivePreview>,
+	actions: HivesListActions,
+	modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = Dimens.ScreenContentPadding),
-        verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
-        contentPadding = PaddingValues(
-            top = Dimens.ScreenContentPadding,
-            bottom = Dimens.ScreenContentPadding
-        )
-    ) {
-        items(hives) { hive ->
-            HiveItem(hive, actions.onHiveClick)
-        }
-    }
+	LazyColumn(
+		modifier = modifier
+			.fillMaxSize()
+			.padding(horizontal = Dimens.ScreenContentPadding),
+		verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
+		contentPadding = PaddingValues(
+			top = Dimens.ScreenContentPadding,
+			bottom = Dimens.ScreenContentPadding
+		)
+	) {
+		items(hives) { hive ->
+			HiveItem(hive, actions.onHiveClick)
+		}
+	}
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HiveItem(hive: HivePreview, onHiveClick: (String) -> Unit) {
-    HiveItemCard(
-        name = hive.name,
-        // TODO: Добавьте поле lastConnection в модель HivePreview
-        lastConnection = "2024.04.12",
+	HiveItemCard(
+		name = hive.name,
+		// TODO: Добавьте поле lastConnection в модель HivePreview
+		lastConnection = "2024.04.12",
 
-        // TODO: Добавьте поле isConnected (Boolean) в модель HivePreview
-        isSignalActive = true, // Если true - иконка черная, false - серая
+		// TODO: Добавьте поле isConnected (Boolean) в модель HivePreview
+		isSignalActive = true, // Если true - иконка черная, false - серая
 
-        onClick = { onHiveClick(hive.id) }
-    )
+		onClick = { onHiveClick(hive.id) }
+	)
 }
 
 @Composable
 private fun EmptyHivesListScreen(
-    selectedTab: Int,
-    onTabSelected: (Int) -> Unit,
-    onCreateHiveClick: () -> Unit
+	selectedTab: Int,
+	onTabSelected: (Int) -> Unit,
+	onCreateHiveClick: () -> Unit
 ) {
     val tabs = listOf(stringResource(R.string.active_hives), stringResource(R.string.archive))
 

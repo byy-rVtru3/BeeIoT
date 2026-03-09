@@ -3,13 +3,15 @@ package com.app.mobile.presentation.ui.screens.authorization
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,8 +33,8 @@ import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.components.Title
 import com.app.mobile.presentation.ui.components.ValidatedTextField
 import com.app.mobile.presentation.ui.screens.authorization.models.AuthorizationActions
+import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationEvent
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationFormState
-import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationNavigationEvent
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationUiState
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationViewModel
 import com.app.mobile.presentation.validators.ValidationConfig
@@ -42,191 +44,206 @@ import com.app.mobile.ui.theme.MobileTheme
 
 @Composable
 fun AuthorizationScreen(
-    authorizationViewModel: AuthorizationViewModel,
-    onAuthorizeClick: () -> Unit,
-    onRegistrationClick: () -> Unit
+	authorizationViewModel: AuthorizationViewModel,
+	onAuthorizeClick: () -> Unit,
+	onRegistrationClick: () -> Unit
 ) {
-    val authorizationUiState by authorizationViewModel.uiState.collectAsStateWithLifecycle()
+	val authorizationUiState by authorizationViewModel.uiState.collectAsStateWithLifecycle()
+	val snackBarHostState = remember { SnackbarHostState() }
 
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        authorizationViewModel.createAuthorizationModel()
-    }
+	LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+		authorizationViewModel.createAuthorizationModel()
+	}
 
-    ObserveAsEvents(authorizationViewModel.event) { event ->
-        when (event) {
-            is AuthorizationNavigationEvent.NavigateToMainScreen -> onAuthorizeClick()
-            is AuthorizationNavigationEvent.NavigateToRegistration -> onRegistrationClick()
-        }
-    }
+	ObserveAsEvents(authorizationViewModel.event) { event ->
+		when (event) {
+			is AuthorizationEvent.NavigateToMainScreen -> onAuthorizeClick()
+			is AuthorizationEvent.NavigateToRegistration -> onRegistrationClick()
 
-    val isValidationEnabled = remember { mutableStateOf(ValidationConfig.isValidationEnabled) }
+			is AuthorizationEvent.ShowSnackBar -> {
+				snackBarHostState.showSnackbar(
+					message = event.message,
+					duration = SnackbarDuration.Short
+				)
+			}
+		}
+	}
 
-    when (val state = authorizationUiState) {
-        is AuthorizationUiState.Loading -> {
-            FullScreenProgressIndicator()
-        }
+	val isValidationEnabled = remember { mutableStateOf(ValidationConfig.isValidationEnabled) }
 
-        is AuthorizationUiState.Error -> {
-            ErrorMessage(message = state.message) {}
-        }
+	when (val state = authorizationUiState) {
+		is AuthorizationUiState.Loading -> {
+			FullScreenProgressIndicator()
+		}
 
-        is AuthorizationUiState.Content -> {
-            val formState = state.formState
+		is AuthorizationUiState.Error   -> {
+			ErrorMessage(message = state.message, authorizationViewModel::resetError)
+		}
 
-            val actions = AuthorizationActions(
-                onEmailChange = authorizationViewModel::onEmailChange,
-                onPasswordChange = authorizationViewModel::onPasswordChange,
-                onAuthorizeClick = authorizationViewModel::onAuthorizeClick,
-                onRegistrationClick = authorizationViewModel::onRegistrationClick
-            )
+		is AuthorizationUiState.Content -> {
+			val formState = state.formState
 
-            Box(modifier = Modifier.fillMaxSize()) {
-                AuthorizationContent(
-                    formState = formState,
-                    actions = actions
-                )
+			val actions = AuthorizationActions(
+				onEmailChange = authorizationViewModel::onEmailChange,
+				onPasswordChange = authorizationViewModel::onPasswordChange,
+				onAuthorizeClick = authorizationViewModel::onAuthorizeClick,
+				onRegistrationClick = authorizationViewModel::onRegistrationClick
+			)
 
-                DeveloperPanel(
-                    isValidationEnabled = isValidationEnabled,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(Dimens.ScreenContentPadding)
-                )
-            }
-        }
-    }
+			Box(modifier = Modifier.fillMaxSize()) {
+				AuthorizationContent(
+					formState = formState,
+					snackBarHostState = snackBarHostState,
+					actions = actions
+				)
+
+				DeveloperPanel(
+					isValidationEnabled = isValidationEnabled,
+					modifier = Modifier
+						.align(Alignment.BottomEnd)
+						.padding(Dimens.ScreenContentPadding)
+				)
+			}
+		}
+	}
 }
 
 @Composable
 private fun AuthorizationContent(
-    formState: AuthorizationFormState,
-    actions: AuthorizationActions
+	formState: AuthorizationFormState,
+	snackBarHostState: SnackbarHostState,
+	actions: AuthorizationActions
 ) {
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(
-                    horizontal = Dimens.OpenScreenPaddingHorizontal,
-                    vertical = Dimens.OpenScreenPaddingVertical
-                ),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Title(
-                text = stringResource(R.string.authorization_title),
-                modifier = Modifier.padding(top = Dimens.TitleTopPadding)
-            )
 
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingSmall)
-            ) {
-                AuthorizationEmailTextField(
-                    email = formState.email,
-                    emailError = formState.emailError,
-                    onEmailChange = actions.onEmailChange
-                )
+	Scaffold(
+		snackbarHost = { SnackbarHost(snackBarHostState) },
+		contentWindowInsets = WindowInsets.safeDrawing,
+	) { paddingValues ->
+		Column(
+			modifier = Modifier
+				.fillMaxSize()
+				.padding(paddingValues)
+				.padding(
+					horizontal = Dimens.OpenScreenPaddingHorizontal,
+					vertical = Dimens.OpenScreenPaddingVertical
+				),
+			horizontalAlignment = Alignment.CenterHorizontally,
+			verticalArrangement = Arrangement.SpaceBetween,
+		) {
+			Title(
+				text = stringResource(R.string.authorization_title),
+				modifier = Modifier.padding(top = Dimens.TitleTopPadding)
+			)
 
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.End
-                ) {
-                    AuthorizationPasswordTextField(
-                        password = formState.password,
-                        passwordError = formState.passwordError,
-                        onPasswordChange = actions.onPasswordChange
-                    )
+			Column(
+				modifier = Modifier.fillMaxWidth(),
+				horizontalAlignment = Alignment.CenterHorizontally,
+				verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingSmall)
+			) {
+				AuthorizationEmailTextField(
+					email = formState.email,
+					emailError = formState.emailError,
+					onEmailChange = actions.onEmailChange
+				)
 
-                    ForgotPasswordButton(onClick = { /* TODO */ })
-                }
-            }
+				Column(
+					modifier = Modifier.fillMaxWidth(),
+					horizontalAlignment = Alignment.End
+				) {
+					AuthorizationPasswordTextField(
+						password = formState.password,
+						passwordError = formState.passwordError,
+						onPasswordChange = actions.onPasswordChange
+					)
 
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingMedium),
-                modifier = Modifier
-                    .padding(
-                        horizontal = Dimens.ButtonHorizontalPadding
-                    )
-                    .padding(bottom = Dimens.ButtonTwiceVerticalPadding)
-            ) {
-                AuthorizationButton(onClick = actions.onAuthorizeClick)
-                RegistrationButton(onClick = actions.onRegistrationClick)
-            }
-        }
-    }
+					ForgotPasswordButton(onClick = { /* TODO */ })
+				}
+			}
+
+			Column(
+				horizontalAlignment = Alignment.CenterHorizontally,
+				verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingMedium),
+				modifier = Modifier
+					.padding(
+						horizontal = Dimens.ButtonHorizontalPadding
+					)
+					.padding(bottom = Dimens.ButtonTwiceVerticalPadding)
+			) {
+				AuthorizationButton(onClick = actions.onAuthorizeClick)
+				RegistrationButton(onClick = actions.onRegistrationClick)
+			}
+		}
+	}
 }
 
 @Composable
 fun AuthorizationEmailTextField(
-    email: String,
-    emailError: ValidationError?,
-    onEmailChange: (String) -> Unit
+	email: String,
+	emailError: ValidationError?,
+	onEmailChange: (String) -> Unit
 ) {
-    ValidatedTextField(
-        value = email,
-        onValueChange = onEmailChange,
-        placeholder = stringResource(R.string.email),
-        error = emailError
-    )
+	ValidatedTextField(
+		value = email,
+		onValueChange = onEmailChange,
+		placeholder = stringResource(R.string.email),
+		error = emailError
+	)
 }
 
 @Composable
 fun AuthorizationPasswordTextField(
-    password: String,
-    passwordError: ValidationError?,
-    onPasswordChange: (String) -> Unit
+	password: String,
+	passwordError: ValidationError?,
+	onPasswordChange: (String) -> Unit
 ) {
-    PasswordTextField(
-        value = password,
-        onValueChange = onPasswordChange,
-        placeholder = stringResource(R.string.password),
-        error = passwordError
-    )
+	PasswordTextField(
+		value = password,
+		onValueChange = onPasswordChange,
+		placeholder = stringResource(R.string.password),
+		error = passwordError
+	)
 }
 
 @Composable
 fun AuthorizationButton(onClick: () -> Unit) {
-    PrimaryButton(
-        text = stringResource(R.string.authorization_button),
-        onClick = onClick
-    )
+	PrimaryButton(
+		text = stringResource(R.string.authorization_button),
+		onClick = onClick
+	)
 }
 
 @Composable
 fun RegistrationButton(onClick: () -> Unit) {
-    PrimaryButton(
-        text = stringResource(R.string.registration_button),
-        onClick = onClick
-    )
+	PrimaryButton(
+		text = stringResource(R.string.registration_button),
+		onClick = onClick
+	)
 }
 
 @Composable
 fun ForgotPasswordButton(onClick: () -> Unit) {
-    LabelButton(
-        text = stringResource(R.string.forgot_password),
-        onClick = onClick,
-        modifier = Modifier.padding(top = Dimens.TextFieldErrorTopPadding)
-    )
+	LabelButton(
+		text = stringResource(R.string.forgot_password),
+		onClick = onClick,
+		modifier = Modifier.padding(top = Dimens.TextFieldErrorTopPadding)
+	)
 }
 
 @Preview(showBackground = true)
 @Composable
 fun AuthorizationContentPreview() {
-    MobileTheme {
-        val formState = AuthorizationFormState()
-        val actions = AuthorizationActions(
-            onEmailChange = {},
-            onPasswordChange = {},
-            onAuthorizeClick = {},
-            onRegistrationClick = {}
-        )
-        AuthorizationContent(
-            formState = formState,
-            actions = actions
-        )
-    }
+	MobileTheme {
+		val formState = AuthorizationFormState()
+		val actions = AuthorizationActions(
+			onEmailChange = {},
+			onPasswordChange = {},
+			onAuthorizeClick = {},
+			onRegistrationClick = {}
+		)
+		AuthorizationContent(
+			formState = formState,
+			snackBarHostState = SnackbarHostState(),
+			actions = actions
+		)
+	}
 }

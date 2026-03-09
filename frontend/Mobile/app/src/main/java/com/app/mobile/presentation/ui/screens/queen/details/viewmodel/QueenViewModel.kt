@@ -13,7 +13,7 @@ class QueenViewModel(
     savedStateHandle: SavedStateHandle,
     private val getQueenUseCase: GetQueenUseCase,
     private val getHivePreviewUseCase: GetHivePreviewUseCase
-) : BaseViewModel<QueenUiState, QueenNavigationEvent>(QueenUiState.Loading) {
+) : BaseViewModel<QueenUiState, QueenEvent>(QueenUiState.Loading) {
 
     private val route = savedStateHandle.toRoute<QueenRoute>()
     private val queenId = route.queenId
@@ -33,16 +33,19 @@ class QueenViewModel(
                 val hive = queen.hiveId?.let { getHivePreviewUseCase(it) }
                 updateState { QueenUiState.Content(queen.toUiModel(hive)) }
             } else {
-                updateState { QueenUiState.Error("Матка не найдена") }
+                sendEvent(QueenEvent.ShowSnackBar("Матка не найдена"))
+                sendEvent(QueenEvent.NavigateBack)
             }
         }
     }
+
+    fun resetError() = getQueen()
 
     fun onEditQueenClick() {
         val state = currentState
         if (state is QueenUiState.Content) {
             sendEvent(
-                QueenNavigationEvent.NavigateToEditQueen(state.queen.id)
+                QueenEvent.NavigateToEditQueen(state.queen.id)
             )
         }
     }
@@ -52,7 +55,7 @@ class QueenViewModel(
         if (state is QueenUiState.Content) {
             if (state.queen.hive?.id != null) {
                 sendEvent(
-                    QueenNavigationEvent.NavigateToHive(state.queen.hive.id)
+                    QueenEvent.NavigateToHive(state.queen.hive.id)
                 )
             }
         }

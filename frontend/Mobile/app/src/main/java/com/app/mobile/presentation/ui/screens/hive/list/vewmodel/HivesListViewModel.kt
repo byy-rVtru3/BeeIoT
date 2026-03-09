@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class HivesListViewModel(
     private val getHivesPreviewUseCase: GetHivesPreviewUseCase
-) : BaseViewModel<HivesListUiState, HivesListNavigationEvent>(HivesListUiState.Loading) {
+) : BaseViewModel<HivesListUiState, HivesListEvent>(HivesListUiState.Loading) {
     private val _selectedTab = MutableStateFlow(0)
     val selectedTab = _selectedTab.asStateFlow()
     override fun handleError(exception: Throwable) {
@@ -45,14 +45,14 @@ class HivesListViewModel(
     fun onHiveClick(hiveId: String) {
         if (currentState is HivesListUiState.Content) {
             updateState { HivesListUiState.Loading }
-            sendEvent(HivesListNavigationEvent.NavigateToHive(hiveId))
+            sendEvent(HivesListEvent.NavigateToHive(hiveId))
         }
     }
 
     fun onCreateHiveClick() {
         if (currentState is HivesListUiState.Content || currentState is HivesListUiState.Empty) {
             updateState { HivesListUiState.Loading }
-            sendEvent(HivesListNavigationEvent.NavigateToCreateHive)
+            sendEvent(HivesListEvent.NavigateToCreateHive)
         }
     }
 }
