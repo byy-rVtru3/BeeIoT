@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import com.app.mobile.R
 import com.app.mobile.presentation.ui.modifiers.styleShadow
+import com.app.mobile.ui.theme.Alpha
 import com.app.mobile.ui.theme.Dimens
 
 sealed interface TopBarAction {
@@ -120,7 +121,7 @@ fun AppTopBar(
                 is TopBarAction.Archive -> Triple(
                     ImageVector.vectorResource(R.drawable.ic_trash),
                     action.onClick,
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    MaterialTheme.colorScheme.primary.copy(alpha = Alpha.Medium)
                 )
 
                 is TopBarAction.Custom -> Triple(
@@ -171,7 +172,7 @@ fun SelectorTopBar(
                 val isSelected = index == selectedTabIndex
                 val color =
                     if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(
-                        alpha = 0.5f
+                        alpha = Alpha.Medium
                     )
 
                 Column(

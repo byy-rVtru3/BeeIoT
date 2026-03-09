@@ -161,17 +161,3 @@ private fun WorksList(
 		}
 	}
 }
-
-@Composable
-private fun EmptyStub(text: String, modifier: Modifier = Modifier) {
-	Box(
-		modifier = modifier.fillMaxSize(),
-		contentAlignment = Alignment.Center
-	) {
-		Text(
-			text = text,
-			style = MaterialTheme.typography.bodyLarge,
-			color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-		)
-	}
-}

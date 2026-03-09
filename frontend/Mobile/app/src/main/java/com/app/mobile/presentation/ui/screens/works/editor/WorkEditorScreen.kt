@@ -39,6 +39,7 @@ import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditor
 import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorUiState
 import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorViewModel
 import com.app.mobile.ui.theme.Dimens
+import com.app.mobile.ui.theme.Alpha
 
 @Composable
 fun WorksEditorScreen(
@@ -92,28 +93,55 @@ fun WorksEditorContent(
 	actions: WorksEditorActions,
 	onNavigateBack: () -> Unit,
 ) {
-	Scaffold(
-		topBar = {
-			AppTopBar(
-				title = if (work.id.isEmpty()) stringResource(R.string.add_work_title) else stringResource(R.string.edit_work_title),
-				onBackClick = onNavigateBack,
-			)
-		},
-		snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-		containerColor = MaterialTheme.colorScheme.surface
-	) { padding ->
-		Column(
-			modifier = Modifier
-				.fillMaxSize()
-				.padding(padding)
-		) {
-			CustomTextField(
-				value = work.title,
-				onValueChange = actions.onTitleChange,
-				placeholder = stringResource(R.string.work_title_placeholder) // "Название работы"
-			)
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                title = if (work.id.isEmpty()) stringResource(R.string.add_work_title) else stringResource(R.string.edit_work_title),
+                onBackClick = onNavigateBack,
+            )
+        },
+      	snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+        containerColor = MaterialTheme.colorScheme.surface
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(Dimens.ScreenContentPadding)
+        ) {
+            CustomTextField(
+                value = work.title,
+                onValueChange = actions.onTitleChange,
+                placeholder = stringResource(R.string.work_title_placeholder) // "Название работы"
+            )
 
-			Spacer(modifier = Modifier.height(Dimens.ItemsSpacingLarge))
+            Spacer(modifier = Modifier.height(Dimens.ItemsSpacingLarge))
+
+            Text(
+                text = stringResource(R.string.work_text_label), // "Текст работы:"
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(Dimens.ItemsSpacingSmall))
+
+            WorkBodyTextField(
+                value = work.text,
+                onValueChange = actions.onTextChange,
+                placeholder = stringResource(R.string.work_text_placeholder)
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            PrimaryButton(
+                text = stringResource(R.string.save),
+                onClick = actions.onSaveClick,
+                modifier = Modifier.padding(bottom = Dimens.ButtonSoloVerticalPadding).padding(horizontal = Dimens.ButtonHorizontalPaddingLarge)
+            )
+        }
+    }
+}
 
 			Text(
 				text = stringResource(R.string.work_text_label), // "Текст работы:"
@@ -150,48 +178,48 @@ private fun WorkBodyTextField(
 	placeholder: String,
 	modifier: Modifier = Modifier
 ) {
-	val borderColor = MaterialTheme.colorScheme.outline
+    val borderColor = MaterialTheme.colorScheme.outline
 
-	BasicTextField(
-		value = value,
-		onValueChange = onValueChange,
-		modifier = modifier
-			.fillMaxWidth()
-			.drawBehind {
-				val strokeWidth = Dimens.BorderWidthNormal.toPx()
-				val y = size.height - strokeWidth / 2
-				drawLine(
-					color = borderColor,
-					start = Offset(0f, y),
-					end = Offset(size.width, y),
-					strokeWidth = strokeWidth
-				)
-			},
-		textStyle = MaterialTheme.typography.bodyMedium.copy(
-			color = MaterialTheme.colorScheme.onSurface
-		),
-		singleLine = false,
-		minLines = 3,
-		maxLines = 15,
-		cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-		decorationBox = { innerTextField ->
-			Box(
-				modifier = Modifier
-					.fillMaxWidth()
-					.padding(
-						horizontal = Dimens.TextFieldPaddingHorizontal,
-						vertical = Dimens.TextFieldPaddingVertical
-					)
-			) {
-				if (value.isEmpty()) {
-					Text(
-						text = placeholder,
-						style = MaterialTheme.typography.bodyMedium,
-						color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-					)
-				}
-				innerTextField()
-			}
-		}
-	)
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier
+            .fillMaxWidth()
+            .drawBehind {
+                val strokeWidth = Dimens.BorderWidthNormal.toPx()
+                val y = size.height - strokeWidth / 2
+                drawLine(
+                    color = borderColor,
+                    start = Offset(0f, y),
+                    end = Offset(size.width, y),
+                    strokeWidth = strokeWidth
+                )
+            },
+        textStyle = MaterialTheme.typography.bodyMedium.copy(
+            color = MaterialTheme.colorScheme.onSurface
+        ),
+        singleLine = false,
+        minLines = 3,
+        maxLines = 15,
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        decorationBox = { innerTextField ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = Dimens.TextFieldPaddingHorizontal,
+                        vertical = Dimens.TextFieldPaddingVertical
+                    )
+            ) {
+                if (value.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.Medium)
+                    )
+                }
+                innerTextField()
+            }
+        }
+    )
 }

@@ -97,6 +97,14 @@
     <string name="edit_work_title">Редактирование работы</string>
     <string name="work_title_placeholder">Название работы</string>
     <string name="work_text_label">Текст работы:</string>
+    <string name="work_text_placeholder">Опишите выполненную работу</string>
+    
+    <!-- Queen Timeline (График развития матки) -->
+    <string name="queen_timeline_title">График развития</string>
+    <string name="queen_timeline_empty">Нет данных о развитии</string>
+    <string name="queen_stage_start">Старт</string>
+    <string name="queen_stage_completed">Завершено</string>
+    <string name="queen_stage_in_progress">В процессе</string>
 
 
 </resources>

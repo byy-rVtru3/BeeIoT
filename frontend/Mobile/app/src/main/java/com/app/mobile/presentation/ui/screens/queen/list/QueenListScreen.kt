@@ -23,6 +23,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
@@ -107,57 +108,44 @@ fun QueenListContent(
 	selectedTab: Int,
 	onTabSelected: (Int) -> Unit
 ) {
-	val tabs = listOf(
-		stringResource(R.string.queens),
-		stringResource(R.string.archive)
-	)
+    val tabs = listOf(
+        stringResource(R.string.queens),
+        stringResource(R.string.archive)
+    )
 
-	Scaffold(
-		topBar = {
-			SelectorTopBar(
-				tabs = tabs,
-				selectedTabIndex = selectedTab,
-				onTabSelected = onTabSelected
-			)
-		},
-		snackbarHost = { SnackbarHost(snackbarHostState) },
-		containerColor = MaterialTheme.colorScheme.surfaceVariant,
-		contentWindowInsets = WindowInsets.safeDrawing,
-		floatingActionButton = {
-			if (selectedTab == 0) {
-				CustomFloatingActionButton(
-					onClick = actions.onAddClick,
-					icon = Icons.Filled.Add,
-					contentDescription = stringResource(R.string.add_queen)
-				)
-			}
-		}
-	) { innerPadding ->
-		when (selectedTab) {
-			0 -> {
-				if (queens.isNotEmpty()) {
-					QueensList(
-						queens = queens,
-						actions = actions,
-						modifier = Modifier.padding(innerPadding)
-					)
-				} else {
-					EmptyStub(
-						text = stringResource(R.string.empty_queens_list_screen),
-						modifier = Modifier.padding(innerPadding)
-					)
-				}
-			}
-
-			1 -> {
-				// Заглушка для архива
-				EmptyStub(
-					text = stringResource(R.string.empty_archive_list_screen),
-					modifier = Modifier.padding(innerPadding)
-				)
-			}
-		}
-	}
+    TabbedScreenScaffold(
+        tabs = tabs,
+        selectedTabIndex = selectedTab,
+        onTabSelected = onTabSelected,
+        showFabOnTab = 0,
+        fabIcon = Icons.Filled.Add,
+        fabContentDescription = stringResource(R.string.add_queen),
+        onFabClick = actions.onAddClick
+    ) { innerPadding ->
+        when (selectedTab) {
+            0 -> {
+                if (queens.isNotEmpty()) {
+                    QueensList(
+                        queens = queens,
+                        actions = actions,
+                        modifier = innerPadding
+                    )
+                } else {
+                    EmptyStub(
+                        text = stringResource(R.string.empty_queens_list_screen),
+                        modifier = innerPadding
+                    )
+                }
+            }
+            1 -> {
+                // Заглушка для архива
+                EmptyStub(
+                    text = stringResource(R.string.empty_archive_list_screen),
+                    modifier = innerPadding
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -190,19 +178,4 @@ private fun QueenItem(queen: QueenPreviewModel, onQueenClick: (String) -> Unit) 
 		onClick = { onQueenClick(queen.id) },
 		displayMode = QueenCardDisplayMode.SHOW_HIVE
 	)
-}
-
-@Composable
-private fun EmptyStub(text: String, modifier: Modifier = Modifier) {
-	Box(
-		modifier = modifier.fillMaxSize(),
-		contentAlignment = Alignment.Center
-	) {
-		Text(
-			text = text,
-			style = MaterialTheme.typography.bodyLarge,
-			color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-			textAlign = androidx.compose.ui.text.style.TextAlign.Center
-		)
-	}
 }

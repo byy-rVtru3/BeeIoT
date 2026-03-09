@@ -44,7 +44,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -282,39 +281,39 @@ private fun ItemSelectionCard(
 	onClick: () -> Unit,
 	modifier: Modifier = Modifier
 ) {
-	val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-	val borderWidth = if (isSelected) 2.dp else 0.dp
+    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+    val borderWidth = if (isSelected) Dimens.BorderWidthNormal else Dimens.Null
 
-	Surface(
-		onClick = onClick,
-		shape = RoundedCornerShape(Dimens.ItemCardRadius),
-		color = MaterialTheme.colorScheme.surface,
-		border = if (isSelected) BorderStroke(borderWidth, borderColor) else null,
-		modifier = modifier
-			.height(80.dp)
-			.widthIn(min = 100.dp)
-	) {
-		Box(modifier = Modifier.padding(Dimens.ItemCardPadding)) {
-			Text(
-				text = name,
-				style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-				maxLines = 2,
-				overflow = TextOverflow.Ellipsis,
-				modifier = Modifier.align(Alignment.TopStart)
-			)
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(Dimens.ItemCardRadius),
+        color = MaterialTheme.colorScheme.surface,
+        border = if (isSelected) BorderStroke(borderWidth, borderColor) else null,
+        modifier = modifier
+            .height(Dimens.SelectionGridItemHeight)
+            .widthIn(min = Dimens.SelectionGridItemMinWidth)
+    ) {
+        Box(modifier = Modifier.padding(Dimens.ItemCardPadding)) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.TopStart)
+            )
 
-			if (iconVector != null) {
-				Icon(
-					imageVector = iconVector,
-					contentDescription = null,
-					modifier = Modifier
-						.align(Alignment.CenterEnd)
-						.size(24.dp),
-					tint = MaterialTheme.colorScheme.onSurface
-				)
-			}
-		}
-	}
+            if (iconVector != null) {
+                Icon(
+                    imageVector = iconVector,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(Dimens.IconSizeMedium),
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -322,30 +321,30 @@ private fun AddItemCard(
 	onClick: () -> Unit,
 	modifier: Modifier = Modifier
 ) {
-	Surface(
-		onClick = onClick,
-		shape = RoundedCornerShape(Dimens.ItemCardRadius),
-		color = MaterialTheme.colorScheme.surface,
-		modifier = modifier
-			.height(80.dp)
-			.widthIn(min = 100.dp)
-	) {
-		Box(
-			contentAlignment = Alignment.Center,
-			modifier = Modifier.fillMaxSize()
-		) {
-			Surface(
-				shape = CircleShape,
-				border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-				color = MaterialTheme.colorScheme.surface
-			) {
-				Icon(
-					imageVector = Icons.Rounded.Add,
-					contentDescription = stringResource(R.string.add),
-					tint = MaterialTheme.colorScheme.primary,
-					modifier = Modifier.padding(4.dp)
-				)
-			}
-		}
-	}
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(Dimens.ItemCardRadius),
+        color = MaterialTheme.colorScheme.surface,
+        modifier = modifier
+            .height(Dimens.SelectionGridItemHeight)
+            .widthIn(min = Dimens.SelectionGridItemMinWidth)
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Surface(
+                shape = CircleShape,
+                border = BorderStroke(Dimens.BorderWidthThin, MaterialTheme.colorScheme.primary),
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Add,
+                    contentDescription = stringResource(R.string.add),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(Dimens.TimelineItemSpacing)
+                )
+            }
+        }
+    }
 }
