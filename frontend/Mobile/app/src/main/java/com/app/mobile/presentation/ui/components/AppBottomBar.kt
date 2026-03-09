@@ -6,8 +6,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -15,7 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -82,31 +85,35 @@ fun AppBottomBar(
     val activeBorderColor = MaterialTheme.colorScheme.outline
     val indicatorShape = RoundedCornerShape(Dimens.BorderRadiusMedium)
 
-    NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = Dimens.Null,
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
         modifier = Modifier
             .styleShadow()
             .clip(RoundedCornerShape(Dimens.BorderRadiusMedium, Dimens.BorderRadiusMedium))
             .navigationBarsPadding()
             .height(Dimens.BottomAppBarHeight)
+            .fillMaxWidth()
     ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = Dimens.ItemSpacingSmallMedium),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            tabs.forEach { tab ->
+                val selected = currentDestination?.hierarchy?.any {
+                    it.hasRoute(tab.route::class)
+                } == true
 
-        tabs.forEach { tab ->
-            val selected = currentDestination?.hierarchy?.any {
-                it.hasRoute(tab.route::class)
-            } == true
-
-
-            CustomBottomNavigationItem(
-                selected = selected,
-                onClick = { onNavigate(tab.route) },
-                icon = tab.icon,
-                label = tab.label,
-                activeBorderColor = activeBorderColor,
-                shape = indicatorShape,
-
+                CustomBottomNavigationItem(
+                    selected = selected,
+                    onClick = { onNavigate(tab.route) },
+                    icon = tab.icon,
+                    label = tab.label,
+                    activeBorderColor = activeBorderColor,
+                    shape = indicatorShape,
                 )
+            }
         }
 
     }

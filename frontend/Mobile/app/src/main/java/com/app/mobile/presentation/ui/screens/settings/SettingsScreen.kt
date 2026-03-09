@@ -77,7 +77,8 @@ fun SettingsScreen(
 			val actions = SettingsActions(
 				onAccountInfoClick = settingsViewModel::onAccountInfoClick,
 				onAboutAppClick = settingsViewModel::onAboutAppClick,
-				onLogoutClick = settingsViewModel::onLogoutClick
+				onLogoutClick = settingsViewModel::onLogoutClick,
+				onToggleTheme = settingsViewModel::onToggleTheme
 			)
 
 			if (state.showNotificationPrompt) {
@@ -95,7 +96,11 @@ fun SettingsScreen(
 				)
 			}
 
-			SettingsContent(actions, snackBarHostState)
+			SettingsContent(
+				actions = actions,
+				snackBarHostState = snackBarHostState,
+				isDarkTheme = state.isDarkTheme
+			)
 		}
 
 		is SettingsUiState.Loading -> FullScreenProgressIndicator()
@@ -105,7 +110,11 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingsContent(actions: SettingsActions, snackBarHostState: SnackbarHostState) {
+private fun SettingsContent(
+	actions: SettingsActions,
+	snackBarHostState: SnackbarHostState,
+	isDarkTheme: Boolean
+) {
 	Scaffold(
 		snackbarHost = { SnackbarHost(hostState = snackBarHostState) }
 	) { paddingValues ->
@@ -141,6 +150,11 @@ private fun SettingsContent(actions: SettingsActions, snackBarHostState: Snackba
 			) {
 				AccountInfoButton(actions.onAccountInfoClick)
 
+				ThemeToggleButton(
+					isDarkTheme = isDarkTheme,
+					onToggleTheme = actions.onToggleTheme
+				)
+
 				AboutAppButton(actions.onAboutAppClick)
 
 				LogoutButton(actions.onLogoutClick)
@@ -148,6 +162,18 @@ private fun SettingsContent(actions: SettingsActions, snackBarHostState: Snackba
 
 		}
 	}
+}
+
+@Composable
+private fun ThemeToggleButton(isDarkTheme: Boolean, onToggleTheme: () -> Unit) {
+	SettingsButton(
+		onClick = onToggleTheme,
+		text = if (isDarkTheme) {
+			stringResource(R.string.switch_to_light_theme)
+		} else {
+			stringResource(R.string.switch_to_dark_theme)
+		},
+	)
 }
 
 @Composable
@@ -184,11 +210,13 @@ fun SettingsContentPreview() {
 		val actions = SettingsActions(
 			onAccountInfoClick = {},
 			onAboutAppClick = {},
-			onLogoutClick = {}
+			onLogoutClick = {},
+			onToggleTheme = {}
 		)
 		SettingsContent(
-			actions,
-			snackBarHostState = SnackbarHostState()
+			actions = actions,
+			snackBarHostState = SnackbarHostState(),
+			isDarkTheme = false
 		)
 	}
 }
