@@ -33,8 +33,12 @@ tags:
     description: CRUD операции над ульями (все эндпоинты защищены CheckAuth)
   - name: Telemetry
     description: Получение и управление телеметрическими данными (шум, вес, температура)
-  - name: CalcQueen
-    description: Калькулятор фаз развития пчелиной матки
+  - name: Hub
+    description: CRUD операции над хабами
+  - name: Queen
+    description: Управление матками и расчет фаз их развития
+  - name: MQTT
+    description: Управление датчиками через MQTT (конфигурация, health check)
 
 components:
   securitySchemes:
@@ -153,12 +157,31 @@ components:
       required:
         - name
 
+    UpdateFcmToken:
+      type: object
+      properties:
+        token:
+          type: string
+          example: dGVzdC1mY20tdG9rZW4...
+          description: Firebase Cloud Messaging токен устройства
+        device:
+          type: string
+          example: 550e8400-e29b-41d4-a716-446655440000
+          description: UUID устройства
+      required:
+        - token
+        - device
+
     CreateHive:
       type: object
       properties:
         name:
           type: string
           example: Улей-1
+        sensor:
+          type: string
+          example: sensor-001
+          description: Идентификатор датчика для привязки к улью (опционально). Если датчик не найден у пользователя, улей создаётся без привязки.
       required:
         - name
 
@@ -221,6 +244,14 @@ components:
           type: string
           example: sensor-001
           description: Идентификатор датчика, привязанного к улью
+        hub:
+          type: string
+          example: "hub-serial-001"
+          description: Физический идентификатор привязанного хаба
+        queen:
+          type: string
+          example: Матка-2026
+          description: Имя привязанной матки
 
     HiveDetails:
       type: object
@@ -232,20 +263,132 @@ components:
           type: string
           example: sensor-001
           description: Идентификатор датчика, привязанного к улью
+        hub:
+          type: string
+          example: "hub-serial-001"
+          description: Физический идентификатор привязанного хаба
+        queen:
+          type: string
+          example: Матка-2026
+          description: Имя привязанной матки
         active:
           type: boolean
           example: true
           description: Статус активности улья
 
-    QueenRequest:
+    LinkToHiveRequest:
       type: object
       properties:
+        hive_name:
+          type: string
+          example: Улей-1
+        target_name:
+          type: string
+          example: hub-serial-001
+          description: Имя/ID хаба или матки для привязки. Если передать пустую строку, привязка будет удалена.
+      required:
+        - hive_name
+
+    # --- Схемы Hub ---
+    CreateHub:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "hub-serial-001"
+          description: Уникальный физический идентификатор хаба (серийный номер, MAC-адрес и т.д.)
+        name:
+          type: string
+          example: Hub-Alpha
+          description: Пользовательское имя хаба
+      required:
+        - id
+        - name
+
+    UpdateHub:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "hub-serial-001"
+          description: Идентификатор хаба, который нужно изменить
+        name:
+          type: string
+          example: Hub-Beta
+          description: Новое пользовательское имя хаба
+      required:
+        - id
+
+    HubListItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "hub-serial-001"
+          description: Физический идентификатор хаба
+        name:
+          type: string
+          example: Hub-Alpha
+          description: Пользовательское имя хаба
+
+    # --- Схемы Queen ---
+    CreateQueen:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Матка-Карника-26
         start_date:
           type: string
           example: "2026-02-19"
-          description: Дата начала в формате YYYY-MM-DD
+          description: Дата начала (яйца) в формате YYYY-MM-DD
       required:
+        - name
         - start_date
+
+    UpdateQueen:
+      type: object
+      properties:
+        old_name:
+          type: string
+          example: Матка-Карника-26
+        new_name:
+          type: string
+          example: Матка-Бакфаст-26
+        start_date:
+          type: string
+          example: "2026-02-20"
+          description: Новая дата для перерасчета календаря. Если пусто — остается старая.
+      required:
+        - old_name
+
+    DeleteQueen:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Матка-Карника-26
+      required:
+        - name
+
+    QueenListItem:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Матка-Карника-26
+        start_date:
+          type: string
+          example: "2026-02-19"
+
+    QueenDetails:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Матка-Карника-26
+        calendar:
+          $ref: '#/components/schemas/QueenPhaseCalendar'
 
     QueenPhaseCalendar:
       type: object
@@ -357,7 +500,7 @@ components:
         since:
           type: integer
           format: int64
-          description: Unix timestamp начала выборки
+          description: "Unix timestamp начала выборки (в секундах, не миллисекундах)"
           example: 1708704000
       required:
         - hive
@@ -400,6 +543,101 @@ components:
       required:
         - hive
         - time
+
+    DeviceConfigRequest:
+      type: object
+      properties:
+        sensor:
+          type: string
+          example: sensor-001
+          description: Уникальное имя датчика
+        config:
+          type: object
+          properties:
+            sampling_rate_noise:
+              type: integer
+              description: Частота сбора данных о шуме (секунды). -1 — не установлена
+              example: 60
+            sampling_rate_temperature:
+              type: integer
+              description: Частота сбора данных о температуре (секунды). -1 — не установлена
+              example: 60
+            restart_device:
+              type: boolean
+              description: Перезагрузить устройство
+              example: false
+            health_check:
+              type: boolean
+              description: Запросить проверку состояния
+              example: false
+            frequency_status:
+              type: integer
+              description: Частота отправки статуса (секунды). -1 — не установлена
+              example: 10000
+            delete_device:
+              type: boolean
+              description: Удалить устройство
+              example: false
+      required:
+        - sensor
+
+    HealthCheckRequest:
+      type: object
+      properties:
+        sensor:
+          type: string
+          example: sensor-001
+          description: Уникальное имя датчика
+      required:
+        - sensor
+
+    DeviceStatus:
+      type: object
+      description: Статус датчика, полученный в ответ на health check
+      properties:
+        battery_level:
+          type: integer
+          description: Уровень заряда батареи (0–100). -1 означает отсутствие данных
+          example: 85
+        signal_strength:
+          type: integer
+          description: Уровень сигнала (0–100). -1 означает отсутствие данных
+          example: 72
+        timestamp:
+          type: integer
+          format: int64
+          description: Unix timestamp статуса (в секундах)
+          example: 1708704000
+        errors:
+          type: array
+          items:
+            type: string
+          description: Список ошибок датчика (пустой, если ошибок нет)
+          example: []
+
+    LastSensorReading:
+      type: object
+      properties:
+        temperature:
+          type: number
+          format: float64
+          description: Температура в цельсиях. -1 означает отсутствие данных
+          example: 34.5
+        temperature_time:
+          type: integer
+          format: int64
+          description: Unix timestamp измерения температуры
+          example: 1708704000
+        noise:
+          type: number
+          format: float64
+          description: Уровень шума в децибелах. -1 означает отсутствие данных
+          example: 42.0
+        noise_time:
+          type: integer
+          format: int64
+          description: Unix timestamp измерения шума
+          example: 1708704000
 
 paths:
   # ==================== AUTH ====================
@@ -804,6 +1042,65 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /auth/fcm/update:
+    post:
+      tags: [Auth]
+      summary: Обновление FCM токена 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+
+        Сохраняет или обновляет Firebase Cloud Messaging токен для устройства пользователя.
+        Используется для отправки push-уведомлений.
+        Email извлекается из контекста (установлен middleware).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFcmToken'
+      responses:
+        '200':
+          description: FCM токен обновлён
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: FCM токен успешно обновлен
+                      data:
+                        type: 'null'
+                        example: null
+        '400':
+          description: Пустой токен или устройство
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - FCM токен не должен быть пустым
+                  - uuid устройства не должно быть пустым
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Отсутствует заголовок авторизации
+                  - Неверный формат заголовка авторизации
+                  - Пустой токен авторизации
+                  - Срок действия токена истек или он невалидный
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   # ==================== HIVE ====================
   /hive/create:
     post:
@@ -813,6 +1110,8 @@ paths:
         **Требует middleware `CheckAuth`** (применён на весь роут `/hive`).
 
         Создаёт новый улей для текущего пользователя.
+        Опционально можно указать имя датчика для привязки к улью.
+        Если датчик не найден у пользователя, улей создаётся без привязки.
       security:
         - BearerAuth: []
       requestBody:
@@ -863,9 +1162,21 @@ paths:
       description: |
         **Требует middleware `CheckAuth`** (применён на весь роут `/hive`).
 
-        Возвращает все ульи текущего пользователя.
+        Возвращает ульи текущего пользователя.
+        Можно фильтровать по статусу активности через query-параметр `active`.
       security:
         - BearerAuth: []
+      parameters:
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: |
+            Фильтр по статусу:
+            - `true` — только активные ульи
+            - `false` — только архивные ульи
+            - не указан — все ульи
       responses:
         '200':
           description: Список ульев
@@ -917,6 +1228,16 @@ paths:
             type: string
             example: Улей-1
           description: Название улья
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: |
+            Фильтр по статусу:
+            - `true` — вернуть только если улей активен
+            - `false` — вернуть только если улей в архиве
+            - не указан — вернуть в любом статусе
       responses:
         '200':
           description: Данные улья
@@ -1069,6 +1390,245 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /hive/link/hub:
+    post:
+      tags: [Hive]
+      summary: Привязка хаба к улью 🔒
+      description: Привязывает хаб к указанному улью. Передача пустой строки в target_name отвяжет текущий хаб.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkToHiveRequest'
+      responses:
+        '200':
+          description: Привязка успешна
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+
+  /hive/link/queen:
+    post:
+      tags: [Hive]
+      summary: Привязка матки к улью 🔒
+      description: Привязывает матку к указанному улью. Передача пустой строки в target_name отвяжет текущую матку.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkToHiveRequest'
+      responses:
+        '200':
+          description: Привязка успешна
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+
+  # ==================== HUB ====================
+  /hub/create:
+    post:
+      tags: [Hub]
+      summary: Создание хаба 🔒
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHub'
+      responses:
+        '200':
+          description: Хаб создан
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Хаб успешно создан
+        '400':
+          description: Неверный запрос
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+
+  /hub/list:
+    get:
+      tags: [Hub]
+      summary: Список всех хабов 🔒
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Список хабов получен
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/HubListItem'
+
+  /hub/update:
+    put:
+      tags: [Hub]
+      summary: Изменение хаба 🔒
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHub'
+      responses:
+        '200':
+          description: Хаб обновлен
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Хаб успешно обновлен
+
+  # ==================== QUEEN ====================
+  /queen/create:
+    post:
+      tags: [Queen]
+      summary: Создание матки и расчет календаря 🔒
+      description: Создает матку, сохраняет в БД и сразу возвращает рассчитанный календарь фаз развития.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQueen'
+      responses:
+        '200':
+          description: Матка создана, календарь рассчитан
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/QueenDetails'
+        '400':
+          description: Неверный формат
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+
+  /queen/list:
+    get:
+      tags: [Queen]
+      summary: Получение всех маток 🔒
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Список маток
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/QueenListItem'
+
+  /queen/:
+    get:
+      tags: [Queen]
+      summary: Получение матки (с календарем) 🔒
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Название матки
+      responses:
+        '200':
+          description: Полная информация о матке
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/QueenDetails'
+
+  /queen/update:
+    put:
+      tags: [Queen]
+      summary: Изменение матки 🔒
+      description: Позволяет изменить имя или дату старта (что вызовет перерасчет календаря).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQueen'
+      responses:
+        '200':
+          description: Матка обновлена
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+
+  /queen/delete:
+    delete:
+      tags: [Queen]
+      summary: Удаление матки 🔒
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteQueen'
+      responses:
+        '200':
+          description: Матка удалена
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+
   # ==================== TELEMETRY ====================
   /telemetry/noise/get:
     get:
@@ -1089,14 +1649,15 @@ paths:
             type: string
           description: Название улья
           example: Улей-1
-        - name: period
+        - name: since
           in: query
           required: false
           schema:
-            type: string
-            default: day
-            enum: [day, week, month]
-          description: Период агрегации (по умолчанию day)
+            type: integer
+            format: int64
+            example: 1708704000
+          description: |
+            Unix timestamp начала выборки (в секундах, не миллисекундах). Если не указан — последние 24 часа.
       responses:
         '200':
           description: Данные шума получены
@@ -1151,14 +1712,15 @@ paths:
             type: string
           description: Название улья
           example: Улей-1
-        - name: period
+        - name: since
           in: query
           required: false
           schema:
-            type: string
-            default: day
-            enum: [day, week, month]
-          description: Период агрегации (по умолчанию day)
+            type: integer
+            format: int64
+            example: 1708704000
+          description: |
+            Unix timestamp начала выборки (в секундах, не миллисекундах). Если не указан — последние 24 часа.
       responses:
         '200':
           description: Данные веса получены
@@ -1213,14 +1775,15 @@ paths:
             type: string
           description: Название улья
           example: Улей-1
-        - name: period
+        - name: since
           in: query
           required: false
           schema:
-            type: string
-            default: day
-            enum: [day, week, month]
-          description: Период агрегации (по умолчанию day)
+            type: integer
+            format: int64
+            example: 1708704000
+          description: |
+            Unix timestamp начала выборки (в секундах, не миллисекундах). Если не указан — последние 24 часа.
       responses:
         '200':
           description: Данные температуры получены
@@ -1249,6 +1812,68 @@ paths:
             text/plain:
               schema:
                 type: string
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /telemetry/sensor/last:
+    get:
+      tags: [Telemetry]
+      summary: Последние данные датчика 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+
+        Возвращает последние показания датчика, привязанного к улью.
+        Данные хранятся в Redis и обновляются при каждом получении данных от датчика по MQTT.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Название улья
+          example: Улей-1
+      responses:
+        '200':
+          description: Последние данные датчика получены
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Последние данные датчика получены
+                      data:
+                        $ref: '#/components/schemas/LastSensorReading'
+        '400':
+          description: Параметр name не указан
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Параметр "name" обязателен
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Улей, датчик или данные не найдены
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Улей не найден
+                  - К данному улью не привязан датчик
+                  - Нет данных от датчика
         '500':
           description: Внутренняя ошибка сервера
           content:
@@ -1348,15 +1973,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  # ==================== CALCQUEEN ====================
-  /calcQueen/calc:
+  # ==================== MQTT ====================
+  /mqtt/config:
     post:
-      tags: [CalcQueen]
-      summary: Расчёт календаря развития матки 🔒
+      tags: [MQTT]
+      summary: Отправка конфигурации на датчик 🔒
       description: |
         **Требует middleware `CheckAuth`.**
 
-        Рассчитывает календарь фаз развития пчелиной матки от стадии яйца до начала яйцекладки.
+        Отправляет конфигурацию на датчик через MQTT (топик `/device/{sensor}/config`, QoS 1).
+        Позволяет задать частоту сбора данных, перезагрузку устройства и другие параметры.
       security:
         - BearerAuth: []
       requestBody:
@@ -1364,10 +1990,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/QueenRequest'
+              $ref: '#/components/schemas/DeviceConfigRequest'
       responses:
         '200':
-          description: Календарь рассчитан
+          description: Конфигурация отправлена
           content:
             application/json:
               schema:
@@ -1375,39 +2001,67 @@ paths:
                   - $ref: '#/components/schemas/Response'
                   - properties:
                       message:
-                        example: Календарь развития матки успешно рассчитан
-                      data:
-                        $ref: '#/components/schemas/QueenPhaseCalendar'
+                        example: Конфигурация успешно отправлена
         '400':
-          description: Неверный формат даты или JSON
+          description: Имя датчика не указано
           content:
             text/plain:
               schema:
                 type: string
-                enum:
-                  - Неверный формат JSON
-                  - Неверный формат даты
-        '401':
-          description: Не авторизован (middleware CheckAuth)
-          content:
-            text/plain:
-              schema:
-                type: string
-                enum:
-                  - Отсутствует заголовок авторизации
-                  - Неверный формат заголовка авторизации
-                  - Пустой токен авторизации
-                  - Срок действия токена истек или он невалидный
+                example: Имя датчика обязательно
         '500':
-          description: Внутренняя ошибка сервера
-          content:
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '503':
-          description: Превышено время выполнения запроса (5s timeout)
+          description: Ошибка отправки конфигурации
           content:
             text/plain:
               schema:
                 type: string
-                example: context deadline exceeded
+                example: Ошибка отправки конфигурации
+
+  /mqtt/health:
+    post:
+      tags: [MQTT]
+      summary: Отправка health check на датчик 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+
+        Отправляет запрос на проверку состояния (health check) датчика через MQTT (топик `/device/{sensor}/config`, QoS 1).
+        Отправляет конфигурацию с `health_check=true`, затем ожидает ответ от датчика (до 4 секунд).
+
+        Публикация MQTT-сообщения выполняется в фоне (fire-and-forget): даже если HTTP-запрос
+        истечёт по таймауту, сообщение останется в очереди MQTT-клиента и будет доставлено
+        датчику при выходе из гибернации (QoS 1).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HealthCheckRequest'
+      responses:
+        '200':
+          description: Датчик ответил — статус получен
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Health check выполнен успешно
+                      data:
+                        $ref: '#/components/schemas/DeviceStatus'
+        '400':
+          description: Имя датчика не указано
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Имя датчика обязательно
+        '504':
+          description: Датчик не ответил в отведённое время (4 с)
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Датчик не ответил на health check в отведённое время
