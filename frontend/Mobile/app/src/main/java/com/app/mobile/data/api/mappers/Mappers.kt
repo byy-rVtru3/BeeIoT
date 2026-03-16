@@ -29,6 +29,6 @@ fun AuthorizationModel.toApiModel() =
 
 fun PushTokenCreation.toApiModel() =
     PushTokenCreationModel(
-        deviceId = deviceId,
+        device = deviceId,
         token = token
     )
