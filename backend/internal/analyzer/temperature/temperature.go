@@ -3,8 +3,9 @@ package temperature
 import (
 	"BeeIOT/internal/domain/interfaces"
 	"BeeIOT/internal/domain/models/dbTypes"
-	"BeeIOT/internal/domain/models/httpType"
+	"BeeIOT/internal/domain/notification"
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -12,22 +13,22 @@ import (
 )
 
 type Analyzer struct {
-	period  time.Duration
-	db      interfaces.DB
-	ctx     context.Context
-	inMemDb interfaces.InMemoryDB
-	logger  zerolog.Logger
+	period       time.Duration
+	db           interfaces.DB
+	ctx          context.Context
+	notification *notification.Notification
+	logger       zerolog.Logger
 }
 
-func NewAnalyzer(ctx context.Context, period time.Duration, db interfaces.DB, inMemDb interfaces.InMemoryDB) *Analyzer {
+func NewAnalyzer(ctx context.Context, period time.Duration, db interfaces.DB, notification *notification.Notification) *Analyzer {
 	logger := ctx.Value("logger").(zerolog.Logger)
-	return &Analyzer{period: period, db: db, ctx: ctx, inMemDb: inMemDb, logger: logger}
+	return &Analyzer{period: period, db: db, ctx: ctx, logger: logger, notification: notification}
 }
 
 func (a *Analyzer) Start() {
-	ticker := time.NewTicker(a.period)
-	defer ticker.Stop()
 	go func() {
+		ticker := time.NewTicker(a.period)
+		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
@@ -40,7 +41,7 @@ func (a *Analyzer) Start() {
 }
 
 func (a *Analyzer) analyzeTemperature() {
-	hives, err := a.db.GetHives(a.ctx, "")
+	hives, err := a.db.GetHives(a.ctx, "", nil)
 	if err != nil {
 		a.logger.Error().Err(err).Msg("failed to get hives")
 		return
@@ -52,8 +53,8 @@ func (a *Analyzer) analyzeTemperature() {
 			continue
 		}
 		a.temperatureAnalysis(data, hive)
-		if a.db.UpdateHiveTemperatureCheck(a.ctx, hive.Id, time.Now()) != nil {
-			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Msg("failed to update hive temperature check")
+		if errUpd := a.db.UpdateHiveTemperatureCheck(a.ctx, hive.Id, time.Now()); errUpd != nil {
+			a.logger.Warn().Err(errUpd).Int("hiveId", hive.Id).Msg("failed to update hive temperature check")
 		}
 	}
 }
@@ -71,21 +72,35 @@ func (a *Analyzer) temperatureAnalysis(data []dbTypes.HivesTemperatureData, hive
 		if a.isNormallyTemperature(elem.Temperature) {
 			continue
 		}
-		email, err := a.db.GetUserById(a.ctx, hive.Id)
-		if err != nil {
-			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Str("email", email).Msg("failed to get user")
+		if a.notification == nil {
+			a.logger.Warn().Int("hiveId", hive.Id).Msg("notification service is nil, skipping")
 			continue
 		}
-		err = a.inMemDb.SetNotification(a.ctx, email, httpType.NotificationData{
-			Text: fmt.Sprintf(`Обнаружено отклонение температуры в улье %s: %.2f°C.
-Нормальное значение температуры находится в пределе от %.2f до %.2f.
-Необходимо принять меры`, hive.NameHive, elem.Temperature,
-				temperatureNormal-temperatureDeltaDown, temperatureNormal+temperatureDeltaUp),
-			NameHive: hive.NameHive,
-			Date:     elem.Date.UnixNano(),
-		})
+		tokens, err := a.db.GetFirebaseToken(a.ctx, hive.Email)
 		if err != nil {
-			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Str("email", email).Msg("failed to set notification")
+			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Str("email", hive.Email).Msg("failed to get firebase tokens")
+			continue
+		}
+		badToken, err := a.notification.SendNotification(a.ctx, notification.Data{
+			Title: "Критический уровень температуры в улье",
+			Body: fmt.Sprintf(`Текущее значение температуры сейчас: %.2f.
+Норма: %.2f +- %.2f. Необходимо проверить состояние улья`, elem.Temperature, temperatureNormal, temperatureDeltaUp),
+			Data: map[string]string{
+				"hive": hive.NameHive,
+			},
+			Tokens:    tokens,
+			Important: false,
+		})
+		switch {
+		case errors.Is(err, notification.ErrInvalidTokens):
+			err = a.db.DeleteFirebaseToken(a.ctx, hive.Email, badToken)
+			if err != nil {
+				a.logger.Warn().Int("hiveId", hive.Id).
+					Str("email", hive.Email).Err(err).Msg("failed to delete invalid firebase token")
+			}
+		case err != nil:
+			a.logger.Warn().Int("hiveId", hive.Id).
+				Str("email", hive.Email).Err(err).Msg("failed to send notification")
 		}
 	}
 }

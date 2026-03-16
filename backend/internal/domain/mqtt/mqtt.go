@@ -2,6 +2,7 @@ package mqtt
 
 import (
 	"BeeIOT/internal/domain/interfaces"
+	"BeeIOT/internal/domain/notification"
 	"errors"
 	"fmt"
 	"os"
@@ -12,13 +13,14 @@ import (
 )
 
 type Client struct {
-	client  mqtt.Client
-	inMemDb interfaces.InMemoryDB
-	db      interfaces.DB
-	logger  zerolog.Logger
+	client       mqtt.Client
+	inMemDb      interfaces.InMemoryDB
+	db           interfaces.DB
+	notification *notification.Notification
+	logger       zerolog.Logger
 }
 
-func NewMQTTClient(db interfaces.DB, inMemDb interfaces.InMemoryDB, logger zerolog.Logger) (*Client, error) {
+func NewMQTTClient(db interfaces.DB, inMemDb interfaces.InMemoryDB, notifi *notification.Notification, logger zerolog.Logger) (*Client, error) {
 	host := os.Getenv("MQTT_HOST")
 	port := os.Getenv("MQTT_PORT")
 	username := os.Getenv("MQTT_USERNAME")
@@ -31,7 +33,7 @@ func NewMQTTClient(db interfaces.DB, inMemDb interfaces.InMemoryDB, logger zerol
 		return nil, errors.New("MQTT_PORT environment variable is not set")
 	}
 
-	mqttClient := &Client{inMemDb: inMemDb, db: db, logger: logger}
+	mqttClient := &Client{inMemDb: inMemDb, db: db, logger: logger, notification: notifi}
 
 	opts := mqtt.NewClientOptions().
 		AddBroker(fmt.Sprintf("tcp://%s:%s", host, port)).

@@ -33,10 +33,8 @@ tags:
     description: CRUD операции над ульями (все эндпоинты защищены CheckAuth)
   - name: Telemetry
     description: Получение и управление телеметрическими данными (шум, вес, температура)
-  - name: Hub
-    description: CRUD операции над хабами
-  - name: Queen
-    description: Управление матками и расчет фаз их развития
+  - name: CalcQueen
+    description: Калькулятор фаз развития пчелиной матки
   - name: MQTT
     description: Управление датчиками через MQTT (конфигурация, health check)
 
@@ -244,14 +242,6 @@ components:
           type: string
           example: sensor-001
           description: Идентификатор датчика, привязанного к улью
-        hub:
-          type: string
-          example: "hub-serial-001"
-          description: Физический идентификатор привязанного хаба
-        queen:
-          type: string
-          example: Матка-2026
-          description: Имя привязанной матки
 
     HiveDetails:
       type: object
@@ -263,132 +253,20 @@ components:
           type: string
           example: sensor-001
           description: Идентификатор датчика, привязанного к улью
-        hub:
-          type: string
-          example: "hub-serial-001"
-          description: Физический идентификатор привязанного хаба
-        queen:
-          type: string
-          example: Матка-2026
-          description: Имя привязанной матки
         active:
           type: boolean
           example: true
           description: Статус активности улья
 
-    LinkToHiveRequest:
+    QueenRequest:
       type: object
       properties:
-        hive_name:
-          type: string
-          example: Улей-1
-        target_name:
-          type: string
-          example: hub-serial-001
-          description: Имя/ID хаба или матки для привязки. Если передать пустую строку, привязка будет удалена.
-      required:
-        - hive_name
-
-    # --- Схемы Hub ---
-    CreateHub:
-      type: object
-      properties:
-        id:
-          type: string
-          example: "hub-serial-001"
-          description: Уникальный физический идентификатор хаба (серийный номер, MAC-адрес и т.д.)
-        name:
-          type: string
-          example: Hub-Alpha
-          description: Пользовательское имя хаба
-      required:
-        - id
-        - name
-
-    UpdateHub:
-      type: object
-      properties:
-        id:
-          type: string
-          example: "hub-serial-001"
-          description: Идентификатор хаба, который нужно изменить
-        name:
-          type: string
-          example: Hub-Beta
-          description: Новое пользовательское имя хаба
-      required:
-        - id
-
-    HubListItem:
-      type: object
-      properties:
-        id:
-          type: string
-          example: "hub-serial-001"
-          description: Физический идентификатор хаба
-        name:
-          type: string
-          example: Hub-Alpha
-          description: Пользовательское имя хаба
-
-    # --- Схемы Queen ---
-    CreateQueen:
-      type: object
-      properties:
-        name:
-          type: string
-          example: Матка-Карника-26
         start_date:
           type: string
           example: "2026-02-19"
-          description: Дата начала (яйца) в формате YYYY-MM-DD
+          description: Дата начала в формате YYYY-MM-DD
       required:
-        - name
         - start_date
-
-    UpdateQueen:
-      type: object
-      properties:
-        old_name:
-          type: string
-          example: Матка-Карника-26
-        new_name:
-          type: string
-          example: Матка-Бакфаст-26
-        start_date:
-          type: string
-          example: "2026-02-20"
-          description: Новая дата для перерасчета календаря. Если пусто — остается старая.
-      required:
-        - old_name
-
-    DeleteQueen:
-      type: object
-      properties:
-        name:
-          type: string
-          example: Матка-Карника-26
-      required:
-        - name
-
-    QueenListItem:
-      type: object
-      properties:
-        name:
-          type: string
-          example: Матка-Карника-26
-        start_date:
-          type: string
-          example: "2026-02-19"
-
-    QueenDetails:
-      type: object
-      properties:
-        name:
-          type: string
-          example: Матка-Карника-26
-        calendar:
-          $ref: '#/components/schemas/QueenPhaseCalendar'
 
     QueenPhaseCalendar:
       type: object
@@ -1390,277 +1268,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /hive/link/hub:
-    post:
-      tags: [Hive]
-      summary: Привязка хаба к улью 🔒
-      description: Привязывает хаб к указанному улью. Передача пустой строки в target_name отвяжет текущий хаб.
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LinkToHiveRequest'
-      responses:
-        '200':
-          description: Привязка успешна
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/Response'
-
-  /hive/link/queen:
-    post:
-      tags: [Hive]
-      summary: Привязка матки к улью 🔒
-      description: Привязывает матку к указанному улью. Передача пустой строки в target_name отвяжет текущую матку.
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LinkToHiveRequest'
-      responses:
-        '200':
-          description: Привязка успешна
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/Response'
-
-  # ==================== HUB ====================
-  /hub/create:
-    post:
-      tags: [Hub]
-      summary: Создание хаба 🔒
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateHub'
-      responses:
-        '200':
-          description: Хаб создан
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/Response'
-                  - properties:
-                      message:
-                        example: Хаб успешно создан
-        '400':
-          description: Неверный запрос
-          content:
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/BadRequestError'
-
-  /hub/list:
-    get:
-      tags: [Hub]
-      summary: Список всех хабов 🔒
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Список хабов получен
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/Response'
-                  - properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/HubListItem'
-
-  /hub/:
-    get:
-      tags: [Hub]
-      summary: Получение хаба по ID 🔒
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: Физический идентификатор хаба
-      responses:
-        '200':
-          description: Хаб найден
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/Response'
-                  - properties:
-                      data:
-                        $ref: '#/components/schemas/HubListItem'
-        '404':
-          description: Хаб не найден
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: Хаб не найден
-
-  /hub/update:
-    put:
-      tags: [Hub]
-      summary: Изменение хаба 🔒
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateHub'
-      responses:
-        '200':
-          description: Хаб обновлен
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/Response'
-                  - properties:
-                      message:
-                        example: Хаб успешно обновлен
-
-  # ==================== QUEEN ====================
-  /queen/create:
-    post:
-      tags: [Queen]
-      summary: Создание матки и расчет календаря 🔒
-      description: Создает матку, сохраняет в БД и сразу возвращает рассчитанный календарь фаз развития.
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateQueen'
-      responses:
-        '200':
-          description: Матка создана, календарь рассчитан
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/Response'
-                  - properties:
-                      data:
-                        $ref: '#/components/schemas/QueenDetails'
-        '400':
-          description: Неверный формат
-          content:
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/BadRequestError'
-
-  /queen/list:
-    get:
-      tags: [Queen]
-      summary: Получение всех маток 🔒
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Список маток
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/Response'
-                  - properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/QueenListItem'
-
-  /queen/:
-    get:
-      tags: [Queen]
-      summary: Получение матки (с календарем) 🔒
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: name
-          in: query
-          required: true
-          schema:
-            type: string
-          description: Название матки
-      responses:
-        '200':
-          description: Полная информация о матке
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/Response'
-                  - properties:
-                      data:
-                        $ref: '#/components/schemas/QueenDetails'
-
-  /queen/update:
-    put:
-      tags: [Queen]
-      summary: Изменение матки 🔒
-      description: Позволяет изменить имя или дату старта (что вызовет перерасчет календаря).
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateQueen'
-      responses:
-        '200':
-          description: Матка обновлена
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/Response'
-
-  /queen/delete:
-    delete:
-      tags: [Queen]
-      summary: Удаление матки 🔒
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DeleteQueen'
-      responses:
-        '200':
-          description: Матка удалена
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/Response'
-
   # ==================== TELEMETRY ====================
   /telemetry/noise/get:
     get:
@@ -2097,3 +1704,67 @@ paths:
               schema:
                 type: string
                 example: Датчик не ответил на health check в отведённое время
+
+  # ==================== CALCQUEEN ====================
+  /calcQueen/calc:
+    post:
+      tags: [CalcQueen]
+      summary: Расчёт календаря развития матки 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+
+        Рассчитывает календарь фаз развития пчелиной матки от стадии яйца до начала яйцекладки.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueenRequest'
+      responses:
+        '200':
+          description: Календарь рассчитан
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Календарь развития матки успешно рассчитан
+                      data:
+                        $ref: '#/components/schemas/QueenPhaseCalendar'
+        '400':
+          description: Неверный формат даты или JSON
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Неверный формат JSON
+                  - Неверный формат даты
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Отсутствует заголовок авторизации
+                  - Неверный формат заголовка авторизации
+                  - Пустой токен авторизации
+                  - Срок действия токена истек или он невалидный
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Превышено время выполнения запроса (5s timeout)
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: context deadline exceeded

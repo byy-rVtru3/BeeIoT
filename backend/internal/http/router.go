@@ -49,6 +49,7 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.With(m.CheckAuth).Delete("/delete/user", h.DeleteUser)
 			r.With(m.CheckAuth).Delete("/logout", h.Logout)
 			r.With(m.CheckAuth).Post("/change/name", h.ChangeName)
+			r.With(m.CheckAuth).Post("/fcm/update", h.UpdateFcmToken)
 		})
 		r.Route("/calcQueen", func(r chi.Router) {
 			r.With(m.CheckAuth).Post("/calc", h.QueenCalculator)
@@ -62,7 +63,9 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.Delete("/delete", h.DeleteHive)
 		})
 		r.Route("/mqtt", func(r chi.Router) {
+			r.Use(m.CheckAuth)
 			r.Post("/config", h.MQTTSendConfig)
+			r.Post("/health", h.MQTTSendHealthCheck)
 			r.Get("/data", h.GetNoiseAndTemp)
 		})
 		r.Route("/telemetry", func(r chi.Router) {
@@ -70,6 +73,7 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.Get("/noise/get", h.GetNoiseSinceTime)
 			r.Get("/weight/get", h.GetWeightSinceTime)
 			r.Get("/temperature/get", h.GetTemperatureSinceTime)
+			r.Get("/sensor/last", h.GetLastSensorReading)
 			r.Post("/weight/set", h.SetHiveWeight)
 			r.Delete("/weight/delete", h.DeleteHiveWeight)
 		})
@@ -80,7 +84,7 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 		Handler: r,
 	}
 
-	quit := make(chan os.Signal)
+	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		logger.Info().Str("port", serverPort).Msg("starting server")

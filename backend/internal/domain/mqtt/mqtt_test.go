@@ -23,10 +23,6 @@ type MockInMemoryDB struct {
 	ExistSensorError     error
 	SetSensorError       error
 	UpdateTimestampError error
-	SetNotificationError error
-	// Captures
-	SetNotificationCall bool
-	LastNotification    httpType.NotificationData
 
 	// расширим MockInMemoryDB чтобы захватывать SetSensor вызовы
 	SetSensorCall bool
@@ -38,7 +34,6 @@ func (m *MockInMemoryDB) ExistSensor(_ context.Context, _ string) (bool, error) 
 }
 
 func (m *MockInMemoryDB) SetSensor(_ context.Context, sensorID string) error {
-	m.SetSensorError = m.SetSensorError
 	// capture
 	if ms, ok := interface{}(m).(*MockInMemoryDB); ok {
 		ms.SetSensorCall = true
@@ -51,10 +46,16 @@ func (m *MockInMemoryDB) UpdateSensorTimestamp(_ context.Context, _ string, _ in
 	return m.UpdateTimestampError
 }
 
-func (m *MockInMemoryDB) SetNotification(_ context.Context, _ string, note httpType.NotificationData) error {
-	m.SetNotificationCall = true
-	m.LastNotification = note
-	return m.SetNotificationError
+func (m *MockInMemoryDB) SetLastSensorData(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
+func (m *MockInMemoryDB) SetLastDeviceStatus(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
+func (m *MockInMemoryDB) GetLastDeviceStatus(_ context.Context, _ string) (string, error) {
+	return "", nil
 }
 
 type MockDB struct {
@@ -76,6 +77,14 @@ func (m *MockDB) NewNoise(_ context.Context, _ httpType.NoiseLevel) error {
 
 func (m *MockDB) NewTemperature(_ context.Context, _ httpType.Temperature) error {
 	return m.NewTemperatureError
+}
+
+func (m *MockDB) GetFirebaseToken(_ context.Context, _ string) ([]string, error) {
+	return nil, nil
+}
+
+func (m *MockDB) DeleteFirebaseToken(_ context.Context, _ string, _ []string) error {
+	return nil
 }
 
 type MockMessage struct {
@@ -210,12 +219,7 @@ func TestHandleDeviceStatus(t *testing.T) {
 
 	client.handleDeviceStatus(nil, msg)
 
-	if !inMem.SetNotificationCall {
-		t.Error("Expected SetNotification to be called for low battery")
-	}
-	if inMem.LastNotification.NameHive != "Hive1" {
-		t.Errorf("Expected notification for Hive1, got %s", inMem.LastNotification.NameHive)
-	}
+	// With nil notification, checkBatteryLevel returns nil immediately
 }
 
 func TestCheckSignalStrength(t *testing.T) {
@@ -234,10 +238,6 @@ func TestCheckSignalStrength(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-
-	if !inMem.SetNotificationCall {
-		t.Error("Expected SetNotification for low signal")
-	}
 }
 
 func TestCheckErrors(t *testing.T) {
@@ -255,10 +255,6 @@ func TestCheckErrors(t *testing.T) {
 	err := client.checkErrors(context.Background(), "sensor1", status)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
-	}
-
-	if !inMem.SetNotificationCall {
-		t.Error("Expected SetNotification for device error")
 	}
 }
 

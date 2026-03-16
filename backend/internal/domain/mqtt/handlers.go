@@ -3,8 +3,10 @@ package mqtt
 import (
 	"BeeIOT/internal/domain/models/httpType"
 	"BeeIOT/internal/domain/models/mqttTypes"
+	"BeeIOT/internal/domain/notification"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -43,6 +45,10 @@ func (m *Client) handleDeviceData(_ mqtt.Client, msg mqtt.Message) {
 	if err := m.inMemDb.UpdateSensorTimestamp(ctx, sensorId, time.Now().Unix()); err != nil {
 		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to update timestamp")
 		return
+	}
+	// Cache last sensor data for quick retrieval
+	if err := m.inMemDb.SetLastSensorData(ctx, sensorId, string(msg.Payload())); err != nil {
+		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to cache last sensor data")
 	}
 	email, hiveName, err := m.db.GetEmailHiveBySensorID(ctx, sensorId)
 	if err != nil {
@@ -98,6 +104,12 @@ func (m *Client) handleDeviceStatus(_ mqtt.Client, msg mqtt.Message) {
 		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to unmarshal payload")
 		return
 	}
+
+	// Cache device status for health check responses
+	if err := m.inMemDb.SetLastDeviceStatus(context.Background(), sensorId, string(msg.Payload())); err != nil {
+		m.logger.Warn().Err(err).Str("sensor", sensorId).Msg("Failed to cache device status")
+	}
+
 	m.handlingStatusData(DeviceStatus, sensorId)
 }
 
@@ -174,12 +186,28 @@ func (m *Client) checkBatteryLevel(ctx context.Context, sensorId string, data mq
 	if err != nil {
 		return err
 	}
-	err = m.inMemDb.SetNotification(ctx, email, httpType.NotificationData{
-		Text:     fmt.Sprintf("Низкий уровень заряда батареи (%d%%) в улье %s", data.BatteryLevel, hive),
-		NameHive: hive,
-		Date:     data.Timestamp,
+	tokens, err := m.db.GetFirebaseToken(ctx, email)
+	if err != nil {
+		return err
+	}
+	if m.notification == nil {
+		return nil
+	}
+	badToken, err := m.notification.SendNotification(ctx, notification.Data{
+		Title:     fmt.Sprintf("Низкий уровень заряда батареи (%d%%) в улье", data.BatteryLevel),
+		Body:      "Пожалуйста, замените батарею в ближайшее время, чтобы обеспечить бесперебойную работу датчика.",
+		Data:      map[string]string{"hive": hive},
+		Tokens:    tokens,
+		Important: true,
 	})
-	return err
+	switch {
+	case errors.Is(err, notification.ErrInvalidTokens):
+		err = m.db.DeleteFirebaseToken(ctx, email, badToken)
+		return err
+	case err != nil:
+		return fmt.Errorf("failed to send notification: %w", err)
+	}
+	return nil
 }
 
 func (m *Client) checkSignalStrength(ctx context.Context, sensorId string, data mqttTypes.DeviceStatus) error {
@@ -190,12 +218,28 @@ func (m *Client) checkSignalStrength(ctx context.Context, sensorId string, data 
 	if err != nil {
 		return err
 	}
-	err = m.inMemDb.SetNotification(ctx, email, httpType.NotificationData{
-		Text:     fmt.Sprintf("Низкий уровень сигнала (%d%%) в улье %s", data.SignalStrength, hive),
-		NameHive: hive,
-		Date:     data.Timestamp,
+	tokens, err := m.db.GetFirebaseToken(ctx, email)
+	if err != nil {
+		return err
+	}
+	if m.notification == nil {
+		return nil
+	}
+	badToken, err := m.notification.SendNotification(ctx, notification.Data{
+		Title:     fmt.Sprintf("Низкий уровень сигнала (%d%%) в улье", data.SignalStrength),
+		Body:      "Пожалуйста, проверьте расположение датчика и убедитесь, что он находится в зоне стабильного сигнала.",
+		Data:      map[string]string{"hive": hive},
+		Tokens:    tokens,
+		Important: true,
 	})
-	return err
+	switch {
+	case errors.Is(err, notification.ErrInvalidTokens):
+		err = m.db.DeleteFirebaseToken(ctx, email, badToken)
+		return err
+	case err != nil:
+		return fmt.Errorf("failed to send notification: %w", err)
+	}
+	return nil
 }
 
 func (m *Client) checkErrors(ctx context.Context, sensorId string, data mqttTypes.DeviceStatus) error {
@@ -206,15 +250,27 @@ func (m *Client) checkErrors(ctx context.Context, sensorId string, data mqttType
 	if err != nil {
 		return err
 	}
-	for _, errorMsg := range data.Errors {
-		err = m.inMemDb.SetNotification(ctx, email, httpType.NotificationData{
-			Text:     fmt.Sprintf("Ошибка от датчика в улье %s: %s", hive, errorMsg),
-			NameHive: hive,
-			Date:     data.Timestamp,
-		})
-		if err != nil {
-			return err
-		}
+	tokens, err := m.db.GetFirebaseToken(ctx, email)
+	if err != nil {
+		return err
+	}
+	if m.notification == nil {
+		return nil
+	}
+	badToken, err := m.notification.SendNotification(ctx, notification.Data{
+		Title: fmt.Sprintf("Ошибки датчика в улье %s", hive),
+		Body: fmt.Sprintf("Датчик сообщил об ошибках: %s. Пожалуйста, проверьте состояние датчика.",
+			strings.Join(data.Errors, ", ")),
+		Data:      map[string]string{"hive": hive},
+		Tokens:    tokens,
+		Important: true,
+	})
+	switch {
+	case errors.Is(err, notification.ErrInvalidTokens):
+		err = m.db.DeleteFirebaseToken(ctx, email, badToken)
+		return err
+	case err != nil:
+		return fmt.Errorf("failed to send notification: %w", err)
 	}
 	return nil
 }

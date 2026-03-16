@@ -20,11 +20,12 @@ type DB interface {
 	GetUserById(ctx context.Context, id int) (string, error)
 	ChangeNameUser(ctx context.Context, email string, name string) error
 
-	NewHive(ctx context.Context, email, nameHive string) error
-	GetHives(ctx context.Context, email string) ([]dbTypes.Hive, error)
-	GetHiveByName(ctx context.Context, email, nameHive string) (dbTypes.Hive, error)
+	NewHive(ctx context.Context, email, nameHive, sensorName string) error
+	GetHives(ctx context.Context, email string, active *bool) ([]dbTypes.Hive, error)
+	GetHiveByName(ctx context.Context, email, nameHive string, active *bool) (dbTypes.Hive, error)
 	DeleteHive(ctx context.Context, email, nameHive string) error
-	UpdateHive(ctx context.Context, email, oldName, newName string) error
+	UpdateHive(ctx context.Context, email string, data httpType.UpdateHive) error
+	UpdateHiveStatus(ctx context.Context, email, name string, status bool) error
 	UpdateHiveTemperatureCheck(ctx context.Context, hiveId int, t time.Time) error
 	UpdateHiveNoiseCheck(ctx context.Context, hiveId int, t time.Time) error
 	GetEmailHiveBySensorID(ctx context.Context, sensorID string) (string, string, error)
@@ -43,11 +44,13 @@ type DB interface {
 	NewHiveWeight(ctx context.Context, weight httpType.HiveWeight) error
 	DeleteHiveWeight(ctx context.Context, weight httpType.HiveWeight) error
 	GetWeightSinceTime(ctx context.Context, hive httpType.Hive, time time.Time) ([]dbTypes.HivesWeightData, error)
+
+	SetFirebaseToken(ctx context.Context, email, device, fcm string) error
+	GetFirebaseToken(ctx context.Context, email string) ([]string, error)
+	DeleteFirebaseToken(ctx context.Context, email string, badFcm []string) error
 }
 
 type InMemoryDB interface {
-	SetNotification(ctx context.Context, email string, note httpType.NotificationData) error
-	GetNotifications(ctx context.Context, email string) ([]httpType.NotificationData, error)
 	SetJwt(ctx context.Context, email, token string) error
 	ExistJwt(ctx context.Context, email, jwtId string) (bool, error)
 	DeleteJwt(ctx context.Context, email, jwtId string) error
@@ -57,12 +60,16 @@ type InMemoryDB interface {
 	ExistSensor(ctx context.Context, sensorID string) (bool, error)
 	GetAllSensors(ctx context.Context) (map[string]int64, error)
 	DeleteSensor(ctx context.Context, sensorID string) error
+	SetLastSensorData(ctx context.Context, sensorID string, data string) error
+	GetLastSensorData(ctx context.Context, sensorID string) (string, error)
+	SetLastDeviceStatus(ctx context.Context, sensorID string, data string) error
+	GetLastDeviceStatus(ctx context.Context, sensorID string) (string, error)
 }
 
 type PasswordData = string
 type CodeData = string
 
 type PasswordKeeper interface {
-	AddCode(ctx context.Context, email, code, password string, timeLive time.Duration) error
-	GetPassword(ctx context.Context, email string) (CodeData, PasswordData, error)
+	AddCode(ctx context.Context, email, code, password, name string, timeLive time.Duration) error
+	GetPassword(ctx context.Context, email string) (CodeData, PasswordData, string, error)
 }

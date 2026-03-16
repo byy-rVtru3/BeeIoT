@@ -24,7 +24,7 @@ func (h *Handler) Registration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	confirmCode, err := h.conf.NewCode(userData.Email, userData.Password)
+	confirmCode, err := h.conf.NewCode(userData.Email, userData.Password, userData.Name)
 	if err != nil {
 		h.logger.Error().Str("email", userData.Email).Err(err).Msg("failed to create new confirmation code")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
@@ -46,14 +46,14 @@ func (h *Handler) ConfirmRegistration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pswd, exist := h.conf.Verify(confirmData.Email, confirmData.Code)
+	pswd, name, exist := h.conf.Verify(confirmData.Email, confirmData.Code)
 	if !exist {
 		h.logger.Warn().Str("email", confirmData.Email).Msg("invalid or expired confirmation code")
 		http.Error(w, "Неверный или истекший код подтверждения", http.StatusUnauthorized)
 		return
 	}
 
-	err := h.db.Registration(r.Context(), httpType.Registration{Email: confirmData.Email, Password: pswd})
+	err := h.db.Registration(r.Context(), httpType.Registration{Email: confirmData.Email, Password: pswd, Name: name})
 	if err != nil {
 		h.logger.Error().Err(err).Str("email", confirmData.Email).Msg("failed to register user in database")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
@@ -69,7 +69,7 @@ func (h *Handler) ConfirmChangePassword(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	pswd, exist := h.conf.Verify(confirmData.Email, confirmData.Code)
+	pswd, _, exist := h.conf.Verify(confirmData.Email, confirmData.Code)
 	if !exist {
 		h.logger.Warn().Str("email", confirmData.Email).Msg("invalid or expired confirmation code")
 		http.Error(w, "Неверный или истекший код подтверждения", http.StatusUnauthorized)
@@ -106,7 +106,7 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
-	confirmCode, err := h.conf.NewCode(dataChange.Email, dataChange.Password)
+	confirmCode, err := h.conf.NewCode(dataChange.Email, dataChange.Password, "")
 	if err != nil {
 		h.logger.Error().Err(err).Str("email", dataChange.Email).Msg("failed to generate confirmation code")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
@@ -134,7 +134,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 
-	case pswdDb == "", !passwords.CheckPasswordHash(loginData.Password, pswdDb):
+	case pswdDb == "" || !passwords.CheckPasswordHash(loginData.Password, pswdDb):
 		h.logger.Warn().Str("email", loginData.Email).Msg("user not found or invalid password")
 		http.Error(w, "Пользователь с таким email не "+
 			"зарегистрирован или неверный пароль", http.StatusNotFound)
@@ -165,6 +165,10 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	authHeader := r.Header.Get("Authorization")
 	const bearerPrefix = "Bearer "
+	if len(authHeader) < len(bearerPrefix) {
+		http.Error(w, "Отсутствует токен авторизации", http.StatusUnauthorized)
+		return
+	}
 	token := authHeader[len(bearerPrefix):]
 
 	if err := h.inMemDb.DeleteJwt(r.Context(), email, token); err != nil {
@@ -204,7 +208,7 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	confirmCode, err := h.conf.NewCode(userData.Email, userData.Password)
+	confirmCode, err := h.conf.NewCode(userData.Email, userData.Password, "")
 	if err != nil {
 		h.logger.Error().Str("email", userData.Email).Err(err).
 			Msg("failed to create new confirmation code")
@@ -257,4 +261,34 @@ func (h *Handler) ChangeName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.writeBodyJSON(w, "Имя успешно изменено", nil)
+}
+
+func (h *Handler) UpdateFcmToken(w http.ResponseWriter, r *http.Request) {
+	email, err := h.getEmailFromContext(w, r)
+	if err != nil {
+		return
+	}
+	var data struct {
+		FcmToken string `json:"token"`
+		Device   string `json:"device"`
+	}
+	if err := h.readBodyJSON(w, r, &data); err != nil {
+		return
+	}
+	if data.FcmToken == "" {
+		h.logger.Warn().Str("email", email).Msg("empty FCM token")
+		http.Error(w, "FCM токен не должен быть пустым", http.StatusBadRequest)
+		return
+	}
+	if data.Device == "" {
+		h.logger.Warn().Str("email", email).Msg("empty device name")
+		http.Error(w, "uuid устройства не должно быть пустым", http.StatusBadRequest)
+		return
+	}
+	if err := h.db.SetFirebaseToken(r.Context(), email, data.Device, data.FcmToken); err != nil {
+		h.logger.Error().Err(err).Str("email", email).Msg("failed to set FCM token in database")
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
+	}
+	h.writeBodyJSON(w, "FCM токен успешно обновлен", nil)
 }

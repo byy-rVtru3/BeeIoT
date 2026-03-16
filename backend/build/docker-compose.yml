@@ -114,7 +114,7 @@ services:
       SWAGGER_JSON: /swagger/swagger.yaml
       BASE_URL: /swagger
     volumes:
-      - ../docs/swagger.yaml:/swagger/swagger.yaml:ro
+      - ../openapi.yml:/swagger/swagger.yaml:ro
     networks:
       - app-net
     restart: unless-stopped

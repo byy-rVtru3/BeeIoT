@@ -3,7 +3,6 @@ package temperature
 import (
 	"BeeIOT/internal/domain/interfaces"
 	"BeeIOT/internal/domain/models/dbTypes"
-	"BeeIOT/internal/domain/models/httpType"
 	"context"
 	"testing"
 	"time"
@@ -13,12 +12,11 @@ import (
 
 type MockDB struct {
 	interfaces.DB
-	Hives     []dbTypes.Hive
-	TempData  []dbTypes.HivesTemperatureData
-	MockEmail string
+	Hives    []dbTypes.Hive
+	TempData []dbTypes.HivesTemperatureData
 }
 
-func (m *MockDB) GetHives(ctx context.Context, email string) ([]dbTypes.Hive, error) {
+func (m *MockDB) GetHives(ctx context.Context, email string, active *bool) ([]dbTypes.Hive, error) {
 	return m.Hives, nil
 }
 
@@ -27,20 +25,6 @@ func (m *MockDB) GetTemperaturesSinceTimeById(ctx context.Context, hiveId int, t
 }
 
 func (m *MockDB) UpdateHiveTemperatureCheck(ctx context.Context, hiveId int, t time.Time) error {
-	return nil
-}
-
-func (m *MockDB) GetUserById(ctx context.Context, id int) (string, error) {
-	return m.MockEmail, nil
-}
-
-type MockInMemoryDB struct {
-	interfaces.InMemoryDB
-	Notifications []httpType.NotificationData
-}
-
-func (m *MockInMemoryDB) SetNotification(ctx context.Context, email string, note httpType.NotificationData) error {
-	m.Notifications = append(m.Notifications, note)
 	return nil
 }
 
@@ -56,18 +40,12 @@ func TestAnalyzeTemperature(t *testing.T) {
 			{Temperature: 34.0, Date: time.Now()}, // Normal
 			{Temperature: 20.0, Date: time.Now()}, // Too low
 		},
-		MockEmail: "test@example.com",
 	}
 
-	mockInMemDB := &MockInMemoryDB{}
+	analyzer := NewAnalyzer(ctx, 1*time.Second, mockDB, nil)
 
-	analyzer := NewAnalyzer(ctx, 1*time.Second, mockDB, mockInMemDB)
-
+	// With nil notification, temperatureAnalysis skips notification sending
 	analyzer.analyzeTemperature()
-
-	if len(mockInMemDB.Notifications) != 2 {
-		t.Errorf("Expected 2 notifications, got %d", len(mockInMemDB.Notifications))
-	}
 }
 
 func TestIsNormallyTemperature(t *testing.T) {

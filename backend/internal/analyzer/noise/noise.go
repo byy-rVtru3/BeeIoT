@@ -3,8 +3,9 @@ package noise
 import (
 	"BeeIOT/internal/domain/interfaces"
 	"BeeIOT/internal/domain/models/dbTypes"
-	"BeeIOT/internal/domain/models/httpType"
+	"BeeIOT/internal/domain/notification"
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"time"
@@ -13,22 +14,22 @@ import (
 )
 
 type Analyzer struct {
-	period  time.Duration
-	db      interfaces.DB
-	ctx     context.Context
-	inMemDb interfaces.InMemoryDB
-	logger  zerolog.Logger
+	period       time.Duration
+	db           interfaces.DB
+	ctx          context.Context
+	notification *notification.Notification
+	logger       zerolog.Logger
 }
 
-func NewAnalyzer(ctx context.Context, period time.Duration, db interfaces.DB, inMemDb interfaces.InMemoryDB) *Analyzer {
+func NewAnalyzer(ctx context.Context, period time.Duration, db interfaces.DB, notification *notification.Notification) *Analyzer {
 	logger := ctx.Value("logger").(zerolog.Logger)
-	return &Analyzer{period: period, db: db, ctx: ctx, inMemDb: inMemDb, logger: logger}
+	return &Analyzer{period: period, db: db, ctx: ctx, notification: notification, logger: logger}
 }
 
 func (a *Analyzer) Start() {
-	ticker := time.NewTicker(a.period)
-	defer ticker.Stop()
 	go func() {
+		ticker := time.NewTicker(a.period)
+		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
@@ -43,7 +44,7 @@ func (a *Analyzer) Start() {
 func (a *Analyzer) analyzeNoise() {
 	ct := time.Now()
 	computingStartTime := a.createStartDayTime(ct.Year(), ct.Month(), ct.Day())
-	hives, err := a.db.GetHives(a.ctx, "")
+	hives, err := a.db.GetHives(a.ctx, "", nil)
 	if err != nil {
 		a.logger.Error().Err(err).Msg("failed to get hives")
 		return
@@ -71,7 +72,7 @@ func (a *Analyzer) analyzeDay(
 	data map[time.Time][]dbTypes.HivesNoiseData, hive dbTypes.Hive, curTime time.Time) {
 
 	for date, noises := range data {
-		if date == curTime {
+		if date.Equal(curTime) {
 			continue
 		}
 		prevTime := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
@@ -81,22 +82,36 @@ func (a *Analyzer) analyzeDay(
 			if math.Abs(prev-cur) < criticalNoiseDelta {
 				continue
 			}
-			email, err := a.db.GetUserById(a.ctx, hive.Id)
-			if err != nil {
-				a.logger.Warn().Int("hiveId", hive.Id).
-					Str("email", email).Err(err).Msg("failed to get user")
+			if a.notification == nil {
+				a.logger.Warn().Int("hiveId", hive.Id).Msg("notification service is nil, skipping")
 				continue
 			}
-			err = a.inMemDb.SetNotification(a.ctx, email, httpType.NotificationData{
-				Text: fmt.Sprintf(`Обнаружено отклонение шума в улье %s.
-За день уровень шума изменился с %.2f до %.2f.
-Необходимо принять меры.`, hive.NameHive, prev, cur),
-				NameHive: hive.NameHive,
-				Date:     date.UnixNano(),
-			})
+			tokens, err := a.db.GetFirebaseToken(a.ctx, hive.Email)
 			if err != nil {
 				a.logger.Warn().Int("hiveId", hive.Id).
-					Str("email", email).Err(err).Msg("failed to set notification")
+					Str("email", hive.Email).Err(err).Msg("failed to get firebase token")
+				continue
+			}
+			badToken, err := a.notification.SendNotification(a.ctx, notification.Data{
+				Title: "Критический уровень шума",
+				Body: fmt.Sprintf(`Уровень шума изменился с %.2f до %.2f.
+Необходимо проверить его состояние`, prev, cur),
+				Data: map[string]string{
+					"hive": hive.NameHive,
+				},
+				Tokens:    tokens,
+				Important: false,
+			})
+			switch {
+			case errors.Is(err, notification.ErrInvalidTokens):
+				err = a.db.DeleteFirebaseToken(a.ctx, hive.Email, badToken)
+				if err != nil {
+					a.logger.Warn().Int("hiveId", hive.Id).
+						Str("email", hive.Email).Err(err).Msg("failed to delete invalid firebase token")
+				}
+			case err != nil:
+				a.logger.Warn().Int("hiveId", hive.Id).
+					Str("email", hive.Email).Err(err).Msg("failed to send notification")
 			}
 		}
 	}

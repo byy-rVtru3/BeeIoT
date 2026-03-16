@@ -185,19 +185,23 @@ func (m *MockDB) Registration(_ context.Context, _ httpType.Registration) error 
 	return nil
 }
 
-func (m *MockDB) NewHive(_ context.Context, _ string, _ string) error {
+func (m *MockDB) NewHive(_ context.Context, _, _, _ string) error {
 	return nil
 }
 
-func (m *MockDB) GetHives(_ context.Context, _ string) ([]dbTypes.Hive, error) {
+func (m *MockDB) GetHives(_ context.Context, _ string, _ *bool) ([]dbTypes.Hive, error) {
 	return []dbTypes.Hive{{Id: 1, NameHive: "Test Hive"}}, nil
 }
 
-func (m *MockDB) GetHiveByName(_ context.Context, _ string, _ string) (dbTypes.Hive, error) {
+func (m *MockDB) GetHiveByName(_ context.Context, _ string, _ string, _ *bool) (dbTypes.Hive, error) {
 	return dbTypes.Hive{Id: 1, NameHive: "Test Hive"}, nil
 }
 
-func (m *MockDB) UpdateHive(_ context.Context, _, _, _ string) error {
+func (m *MockDB) UpdateHive(_ context.Context, _ string, _ httpType.UpdateHive) error {
+	return nil
+}
+
+func (m *MockDB) UpdateHiveStatus(_ context.Context, _, _ string, _ bool) error {
 	return nil
 }
 
@@ -246,36 +250,47 @@ func (m *MockInMemoryDB) DeleteAllJwts(_ context.Context, _ string) error {
 	return nil
 }
 
+func (m *MockInMemoryDB) SetLastDeviceStatus(_ context.Context, _, _ string) error {
+	return nil
+}
+
+func (m *MockInMemoryDB) GetLastDeviceStatus(_ context.Context, _ string) (string, error) {
+	return "", nil
+}
+
 type MockPasswordKeeper struct {
 	codes map[string]struct {
 		code     string
 		password string
+		name     string
 	}
 }
 
-func (m *MockPasswordKeeper) AddCode(_ context.Context, email, code, password string, _ time.Duration) error {
+func (m *MockPasswordKeeper) AddCode(_ context.Context, email, code, password, name string, _ time.Duration) error {
 	if m.codes == nil {
 		m.codes = make(map[string]struct {
 			code     string
 			password string
+			name     string
 		})
 	}
 	m.codes[email] = struct {
 		code     string
 		password string
-	}{code: code, password: password}
+		name     string
+	}{code: code, password: password, name: name}
 	return nil
 }
 
-func (m *MockPasswordKeeper) GetPassword(_ context.Context, email string) (string, string, error) {
+func (m *MockPasswordKeeper) GetPassword(_ context.Context, email string) (string, string, string, error) {
 	if m.codes == nil {
-		return "", "", nil
+		return "", "", "", nil
 	}
 	data, ok := m.codes[email]
 	if !ok {
-		return "", "", nil
+		return "", "", "", nil
 	}
-	return data.code, data.password, nil
+	return data.code, data.password, data.name, nil
 }
 
 func TestLogout(t *testing.T) {
@@ -443,7 +458,7 @@ func TestConfirmRegistration(t *testing.T) {
 	// Step 1: Generate code
 	email := "test@example.com"
 	password := "password123"
-	code, _ := h.conf.NewCode(email, password)
+	code, _ := h.conf.NewCode(email, password, "Test User")
 
 	// Step 2: Confirm registration
 	body, _ := json.Marshal(httpType.Confirm{
@@ -476,7 +491,7 @@ func TestConfirmChangePassword(t *testing.T) {
 	// Step 1: Generate code
 	email := "test@example.com"
 	password := "newpassword123"
-	code, _ := h.conf.NewCode(email, password)
+	code, _ := h.conf.NewCode(email, password, "")
 
 	// Step 2: Confirm change password
 	body, _ := json.Marshal(httpType.Confirm{
@@ -558,8 +573,7 @@ func TestGetNoiseAndTemp(t *testing.T) {
 		t.Fatalf("NewHandler failed: %v", err)
 	}
 
-	body := []byte(`{"sensor": "sensor1"}`)
-	req := httptest.NewRequest("POST", "/api/mqtt/data", bytes.NewBuffer(body))
+	req := httptest.NewRequest("GET", "/api/mqtt/data?sensor=sensor1", nil)
 	w := httptest.NewRecorder()
 
 	h.GetNoiseAndTemp(w, req)

@@ -66,40 +66,46 @@ type Hive struct {
 	NameHive string `json:"name"`
 }
 
-type HiveResponse struct {
-	Id              int    `json:"id"`
-	NameHive        string `json:"name"`
-	Email           string `json:"email"`
-	DateTemperature string `json:"date_temperature"`
-	DateNoise       string `json:"date_noise"`
-	SensorID        string `json:"sensor_id"`
-	Status          bool   `json:"status"`
+type HiveListItem struct {
+	Name   string `json:"name"`
+	Sensor string `json:"sensor"`
+}
+
+type HiveDetails struct {
+	Name   string `json:"name"`
+	Sensor string `json:"sensor"`
+	Active bool   `json:"active"`
 }
 
 type CreateHive struct {
-	Name string `json:"name"`
+	Name   string `json:"name"`
+	Sensor string `json:"sensor,omitempty"`
+}
+
+type ArchiveHive struct {
+	Name   string `json:"name"`
+	Active bool   `json:"active"`
 }
 
 type UpdateHive struct {
-	OldName string `json:"old_name"`
-	NewName string `json:"new_name"`
+	OldName string  `json:"old_name"`
+	NewName *string `json:"new_name,omitempty"`
+	Active  *bool   `json:"active"`
+	Sensor  *string `json:"sensor,omitempty"`
 }
 
 type DeleteHive struct {
 	Name string `json:"name"`
 }
 
-type NoiseLevelResponse struct {
-	Date  time.Time `json:"date"`
-	Level float64   `json:"level"`
+type TelemetryDataPoint struct {
+	Time  int64   `json:"time"`
+	Value float64 `json:"value"`
 }
 
-type WeightResponse struct {
-	Date   time.Time `json:"date"`
-	Weight float64   `json:"weight"`
-}
-
-type TemperatureResponse struct {
-	Date        time.Time `json:"date"`
-	Temperature float64   `json:"temperature"`
+type LastSensorReading struct {
+	Temperature     float64 `json:"temperature"`
+	TemperatureTime int64   `json:"temperature_time"`
+	Noise           float64 `json:"noise"`
+	NoiseTime       int64   `json:"noise_time"`
 }

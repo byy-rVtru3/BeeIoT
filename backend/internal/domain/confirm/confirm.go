@@ -31,7 +31,7 @@ func NewConfirm(sender interfaces.ConfirmSender, confirmMap interfaces.PasswordK
 		Sender:     sender}, nil
 }
 
-func (conf *Confirm) NewCode(email, password string) (UserCode, error) {
+func (conf *Confirm) NewCode(email, password, name string) (UserCode, error) {
 	code := conf.generateConfirmationCode()
 	pswd, err := passwords.HashPassword(password)
 	if err != nil {
@@ -39,24 +39,25 @@ func (conf *Confirm) NewCode(email, password string) (UserCode, error) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeLiveCode)
 	defer cancel()
-	err = conf.confirmMap.AddCode(ctx, email, code, pswd, timeLiveCode)
+	err = conf.confirmMap.AddCode(ctx, email, code, pswd, name, timeLiveCode)
 	return code, err
 }
 
-func (conf *Confirm) Verify(email, code string) (UserPassword, bool) {
+func (conf *Confirm) Verify(email, code string) (UserPassword, string, bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeLiveCode)
 	defer cancel()
-	confirmCode, password, err := conf.confirmMap.GetPassword(ctx, email)
+	confirmCode, password, name, err := conf.confirmMap.GetPassword(ctx, email)
 	if err != nil || confirmCode != code {
-		return "", false
+		return "", "", false
 	}
-	return password, true
+	return password, name, true
 }
 
 func (conf *Confirm) generateConfirmationCode() string {
-	data := []rune("01234567890123456789")
-	conf.rand.Shuffle(len(data), func(i, j int) {
-		data[i], data[j] = data[j], data[i]
-	})
-	return string(data[:6])
+	const digits = "0123456789"
+	code := make([]byte, 6)
+	for i := range code {
+		code[i] = digits[conf.rand.Intn(len(digits))]
+	}
+	return string(code)
 }

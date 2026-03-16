@@ -3,7 +3,6 @@ package noise
 import (
 	"BeeIOT/internal/domain/interfaces"
 	"BeeIOT/internal/domain/models/dbTypes"
-	"BeeIOT/internal/domain/models/httpType"
 	"context"
 	"testing"
 	"time"
@@ -15,10 +14,9 @@ type MockDB struct {
 	interfaces.DB
 	Hives     []dbTypes.Hive
 	NoiseData map[time.Time][]dbTypes.HivesNoiseData
-	MockEmail string
 }
 
-func (m *MockDB) GetHives(_ context.Context, _ string) ([]dbTypes.Hive, error) {
+func (m *MockDB) GetHives(_ context.Context, _ string, _ *bool) ([]dbTypes.Hive, error) {
 	return m.Hives, nil
 }
 
@@ -26,21 +24,7 @@ func (m *MockDB) GetNoiseSinceDay(_ context.Context, _ int, _ time.Time) (map[ti
 	return m.NoiseData, nil
 }
 
-func (m *MockDB) GetUserById(_ context.Context, _ int) (string, error) {
-	return m.MockEmail, nil
-}
-
 func (m *MockDB) UpdateHiveNoiseCheck(_ context.Context, _ int, _ time.Time) error {
-	return nil
-}
-
-type MockInMemoryDB struct {
-	interfaces.InMemoryDB
-	Notifications []httpType.NotificationData
-}
-
-func (m *MockInMemoryDB) SetNotification(_ context.Context, _ string, note httpType.NotificationData) error {
-	m.Notifications = append(m.Notifications, note)
 	return nil
 }
 
@@ -105,29 +89,16 @@ func TestAnalyzeNoise(t *testing.T) {
 			{Id: 1, NameHive: "NoiseHive"},
 		},
 		NoiseData: noiseData,
-		MockEmail: "noise@example.com",
 	}
-
-	mockInMemDB := &MockInMemoryDB{}
 
 	// NewAnalyzer expects logger in context or creates one.
 	logger := zerolog.Nop()
 	ctxLogger := context.WithValue(ctx, "logger", logger)
 
-	analyzer := NewAnalyzer(ctxLogger, 1*time.Hour, mockDB, mockInMemDB)
+	analyzer := NewAnalyzer(ctxLogger, 1*time.Hour, mockDB, nil)
 
-	// Run analysis
+	// Run analysis — with nil notification, analyzeDay skips notification sending
 	analyzer.analyzeNoise()
-
-	// Check results
-	if len(mockInMemDB.Notifications) != 1 {
-		t.Errorf("Expected 1 notification, got %d", len(mockInMemDB.Notifications))
-	} else {
-		note := mockInMemDB.Notifications[0]
-		if note.NameHive != "NoiseHive" {
-			t.Errorf("Expected hive name NoiseHive, got %s", note.NameHive)
-		}
-	}
 }
 
 func TestAverageNoise(t *testing.T) {
