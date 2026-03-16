@@ -1,26 +1,25 @@
 package com.app.mobile.domain.usecase.account
 
+import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.data.session.manager.SessionManager
-import com.app.mobile.domain.models.logout.LogoutRequestResult
+import com.app.mobile.data.session.manager.TokenManager
 import com.app.mobile.domain.repository.RepositoryApi
-import com.app.mobile.domain.repository.UserLocalRepository
 
 class LogoutAccountUseCase(
     private val repositoryApi: RepositoryApi,
-    private val userLocalRepository: UserLocalRepository,
+    private val tokenManager: TokenManager,
     private val sessionManager: SessionManager
 ) {
-    suspend operator fun invoke(): LogoutRequestResult {
+    suspend operator fun invoke(): ApiResult<Unit> {
         return try {
-            val userId = sessionManager.getCurrentUserId() ?: return LogoutRequestResult.UnknownError
             val result = repositoryApi.logoutAccount()
-            if (result is LogoutRequestResult.Success) {
-                userLocalRepository.deleteTokenFromUser(userId)
+            if (result is ApiResult.Success) {
+                tokenManager.clearToken()
                 sessionManager.clearSession()
             }
             result
-        } catch (_: Exception) {
-            LogoutRequestResult.UnknownError
+        } catch (e: Exception) {
+            ApiResult.UnexpectedError(e)
         }
     }
 }

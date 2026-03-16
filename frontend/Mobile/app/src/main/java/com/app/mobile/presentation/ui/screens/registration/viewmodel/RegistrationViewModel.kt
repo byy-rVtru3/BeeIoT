@@ -1,6 +1,7 @@
 package com.app.mobile.presentation.ui.screens.registration.viewmodel
 
 import android.util.Log
+import com.app.mobile.domain.mappers.toRegistrationUiModel
 import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.account.CreateUserAccountUseCase
 import com.app.mobile.domain.usecase.account.RegistrationAccountUseCase
@@ -108,7 +109,7 @@ class RegistrationViewModel(
 			launch {
 				val response = registrationAccountUseCase(
 					registrationModel.toDomain()
-				).toUiModel()
+				).toRegistrationUiModel()
 
 				when (response) {
 					is RegistrationResultUi.Success -> {

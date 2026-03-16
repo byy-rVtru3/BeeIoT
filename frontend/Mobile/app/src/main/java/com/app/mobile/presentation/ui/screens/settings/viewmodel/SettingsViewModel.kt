@@ -1,7 +1,7 @@
 package com.app.mobile.presentation.ui.screens.settings.viewmodel
 
 import android.util.Log
-import com.app.mobile.domain.mappers.toUiModel
+import com.app.mobile.domain.mappers.toLogoutUiModel
 import com.app.mobile.domain.usecase.account.LogoutAccountUseCase
 import com.app.mobile.domain.usecase.notifications.CheckIfNotificationPromptShownUseCase
 import com.app.mobile.domain.usecase.notifications.SendPushTokenUseCase
@@ -36,7 +36,7 @@ class SettingsViewModel(
 			updateState { SettingsUiState.Loading }
 			launch {
 
-				when (val result = logoutUseCase().toUiModel()) {
+				when (val result = logoutUseCase().toLogoutUiModel()) {
 					is LogoutResultUi.Success -> {
 						sendEvent(SettingsEvent.NavigateToAuthorization)
 					}

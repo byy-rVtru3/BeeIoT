@@ -1,12 +1,9 @@
 package com.app.mobile.data.repository
 
-import com.app.mobile.data.session.manager.SessionManager
-import com.app.mobile.domain.repository.UserLocalRepository
+import com.app.mobile.data.session.manager.TokenManager
 
 class AuthRepository(
-    private val sessionManager: SessionManager,
-    private val databaseImpl: UserLocalRepository
+    private val tokenManager: TokenManager
 ) {
-    suspend fun getToken(): String? =
-        sessionManager.getCurrentUserId()?.let { databaseImpl.getUserToken(it) }
+    fun getToken(): String? = tokenManager.getToken()
 }

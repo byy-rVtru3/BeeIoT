@@ -1,32 +1,27 @@
 package com.app.mobile.domain.repository
 
-import com.app.mobile.data.api.models.PushTokenCreationModel
+import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.domain.models.authorization.AuthorizationModel
-import com.app.mobile.domain.models.authorization.AuthorizationRequestResult
 import com.app.mobile.domain.models.confirmation.ConfirmationModel
-import com.app.mobile.domain.models.confirmation.ConfirmationRequestResult
-import com.app.mobile.domain.models.delete.DeleteRequestResult
-import com.app.mobile.domain.models.hives.queen.QueenCalendarRequestResult
+import com.app.mobile.domain.models.hives.queen.QueenLifecycle
 import com.app.mobile.domain.models.hives.queen.QueenRequestModel
-import com.app.mobile.domain.models.logout.LogoutRequestResult
-import com.app.mobile.domain.models.notifications.PushTokenRequestResult
+import com.app.mobile.domain.models.notifications.PushTokenCreation
 import com.app.mobile.domain.models.registration.RegistrationModel
-import com.app.mobile.domain.models.registration.RegistrationRequestResult
 
 interface RepositoryApi {
-    suspend fun registrationAccount(registrationModel: RegistrationModel): RegistrationRequestResult
+    suspend fun registrationAccount(registrationModel: RegistrationModel): ApiResult<Unit>
 
-    suspend fun confirmationUserRegistration(confirmationModel: ConfirmationModel): ConfirmationRequestResult
+    suspend fun confirmationUserRegistration(confirmationModel: ConfirmationModel): ApiResult<Unit>
 
-    suspend fun confirmationUserResetPassword(confirmationModel: ConfirmationModel): ConfirmationRequestResult
+    suspend fun confirmationUserResetPassword(confirmationModel: ConfirmationModel): ApiResult<Unit>
 
-    suspend fun authorizationAccount(authorizationModel: AuthorizationModel): AuthorizationRequestResult
+    suspend fun authorizationAccount(authorizationModel: AuthorizationModel): ApiResult<String>
 
-    suspend fun logoutAccount(): LogoutRequestResult
+    suspend fun logoutAccount(): ApiResult<Unit>
 
-    suspend fun deleteAccount(): DeleteRequestResult
+    suspend fun deleteAccount(): ApiResult<Unit>
 
-    suspend fun calcQueenCalendar(queenRequestModel: QueenRequestModel): QueenCalendarRequestResult
+    suspend fun calcQueenCalendar(queenRequestModel: QueenRequestModel): ApiResult<QueenLifecycle>
 
-    suspend fun registerPushToken(pushTokenCreation: PushTokenCreationModel): PushTokenRequestResult
+    suspend fun registerPushToken(pushTokenCreation: PushTokenCreation): ApiResult<Unit>
 }

@@ -4,6 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class PushTokenCreationModel(
-	val deviceId: String,
-	val token: String
+	val token: String,
+	val device: String,
 )

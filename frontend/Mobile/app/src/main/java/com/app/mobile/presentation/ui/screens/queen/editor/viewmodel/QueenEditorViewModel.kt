@@ -4,7 +4,8 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.toRoute
 import com.app.mobile.domain.mappers.toDomain
-import com.app.mobile.domain.models.hives.queen.QueenCalendarRequestResult
+import com.app.mobile.data.api.models.ApiResult
+import com.app.mobile.data.api.mappers.toErrorMessage
 import com.app.mobile.domain.usecase.hives.hive.GetHivesPreviewUseCase
 import com.app.mobile.domain.usecase.hives.queen.CalcQueenCalendarUseCase
 import com.app.mobile.domain.usecase.hives.queen.CreateQueenUseCase
@@ -86,17 +87,17 @@ class QueenEditorViewModel(
         if (state is QueenEditorUiState.Content) {
             launch {
                 when (val result = calcQueenCalendarUseCase(state.queenEditorModel.toDomain())) {
-                    is QueenCalendarRequestResult.Success -> {
+                    is ApiResult.Success -> {
                         saveQueenUseCase(
                             state.queenEditorModel
                                 .toDomain() // так себе но пойдет
-                                .toDomain(result.queenLifecycle)
+                                .toDomain(result.data)
                         )
                         sendEvent(QueenEditorEvent.NavigateBack)
                     }
 
-                    is QueenCalendarRequestResult.Error -> {
-                        sendEvent(QueenEditorEvent.ShowSnackBar(result.message))
+                    else -> {
+                        sendEvent(QueenEditorEvent.ShowSnackBar(result.toErrorMessage()))
                     }
                 }
             }
