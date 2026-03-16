@@ -32,6 +32,15 @@ import com.app.mobile.presentation.ui.screens.hive.details.viewmodel.HiveViewMod
 import com.app.mobile.presentation.ui.screens.hive.editor.HiveEditorRoute
 import com.app.mobile.presentation.ui.screens.hive.editor.HiveEditorScreen
 import com.app.mobile.presentation.ui.screens.hive.editor.viewmodel.HiveEditorViewModel
+import com.app.mobile.presentation.ui.screens.hub.details.HubRoute
+import com.app.mobile.presentation.ui.screens.hub.details.HubScreen
+import com.app.mobile.presentation.ui.screens.hub.details.viewmodel.HubViewModel
+import com.app.mobile.presentation.ui.screens.hub.editor.HubEditorRoute
+import com.app.mobile.presentation.ui.screens.hub.editor.HubEditorScreen
+import com.app.mobile.presentation.ui.screens.hub.editor.viewmodel.HubEditorViewModel
+import com.app.mobile.presentation.ui.screens.hub.list.HubsListRoute
+import com.app.mobile.presentation.ui.screens.hub.list.HubsListScreen
+import com.app.mobile.presentation.ui.screens.hub.list.viewmodel.HubsListViewModel
 import com.app.mobile.presentation.ui.screens.hive.list.HivesListRoute
 import com.app.mobile.presentation.ui.screens.hive.list.HivesListScreen
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListViewModel
@@ -125,6 +134,33 @@ fun AppNavigation(
             )
         }
 
+        animatedComposable<HubsListRoute> {
+            val hubsListViewModel: HubsListViewModel = koinViewModel()
+            HubsListScreen(
+                hubsListViewModel,
+                onHubClick = { navController.navigate(HubRoute(it)) },
+                onCreateHubClick = { navController.navigate(HubEditorRoute(null)) }
+            )
+        }
+
+        animatedComposable<HubRoute> {
+            val hubViewModel: HubViewModel = koinViewModel()
+            HubScreen(
+                hubViewModel,
+                onHubListClick = { navController.popBackStack() },
+                onHubEditClick = { hubId -> navController.navigate(HubEditorRoute(hubId)) },
+                onNotificationsClick = { TODO("NotificationsRoute") }
+            )
+        }
+
+        animatedComposable<HubEditorRoute> {
+            val hubEditorViewModel: HubEditorViewModel = koinViewModel()
+            HubEditorScreen(
+                hubEditorViewModel,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
         animatedComposable<HivesListRoute> {
             val hivesListViewModel: HivesListViewModel = koinViewModel()
             HivesListScreen(
@@ -191,7 +227,7 @@ fun AppNavigation(
                 hiveEditorViewModel,
                 onBackClick = { navController.popBackStack() },
                 onCreateQueenClick = { navController.navigate(QueenEditorRoute(null)) },
-                onCreateHubClick = { TODO("HiveCreateHubRoute") }
+                onCreateHubClick = { navController.navigate(HubEditorRoute(null)) }
             )
         }
 

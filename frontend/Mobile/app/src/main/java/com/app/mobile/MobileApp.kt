@@ -20,6 +20,9 @@ import com.app.mobile.di.screens.aboutAppModule
 import com.app.mobile.di.screens.accountInfoModule
 import com.app.mobile.di.screens.authorizationModule
 import com.app.mobile.di.screens.confirmationModule
+import com.app.mobile.di.screens.hubsListModule
+import com.app.mobile.di.screens.hubModule
+import com.app.mobile.di.screens.hubEditorModule
 import com.app.mobile.di.screens.hiveEditorModule
 import com.app.mobile.di.screens.hiveModule
 import com.app.mobile.di.screens.hivesListModule
@@ -68,6 +71,9 @@ class MobileApp : Application() {
 				hivesListModule,
 				hiveModule,
 				hiveEditorModule,
+				hubsListModule,
+				hubModule,
+				hubEditorModule,
 				queenModule,
 				queenEditorModule,
 				queenListModule,

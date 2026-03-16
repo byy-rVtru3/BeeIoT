@@ -64,6 +64,29 @@
     <string name="error_name_too_long">Имя слишком длинное (максимум 50 символов)</string>
     <string name="password_requirements">Пароль должен быть длиной 8 и более символов, состоящий из букв, цифр и других символов</string>
 
+    <!-- Strings used in HubsListScreen -->
+    <string name="my_hubs">Мои хабы</string>
+    <string name="add_hub">Добавить хаб</string>
+    <string name="empty_hubs_list_screen">Пока нету хабов, чтобы добавить хаб нажмите на кнопку \"Добавить хаб\"</string>
+
+    <!-- Strings used in HubScreen -->
+    <string name="hub">Хаб</string>
+    <string name="hub_edit_title">Редактирование хаба</string>
+    <string name="hub_add_title">Добавление хаба</string>
+    <string name="hub_name_label">Название хаба</string>
+    <string name="hub_name_placeholder">Введите название хаба</string>
+    <string name="hub_ip_label">IP адрес</string>
+    <string name="hub_ip_placeholder">Введите IP адрес</string>
+    <string name="hub_port_label">Порт</string>
+    <string name="hub_port_placeholder">Введите порт</string>
+    <string name="section_latest_readings">Последние показания с хаба</string>
+    <string name="label_temperature">Температура:</string>
+    <string name="label_noise">Шум:</string>
+    <string name="label_weight">Вес:</string>
+    <string name="label_ip_address">IP адрес:</string>
+    <string name="label_port">Порт:</string>
+    <string name="edit">Редактировать</string>
+
     <!-- Strings used in HiveScreen -->
     <string name="section_main_info">Основная информация</string>
     <string name="label_name">Название:</string>

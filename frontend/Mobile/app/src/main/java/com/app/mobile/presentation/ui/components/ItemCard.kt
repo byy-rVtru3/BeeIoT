@@ -7,9 +7,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -122,6 +124,89 @@ fun HiveItemCard(
                     tint = if (isSignalActive) iconActiveColor() else iconInactiveColor()
                 )
             }
+        }
+    }
+}
+
+
+@Composable
+fun HubItemCard(
+    name: String,
+    lastConnection: String,
+    isSignalActive: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    SelectableCardContainer(
+        onClick = onClick,
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(Dimens.ItemCardPadding)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(Dimens.HiveItemPadding)
+        ) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.hive_last_connection_format, lastConnection),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_sensors),
+                    contentDescription = null,
+                    modifier = Modifier.size(Dimens.HiveItemCardIconSize),
+                    tint = if (isSignalActive) iconActiveColor() else iconInactiveColor()
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun HubTileCard(
+    name: String,
+    isSignalActive: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    SelectableCardContainer(
+        onClick = onClick,
+        modifier = modifier.height(Dimens.Size120)
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(Dimens.ItemCardPadding)
+                .fillMaxSize()
+        ) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.TopStart)
+            )
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.ic_sensors),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(Dimens.HiveItemCardIconSize),
+                tint = if (isSignalActive) iconActiveColor() else iconInactiveColor()
+            )
         }
     }
 }
