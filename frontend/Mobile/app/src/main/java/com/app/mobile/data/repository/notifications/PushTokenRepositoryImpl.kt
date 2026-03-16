@@ -1,6 +1,5 @@
 package com.app.mobile.data.repository.notifications
 
-import com.app.mobile.data.api.mappers.toApiModel
 import com.app.mobile.data.datastore.FcmTokenDataSource
 import com.app.mobile.domain.models.notifications.PushTokenCreation
 import com.app.mobile.domain.repository.RepositoryApi
@@ -14,6 +13,6 @@ class PushTokenRepositoryImpl(
 	override suspend fun getToken(): String = fcmTokenDataSource.getToken()
 
 	override suspend fun registerPushToken(pushTokenCreation: PushTokenCreation) {
-		repositoryApi.registerPushToken(pushTokenCreation.toApiModel())
+		repositoryApi.registerPushToken(pushTokenCreation)
 	}
 }

@@ -1,8 +1,8 @@
 package com.app.mobile.presentation.ui.screens.accountinfo.viewmodel
 
 import android.util.Log
+import com.app.mobile.domain.mappers.toDeleteUiModel
 import com.app.mobile.domain.mappers.toPresentation
-import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.account.DeleteAccountUseCase
 import com.app.mobile.domain.usecase.account.GetAccountInfoUseCase
 import com.app.mobile.presentation.models.account.DeleteResultUi
@@ -78,7 +78,7 @@ class AccountInfoViewModel(
 		if (state is AccountInfoUiState.Content) {
 			updateState { AccountInfoUiState.Loading }
 			launch {
-				when (val result = deleteAccountUseCase().toUiModel()) {
+				when (val result = deleteAccountUseCase().toDeleteUiModel()) {
 					is DeleteResultUi.Success -> {
 						sendEvent(AccountInfoEvent.NavigateToRegistration)
 					}

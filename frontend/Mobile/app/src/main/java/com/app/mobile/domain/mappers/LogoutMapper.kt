@@ -1,19 +1,11 @@
 package com.app.mobile.domain.mappers
 
-import com.app.mobile.domain.models.logout.LogoutRequestResult
+import com.app.mobile.data.api.models.ApiResult
+import com.app.mobile.data.api.mappers.toErrorMessage
 import com.app.mobile.presentation.models.account.LogoutResultUi
 
 
-fun LogoutRequestResult.toUiModel() = when (this) {
-    is LogoutRequestResult.Success -> LogoutResultUi.Success
-
-    is LogoutRequestResult.BadRequestError -> LogoutResultUi.Error("Некорректный запрос")
-
-    is LogoutRequestResult.ServerError -> LogoutResultUi.Error("Ошибка сервера")
-
-    is LogoutRequestResult.TimeoutError -> LogoutResultUi.Error("Превышено время ожидания")
-
-    is LogoutRequestResult.UnknownError -> LogoutResultUi.Error("Неизвестная ошибка")
-
-    is LogoutRequestResult.UnauthorizedError -> LogoutResultUi.Error("Пользователь не авторизован")
+fun ApiResult<Unit>.toLogoutUiModel() = when (this) {
+    is ApiResult.Success -> LogoutResultUi.Success
+    else -> LogoutResultUi.Error(toErrorMessage())
 }

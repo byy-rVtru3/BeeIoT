@@ -20,7 +20,7 @@ interface AuthApiClient {
     @POST("calcQueen/calc")
     suspend fun calcQueen(@Body calcQueenRequest: CalcQueenRequest): Response<QueenCalendarResponse>
 
-    @POST("/api/gateway/notification/push/token")
+    @POST("auth/fcm/update")
     suspend fun registerPushToken(@Body pushTokenCreation: PushTokenCreationModel): Response<ResponseApiModel>
 
 }

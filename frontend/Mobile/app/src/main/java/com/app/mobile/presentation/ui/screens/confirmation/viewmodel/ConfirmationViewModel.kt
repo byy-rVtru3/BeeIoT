@@ -5,7 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.app.mobile.domain.mappers.toDomain
-import com.app.mobile.domain.mappers.toUiModel
+import com.app.mobile.domain.mappers.toConfirmationUiModel
 import com.app.mobile.domain.usecase.account.ConfirmationUserUseCase
 import com.app.mobile.presentation.models.account.ConfirmationModelUi
 import com.app.mobile.presentation.models.account.ConfirmationResultUi
@@ -75,7 +75,7 @@ class ConfirmationViewModel(
             launch {
                 val result = confirmationUserUseCase(
                     model.toDomain()
-                ).toUiModel()
+                ).toConfirmationUiModel()
 
                 when (result) {
                     is ConfirmationResultUi.Success -> {
