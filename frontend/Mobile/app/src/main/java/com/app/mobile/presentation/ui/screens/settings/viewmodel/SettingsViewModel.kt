@@ -8,16 +8,19 @@ import com.app.mobile.domain.usecase.notifications.SendPushTokenUseCase
 import com.app.mobile.domain.usecase.notifications.SetNotificationPromptShownUseCase
 import com.app.mobile.presentation.models.account.LogoutResultUi
 import com.app.mobile.presentation.ui.components.BaseViewModel
+import com.app.mobile.ui.theme.ThemeManager
 
 class SettingsViewModel(
 	private val logoutUseCase: LogoutAccountUseCase,
 	private val checkIfNotificationPromptShownUseCase: CheckIfNotificationPromptShownUseCase,
 	private val setNotificationPromptShownUseCase: SetNotificationPromptShownUseCase,
-	private val sendPushTokenUseCase: SendPushTokenUseCase
+	private val sendPushTokenUseCase: SendPushTokenUseCase,
+	private val themeManager: ThemeManager
 ) : BaseViewModel<SettingsUiState, SettingsEvent>(SettingsUiState.Content()) {
 
 	init {
 		checkNotificationPrompt()
+		observeTheme()
 	}
 
 	override fun handleError(exception: Throwable) {
@@ -54,14 +57,16 @@ class SettingsViewModel(
 		if (currentState is SettingsUiState.Content) {
 			launch {
 				val hasShown = !checkIfNotificationPromptShownUseCase()
-				updateState { SettingsUiState.Content(showNotificationPrompt = hasShown) }
+				val state = currentState as SettingsUiState.Content
+				updateState { state.copy(showNotificationPrompt = hasShown) }
 			}
 		}
 	}
 
 	fun onAcceptNotificationPrompt() {
 		if (currentState is SettingsUiState.Content) {
-			updateState { SettingsUiState.Content(showNotificationPrompt = false) }
+			val state = currentState as SettingsUiState.Content
+			updateState { state.copy(showNotificationPrompt = false) }
 			launch {
 				setNotificationPromptShownUseCase(true)
 			}
@@ -71,7 +76,8 @@ class SettingsViewModel(
 
 	fun onDeclineNotificationPrompt() {
 		if (currentState is SettingsUiState.Content) {
-			updateState { SettingsUiState.Content(showNotificationPrompt = false) }
+			val state = currentState as SettingsUiState.Content
+			updateState { state.copy(showNotificationPrompt = false) }
 			launch {
 				setNotificationPromptShownUseCase(false)
 			}
@@ -80,20 +86,38 @@ class SettingsViewModel(
 
 	fun sendPushToken() {
 		val state = currentState
-		if (state is SettingsUiState.Content) {
-			if (state.showNotificationPrompt) {
-				launch { sendPushTokenUseCase() }
-			}
+		if (state is SettingsUiState.Content && state.showNotificationPrompt) {
+			launch { sendPushTokenUseCase() }
 		}
 	}
 
 	fun resetError() {
-		updateState { SettingsUiState.Content() }
+		val state = currentState
+		if (state is SettingsUiState.Content) {
+			updateState { state.copy() }
+		} else {
+			updateState { SettingsUiState.Content() }
+		}
 	}
 
 	fun onAboutAppClick() {
 		if (currentState is SettingsUiState.Content) {
 			sendEvent(SettingsEvent.NavigateToAboutApp)
 		}
+	}
+
+	private fun observeTheme() {
+		launch {
+			themeManager.themeState.collect { themeState ->
+				val state = currentState
+				if (state is SettingsUiState.Content && themeState.isReady) {
+					updateState { state.copy(isDarkTheme = themeState.isDarkTheme) }
+				}
+			}
+		}
+	}
+
+	fun onToggleTheme() {
+		themeManager.toggleTheme()
 	}
 }

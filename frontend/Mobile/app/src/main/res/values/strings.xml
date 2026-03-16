@@ -116,4 +116,8 @@
 	<string name="notifications_description">Разрешите уведомления, чтобы вовремя узнавать о важных событиях на пасеке: изменениях веса улья, падении температуры или необходимости осмотра маток.</string>
 	<string name="turn_off_notifications">Позже</string>
 
+	<!-- Theme -->
+	<string name="switch_to_dark_theme">Переключить на тёмную тему</string>
+	<string name="switch_to_light_theme">Переключить на дневную тему</string>
+
 </resources>

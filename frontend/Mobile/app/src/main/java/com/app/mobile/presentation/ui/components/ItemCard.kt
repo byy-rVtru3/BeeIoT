@@ -40,8 +40,13 @@ import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.Alpha
 
 
-val IconActive = Color.Black
-val IconInactive = Color.LightGray
+val IconInactiveAlpha = 0.35f
+
+@Composable
+fun iconActiveColor() = MaterialTheme.colorScheme.onSurface
+
+@Composable
+fun iconInactiveColor() = MaterialTheme.colorScheme.onSurface.copy(alpha = IconInactiveAlpha)
 
 @Composable
 fun SelectableCardContainer(
@@ -114,7 +119,7 @@ fun HiveItemCard(
                     imageVector = ImageVector.vectorResource(R.drawable.ic_sensors),
                     contentDescription = null,
                     modifier = Modifier.size(Dimens.HiveItemCardIconSize),
-                    tint = if (isSignalActive) IconActive else IconInactive
+                    tint = if (isSignalActive) iconActiveColor() else iconInactiveColor()
                 )
             }
         }

@@ -7,6 +7,7 @@ import com.app.mobile.di.mainModule
 import com.app.mobile.di.networkModules
 import com.app.mobile.di.firebaseModule
 import com.app.mobile.di.notificationsModule
+import com.app.mobile.di.themeModule
 import com.app.mobile.di.repository.authRepository
 import com.app.mobile.di.repository.hivesLocalRepositoryModule
 import com.app.mobile.di.repository.hubLocalRepositoryModule
@@ -74,6 +75,7 @@ class MobileApp : Application() {
 				workEditorModule,
 				workListModule,
 				notificationsModule,
+				themeModule,
 				mainModule,
 				firebaseModule
 			)

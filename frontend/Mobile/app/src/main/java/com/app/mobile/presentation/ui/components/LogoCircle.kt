@@ -1,5 +1,6 @@
 package com.app.mobile.presentation.ui.components
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,7 +26,7 @@ fun LogoCircle() {
         modifier = Modifier
             .size(Dimens.LogoCircleSize)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surface)
+            .background(Color.White)
             .border(
                 width = Dimens.BorderWidthThick,
                 color = MaterialTheme.colorScheme.outline,
