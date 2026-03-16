@@ -1485,6 +1485,38 @@ paths:
                         items:
                           $ref: '#/components/schemas/HubListItem'
 
+  /hub/:
+    get:
+      tags: [Hub]
+      summary: Получение хаба по ID 🔒
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Физический идентификатор хаба
+      responses:
+        '200':
+          description: Хаб найден
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/HubListItem'
+        '404':
+          description: Хаб не найден
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Хаб не найден
+
   /hub/update:
     put:
       tags: [Hub]
