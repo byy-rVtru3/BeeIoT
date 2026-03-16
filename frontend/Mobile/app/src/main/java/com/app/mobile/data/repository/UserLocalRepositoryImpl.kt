@@ -18,18 +18,7 @@ class UserLocalRepositoryImpl(private val userDao: UserDao) : UserLocalRepositor
     override suspend fun getUserById(userId: Int): UserDomain? =
         userDao.getUserById(userId)?.toDomain()
 
-    override suspend fun addTokenToUser(email: String, token: String): Int? {
-        val id = userDao.getUserIdByEmail(email) ?: return null
-        userDao.addTokenToUser(email, token)
-        return id
-    }
-
-    override suspend fun updateTokenToUser(userId: Int, token: String) =
-        userDao.updateTokenToUser(userId, token)
-
-    override suspend fun getUserToken(userId: Int) = userDao.getUserToken(userId)
-
-    override suspend fun deleteTokenFromUser(userId: Int) = userDao.deleteTokenFromUser(userId)
+    override suspend fun getUserIdByEmail(email: String) = userDao.getUserIdByEmail(email)
 
 }
 

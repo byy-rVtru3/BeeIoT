@@ -10,7 +10,6 @@ import com.app.mobile.presentation.ui.screens.settings.SettingsRoute
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 class MainViewModel(
 	private val isTokenExistUseCase: IsTokenExistUseCase
@@ -21,7 +20,7 @@ class MainViewModel(
 
 	fun getRouteFromScreen(screen: Screen?): Any {
 
-		val session = runBlocking { isTokenExistUseCase() }
+		val session = isTokenExistUseCase()
 
 		return if (!session) {
 			AuthorizationRoute

@@ -21,19 +21,7 @@ interface UserDao {
     @Query("DELETE FROM users WHERE id = :userId")
     suspend fun deleteUserById(userId: Int)
 
-    @Query("UPDATE users SET jwtToken = :token WHERE email = :email")
-    suspend fun addTokenToUser(email: String, token: String)
-
     @Query("SELECT id FROM users WHERE email = :email")
     suspend fun getUserIdByEmail(email: String): Int?
-
-    @Query("SELECT jwtToken FROM users WHERE id = :userId")
-    suspend fun getUserToken(userId: Int): String?
-
-    @Query("UPDATE users SET jwtToken = :token WHERE id = :userId")
-    suspend fun updateTokenToUser(userId: Int, token: String)
-
-    @Query("UPDATE users SET jwtToken = null WHERE id = :userId")
-    suspend fun deleteTokenFromUser(userId: Int)
 
 }

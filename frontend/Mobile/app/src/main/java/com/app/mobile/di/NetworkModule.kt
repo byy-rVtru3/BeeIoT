@@ -2,7 +2,6 @@ package com.app.mobile.di
 
 import com.app.mobile.data.api.interceptor.AuthInterceptor
 import com.app.mobile.data.repository.AuthRepository
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -38,11 +37,7 @@ val networkModule = module {
 
     single<AuthInterceptor> {
         val authRepository: AuthRepository = get()
-        AuthInterceptor {
-            runBlocking {
-                authRepository.getToken()
-            }
-        }
+        AuthInterceptor { authRepository.getToken() }
     }
 
     factory(publicClient) {

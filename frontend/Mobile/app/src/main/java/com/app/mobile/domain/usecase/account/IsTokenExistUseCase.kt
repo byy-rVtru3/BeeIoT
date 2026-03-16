@@ -1,17 +1,9 @@
 package com.app.mobile.domain.usecase.account
 
-import com.app.mobile.data.session.manager.SessionManager
-import com.app.mobile.domain.repository.UserLocalRepository
+import com.app.mobile.data.session.manager.TokenManager
 
 class IsTokenExistUseCase(
-	private val userLocalRepository: UserLocalRepository,
-	private val sessionManager: SessionManager
+    private val tokenManager: TokenManager
 ) {
-	suspend operator fun invoke(): Boolean {
-
-		val userId = sessionManager.getCurrentUserId() ?: return false
-
-		return userLocalRepository.getUserToken(userId) != null
-	}
-
+    operator fun invoke(): Boolean = tokenManager.getToken() != null
 }

@@ -7,8 +7,7 @@ import com.app.mobile.presentation.models.account.UserInfoModel
 fun UserEntity.toDomain() = UserDomain(
     name = this.name,
     email = this.email,
-    password = this.password,
-    jwtToken = this.jwtToken
+    password = this.password
 )
 
 fun UserDomain.toPresentation() = UserInfoModel(
