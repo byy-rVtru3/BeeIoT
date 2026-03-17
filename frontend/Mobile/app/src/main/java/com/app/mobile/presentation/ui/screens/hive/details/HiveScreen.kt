@@ -26,17 +26,11 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.mobile.R
 import com.app.mobile.presentation.models.hive.HiveUi
-import com.app.mobile.presentation.models.hive.HubUi
-import com.app.mobile.presentation.models.hive.QueenUi
 import com.app.mobile.presentation.ui.components.AppTopBar
-import com.app.mobile.presentation.ui.components.DetailsItemCard
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.InfoCard
 import com.app.mobile.presentation.ui.components.ObserveAsEvents
-import com.app.mobile.presentation.ui.components.QueenCard
-import com.app.mobile.presentation.ui.components.QueenCardDisplayMode
-import com.app.mobile.presentation.ui.components.SectionHeaderWithAction
 import com.app.mobile.presentation.ui.components.SectionTitle
 import com.app.mobile.presentation.ui.components.TopBarAction
 import com.app.mobile.presentation.ui.screens.hive.details.models.HiveActions
@@ -48,14 +42,14 @@ import com.app.mobile.ui.theme.Dimens
 @Composable
 fun HiveScreen(
 	hiveViewModel: HiveViewModel,
-	onQueenClick: (queenId: String) -> Unit,
-	onWorksClick: (hiveId: String) -> Unit,
-	onNotificationsClick: (hiveId: String) -> Unit,
-	onTemperatureClick: (hiveId: String) -> Unit,
-	onNoiseClick: (hiveId: String) -> Unit,
-	onWeightClick: (hiveId: String) -> Unit,
+	onQueenClick: (queenName: String) -> Unit,
+	onWorksClick: (hiveName: String) -> Unit,
+	onNotificationsClick: (hiveName: String) -> Unit,
+	onTemperatureClick: (hiveName: String) -> Unit,
+	onNoiseClick: (hiveName: String) -> Unit,
+	onWeightClick: (hiveName: String) -> Unit,
 	onHiveListClick: () -> Unit,
-	onHiveEditClick: (hiveId: String) -> Unit
+	onHiveEditClick: (hiveName: String) -> Unit
 ) {
 	val hiveUiState by hiveViewModel.uiState.collectAsStateWithLifecycle()
 	val snackbarHostState = remember { SnackbarHostState() }
@@ -67,16 +61,13 @@ fun HiveScreen(
 	ObserveAsEvents(hiveViewModel.event) { event ->
 		when (event) {
 			is HiveEvent.NavigateToHiveList           -> onHiveListClick()
-			is HiveEvent.NavigateToQueenByHive        -> onQueenClick(event.queenId)
-			is HiveEvent.NavigateToWorkByHive         -> onWorksClick(event.hiveId)
-			is HiveEvent.NavigateToNotificationByHive -> onNotificationsClick(
-				event.hiveId
-			)
-
-			is HiveEvent.NavigateToTemperatureByHive  -> onTemperatureClick(event.hiveId)
-			is HiveEvent.NavigateToNoiseByHive        -> onNoiseClick(event.hiveId)
-			is HiveEvent.NavigateToWeightByHive       -> onWeightClick(event.hiveId)
-			is HiveEvent.NavigateToHiveEdit           -> onHiveEditClick(event.hiveId)
+			is HiveEvent.NavigateToQueenByHive        -> onQueenClick(event.queenName)
+			is HiveEvent.NavigateToWorkByHive         -> onWorksClick(event.hiveName)
+			is HiveEvent.NavigateToNotificationByHive -> onNotificationsClick(event.hiveName)
+			is HiveEvent.NavigateToTemperatureByHive  -> onTemperatureClick(event.hiveName)
+			is HiveEvent.NavigateToNoiseByHive        -> onNoiseClick(event.hiveName)
+			is HiveEvent.NavigateToWeightByHive       -> onWeightClick(event.hiveName)
+			is HiveEvent.NavigateToHiveEdit           -> onHiveEditClick(event.hiveName)
 
 			is HiveEvent.ShowSnackBar                 -> {
 				snackbarHostState.showSnackbar(
@@ -105,7 +96,7 @@ fun HiveScreen(
 				onWeightClick = hiveViewModel::onWeightClick,
 				onHiveListClick = hiveViewModel::onHiveListClick,
 				onHiveEditClick = hiveViewModel::onHiveEditClick,
-				onDeleteClick = {} // необходимо добавить удаление, сейчас мне лень
+				onDeleteClick = {}
 			)
 			HiveContent(state.hive, snackbarHostState, actions, onBackClick = onHiveListClick)
 		}
@@ -155,73 +146,24 @@ private fun HiveContent(
 						modifier = Modifier.weight(0.6f).fillMaxWidth(0.48f)
 					)
 
-					val hubName = if (hive.connectedHub is HubUi.Present) {
-						hive.connectedHub.name
-					} else {
-						stringResource(R.string.no)
-					}
 					InfoCard(
 						title = stringResource(R.string.label_connected_hub),
-						value = hubName,
+						value = hive.hubName ?: stringResource(R.string.no),
 						modifier = Modifier.weight(1f).fillMaxWidth(0.48f)
 					)
 				}
-
 			}
 
-			if (hive.queen is QueenUi.Present) {
+			if (hive.queenName != null) {
 				Column(
 					modifier = Modifier.fillMaxWidth(),
 					verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
 				) {
 					SectionTitle(title = stringResource(R.string.queen))
-					QueenCard(queen = hive.queen.queen, onClick = actions.onQueenClick, displayMode = QueenCardDisplayMode.Compact)
-				}
-			}
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
-            ) {
-                SectionHeaderWithAction(
-                    title = stringResource(R.string.notifications),
-                    actionText = stringResource(R.string.see_all),
-                    onActionClick = actions.onNotificationClick
-                )
-
-                if (hive.notifications.isNotEmpty()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)) {
-                        hive.notifications.take(2).forEach { notification ->
-                            DetailsItemCard(
-                                title = stringResource(R.string.notification),
-                                description = notification.message,
-                                footer = notification.dateTime
-                            )
-                        }
-                    }
-                }
-            }
-
-			Column(
-				modifier = Modifier.fillMaxWidth(),
-				verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
-			) {
-				SectionHeaderWithAction(
-					title = stringResource(R.string.works_for_hive),
-					actionText = stringResource(R.string.see_all),
-					onActionClick = actions.onWorkClick
-				)
-
-				if (hive.works.isNotEmpty()) {
-					Column(verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)) {
-						hive.works.take(2).forEach { work ->
-							DetailsItemCard(
-								title = work.title,
-								description = work.text,
-								footer = work.dateTime
-							)
-						}
-					}
+					InfoCard(
+						title = stringResource(R.string.queen),
+						value = hive.queenName
+					)
 				}
 			}
 

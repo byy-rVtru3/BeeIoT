@@ -68,10 +68,10 @@ import com.app.mobile.ui.theme.Dimens
 @Composable
 fun QueenScreen(
 	queenViewModel: QueenViewModel,
-	onEditClick: (queenId: String) -> Unit,
-	onHiveClick: (hiveId: String) -> Unit,
+	onEditClick: (queenName: String) -> Unit,
+	onHiveClick: (hiveName: String) -> Unit,
 	onBackClick: () -> Unit,
-	onDeleteClick: (queenId: String) -> Unit // Добавили колбэк удаления
+	onDeleteClick: (queenName: String) -> Unit
 ) {
 	val queenUiState by queenViewModel.uiState.collectAsStateWithLifecycle()
 	val snackbarHostState = remember { SnackbarHostState() }
@@ -82,8 +82,8 @@ fun QueenScreen(
 
 	ObserveAsEvents(queenViewModel.event) { event ->
 		when (event) {
-			is QueenEvent.NavigateToEditQueen -> onEditClick(event.queenId)
-			is QueenEvent.NavigateToHive      -> onHiveClick(event.hiveId)
+			is QueenEvent.NavigateToEditQueen -> onEditClick(event.queenName)
+			is QueenEvent.NavigateToHive      -> onHiveClick(event.hiveName)
 			is QueenEvent.NavigateBack        -> onBackClick()
 
 			is QueenEvent.ShowSnackBar        -> {
@@ -105,7 +105,7 @@ fun QueenScreen(
 				snackbarHostState,
 				onEditClick = { queenViewModel.onEditQueenClick() },
 				onHiveClick = { queenViewModel.onHiveClick() },
-				onDeleteClick = { onDeleteClick(state.queen.id) },
+				onDeleteClick = { onDeleteClick(state.queen.name) },
 				onBackClick = onBackClick
 			)
 		}
@@ -167,20 +167,10 @@ private fun QueenContent(
 							modifier = Modifier.weight(1f).fillMaxWidth(0.48f)
 						)
 
-						val hiveName = queen.hive?.name ?: stringResource(R.string.no_hive)
-						val hiveModifier = if (queen.hive != null) {
-							Modifier
-								.weight(1f)
-                .fillMaxWidth(0.48f)
-								.clickable { onHiveClick() }
-						} else {
-							Modifier.weight(1f).fillMaxWidth(0.48f)
-						}
-
 						InfoCard(
 							title = stringResource(R.string.hive_format),
-							value = hiveName,
-							modifier = hiveModifier
+							value = stringResource(R.string.no_hive),
+							modifier = Modifier.weight(1f).fillMaxWidth(0.48f)
 						)
 					}
 

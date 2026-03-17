@@ -60,7 +60,7 @@ fun HivesListScreen(
 	ObserveAsEvents(hivesListViewModel.event) { event ->
 		when (event) {
 			is HivesListEvent.NavigateToHive -> {
-				onHiveClick(event.hiveId)
+				onHiveClick(event.hiveName)
 			}
 
 			is HivesListEvent.NavigateToCreateHive -> {
@@ -185,7 +185,7 @@ private fun HiveItem(hive: HivePreview, onHiveClick: (String) -> Unit) {
 		// TODO: Добавьте поле isConnected (Boolean) в модель HivePreview
 		isSignalActive = true, // Если true - иконка черная, false - серая
 
-		onClick = { onHiveClick(hive.id) }
+		onClick = { onHiveClick(hive.name) }
 	)
 }
 

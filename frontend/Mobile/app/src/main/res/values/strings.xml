@@ -42,6 +42,7 @@
     <string name="hive_last_connection_format">Последняя связь\n%1$s</string>
     <string name="hive">Улей</string>
     <string name="no_hive">Нет улья</string>
+    <string name="queen_start_date_format">Дата подсадки: %1$s</string>
 
     <string name="hive_format">Улей:</string>
     <string name="empty_works_list">Список работ пуст</string>

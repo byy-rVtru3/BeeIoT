@@ -1,10 +1,8 @@
 package com.app.mobile.presentation.models.queen
 
-import com.app.mobile.presentation.models.hive.QueenStageUi
+import java.time.LocalDate
 
 data class QueenPreviewModel(
-    val id: String,
     val name: String,
-    val stage: QueenStageUi,
-    val hiveName: String?
+    val startDate: LocalDate
 )

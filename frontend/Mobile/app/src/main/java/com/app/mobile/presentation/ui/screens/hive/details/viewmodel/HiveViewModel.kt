@@ -3,9 +3,10 @@ package com.app.mobile.presentation.ui.screens.hive.details.viewmodel
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.toRoute
-import com.app.mobile.domain.mappers.toUiModel
+import com.app.mobile.data.api.mappers.toErrorMessage
+import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.domain.usecase.hives.hive.GetHiveUseCase
-import com.app.mobile.presentation.models.hive.QueenUi
+import com.app.mobile.presentation.models.hive.HiveUi
 import com.app.mobile.presentation.ui.components.BaseViewModel
 import com.app.mobile.presentation.ui.screens.hive.details.HiveRoute
 
@@ -15,7 +16,7 @@ class HiveViewModel(
 ) : BaseViewModel<HiveUiState, HiveEvent>(HiveUiState.Loading) {
     private val route = savedStateHandle.toRoute<HiveRoute>()
 
-    private val hiveId = route.hiveId
+    private val hiveName = route.hiveName
 
     override fun handleError(exception: Throwable) {
         updateState { HiveUiState.Error(exception.message ?: "Unknown error") }
@@ -25,14 +26,26 @@ class HiveViewModel(
     fun loadHive() {
         updateState { HiveUiState.Loading }
         launch {
-            val hive = getHiveUseCase(hiveId)
-            if (hive == null) {
-                sendEvent(HiveEvent.ShowSnackBar("Улей не найден"))
-                sendEvent(HiveEvent.NavigateToHiveList)
-                return@launch
-            }
-            updateState {
-                hive.let { HiveUiState.Content(it.toUiModel()) }
+            when (val result = getHiveUseCase(hiveName)) {
+                is ApiResult.Success -> {
+                    val hive = result.data
+                    updateState {
+                        HiveUiState.Content(
+                            HiveUi(
+                                name = hive.name,
+                                sensor = hive.sensor,
+                                hubName = hive.hubName,
+                                queenName = hive.queenName,
+                                active = hive.active
+                            )
+                        )
+                    }
+                }
+
+                else -> {
+                    sendEvent(HiveEvent.ShowSnackBar(result.toErrorMessage()))
+                    sendEvent(HiveEvent.NavigateToHiveList)
+                }
             }
         }
     }
@@ -40,31 +53,31 @@ class HiveViewModel(
     fun resetError() = loadHive()
 
     fun onTemperatureClick() =
-        navigateWithId(HiveEvent::NavigateToTemperatureByHive)
+        navigateWithName(HiveEvent::NavigateToTemperatureByHive)
 
     fun onNoiseClick() =
-        navigateWithId(HiveEvent::NavigateToNoiseByHive)
+        navigateWithName(HiveEvent::NavigateToNoiseByHive)
 
     fun onWeightClick() =
-        navigateWithId(HiveEvent::NavigateToWeightByHive)
+        navigateWithName(HiveEvent::NavigateToWeightByHive)
 
     fun onNotificationsClick() =
-        navigateWithId(HiveEvent::NavigateToNotificationByHive)
+        navigateWithName(HiveEvent::NavigateToNotificationByHive)
 
     fun onQueenClick() {
         val state = currentState
         if (state is HiveUiState.Content) {
-            val queen = state.hive.queen
-            if (queen is QueenUi.Present) {
+            val queenName = state.hive.queenName
+            if (queenName != null) {
                 launch {
-                    sendEvent(HiveEvent.NavigateToQueenByHive(queen.queen.id))
+                    sendEvent(HiveEvent.NavigateToQueenByHive(queenName))
                 }
             }
         }
     }
 
     fun onWorksClick() =
-        navigateWithId(HiveEvent::NavigateToWorkByHive)
+        navigateWithName(HiveEvent::NavigateToWorkByHive)
 
     fun onHiveListClick() {
         launch {
@@ -73,12 +86,12 @@ class HiveViewModel(
     }
 
     fun onHiveEditClick() =
-        navigateWithId(HiveEvent::NavigateToHiveEdit)
+        navigateWithName(HiveEvent::NavigateToHiveEdit)
 
-    private inline fun navigateWithId(crossinline navEvent: (String) -> HiveEvent) {
+    private inline fun navigateWithName(crossinline navEvent: (String) -> HiveEvent) {
         (currentState as? HiveUiState.Content)?.let {
             launch {
-                sendEvent(navEvent(hiveId))
+                sendEvent(navEvent(hiveName))
             }
         }
     }

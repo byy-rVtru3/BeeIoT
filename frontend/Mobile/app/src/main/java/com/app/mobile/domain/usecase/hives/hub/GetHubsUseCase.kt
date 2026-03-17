@@ -1,8 +1,7 @@
 package com.app.mobile.domain.usecase.hives.hub
 
-import com.app.mobile.domain.models.hives.HubDomain
-import com.app.mobile.domain.repository.HubLocalRepository
+import com.app.mobile.domain.repository.HubRepository
 
-class GetHubsUseCase(private val hubLocalRepository: HubLocalRepository) {
-    suspend operator fun invoke(): List<HubDomain> = hubLocalRepository.getHubs()
+class GetHubsUseCase(private val hubRepository: HubRepository) {
+    suspend operator fun invoke() = hubRepository.getHubs()
 }

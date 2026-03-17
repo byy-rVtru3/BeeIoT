@@ -3,7 +3,8 @@ package com.app.mobile.presentation.ui.screens.queen.details.viewmodel
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.toRoute
-import com.app.mobile.domain.usecase.hives.hive.GetHivePreviewUseCase
+import com.app.mobile.data.api.mappers.toErrorMessage
+import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.domain.usecase.hives.queen.GetQueenUseCase
 import com.app.mobile.presentation.mappers.toUiModel
 import com.app.mobile.presentation.ui.components.BaseViewModel
@@ -11,12 +12,11 @@ import com.app.mobile.presentation.ui.screens.queen.details.QueenRoute
 
 class QueenViewModel(
     savedStateHandle: SavedStateHandle,
-    private val getQueenUseCase: GetQueenUseCase,
-    private val getHivePreviewUseCase: GetHivePreviewUseCase
+    private val getQueenUseCase: GetQueenUseCase
 ) : BaseViewModel<QueenUiState, QueenEvent>(QueenUiState.Loading) {
 
     private val route = savedStateHandle.toRoute<QueenRoute>()
-    private val queenId = route.queenId
+    private val queenName = route.queenName
 
     override fun handleError(exception: Throwable) {
         updateState { QueenUiState.Error(exception.message ?: "Unknown error") }
@@ -27,14 +27,15 @@ class QueenViewModel(
         updateState { QueenUiState.Loading }
 
         launch {
-            val queen = getQueenUseCase(queenId)
+            when (val result = getQueenUseCase(queenName)) {
+                is ApiResult.Success -> {
+                    updateState { QueenUiState.Content(result.data.toUiModel()) }
+                }
 
-            if (queen != null) {
-                val hive = queen.hiveId?.let { getHivePreviewUseCase(it) }
-                updateState { QueenUiState.Content(queen.toUiModel(hive)) }
-            } else {
-                sendEvent(QueenEvent.ShowSnackBar("Матка не найдена"))
-                sendEvent(QueenEvent.NavigateBack)
+                else -> {
+                    sendEvent(QueenEvent.ShowSnackBar(result.toErrorMessage()))
+                    sendEvent(QueenEvent.NavigateBack)
+                }
             }
         }
     }
@@ -45,19 +46,13 @@ class QueenViewModel(
         val state = currentState
         if (state is QueenUiState.Content) {
             sendEvent(
-                QueenEvent.NavigateToEditQueen(state.queen.id)
+                QueenEvent.NavigateToEditQueen(state.queen.name)
             )
         }
     }
 
     fun onHiveClick() {
-        val state = currentState
-        if (state is QueenUiState.Content) {
-            if (state.queen.hive?.id != null) {
-                sendEvent(
-                    QueenEvent.NavigateToHive(state.queen.hive.id)
-                )
-            }
-        }
+        // Hive navigation from queen details is no longer supported
+        // since queen no longer knows its hive
     }
 }

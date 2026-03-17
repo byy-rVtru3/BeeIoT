@@ -9,9 +9,9 @@ import com.app.mobile.di.firebaseModule
 import com.app.mobile.di.notificationsModule
 import com.app.mobile.di.themeModule
 import com.app.mobile.di.repository.authRepository
-import com.app.mobile.di.repository.hivesLocalRepositoryModule
-import com.app.mobile.di.repository.hubLocalRepositoryModule
-import com.app.mobile.di.repository.queenLocalRepositoryModule
+import com.app.mobile.di.repository.hivesRepositoryModule
+import com.app.mobile.di.repository.hubRepositoryModule
+import com.app.mobile.di.repository.queenRepositoryModule
 import com.app.mobile.di.repository.repositoryApiModule
 import com.app.mobile.di.repository.repositoryDatabaseModule
 import com.app.mobile.di.repository.userLocalRepositoryModule
@@ -65,9 +65,9 @@ class MobileApp : Application() {
 				settingsModule,
 				aboutAppModule,
 				accountInfoModule,
-				hivesLocalRepositoryModule,
-				queenLocalRepositoryModule,
-				hubLocalRepositoryModule,
+				hivesRepositoryModule,
+				queenRepositoryModule,
+				hubRepositoryModule,
 				hivesListModule,
 				hiveModule,
 				hiveEditorModule,

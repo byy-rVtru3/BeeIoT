@@ -1,18 +1,15 @@
 package com.app.mobile.domain.mappers
 
-import com.app.mobile.domain.models.hives.queen.QueenDomain
+import com.app.mobile.domain.models.hives.queen.QueenDomainPreview
 import com.app.mobile.domain.models.hives.queen.QueenEditorDomain
-import com.app.mobile.domain.models.hives.queen.QueenLifecycle
 import com.app.mobile.domain.models.hives.queen.QueenRequestModel
-
+import com.app.mobile.presentation.models.queen.QueenPreviewModel
 
 fun QueenEditorDomain.toRequest() = QueenRequestModel(
     birthDate = this.birthDate
 )
 
-fun QueenEditorDomain.toDomain(stages: QueenLifecycle) = QueenDomain(
-    id = this.id,
-    hiveId = this.hiveId,
+fun QueenDomainPreview.toPreviewModel() = QueenPreviewModel(
     name = this.name,
-    stages = stages
+    startDate = this.startDate
 )

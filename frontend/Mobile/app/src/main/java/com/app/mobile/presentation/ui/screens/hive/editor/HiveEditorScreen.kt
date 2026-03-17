@@ -155,11 +155,10 @@ fun HiveEditorContent(
 			// Секция Маток (Grid)
 			SelectionGridSection(
 				title = stringResource(R.string.available_queens),
-				items = hiveEditorModel.queens.map { it.id to it.name },
-				selectedId = hiveEditorModel.connectedQueenId,
+				items = hiveEditorModel.queens.map { it.name to it.name },
+				selectedId = hiveEditorModel.connectedQueenName,
 				onItemSelected = actions.onAddQueenClick,
 				onCreateClick = actions.onCreateQueenClick,
-				// Тут можно добавить другую логику отображения, если нужно больше полей
 			)
 
 			Spacer(modifier = Modifier.weight(1f))

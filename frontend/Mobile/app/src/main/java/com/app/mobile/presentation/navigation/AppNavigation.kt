@@ -174,14 +174,14 @@ fun AppNavigation(
             val hiveViewModel: HiveViewModel = koinViewModel()
             HiveScreen(
                 hiveViewModel,
-                onQueenClick = { queenId -> navController.navigate(QueenRoute(queenId)) },
+                onQueenClick = { queenName -> navController.navigate(QueenRoute(queenName)) },
                 onWorksClick = { navController.navigate(WorksListRoute(it)) },
                 onNotificationsClick = { TODO("NotificationsRoute") },
                 onTemperatureClick = { TODO("TemperatureRoute") },
                 onNoiseClick = { TODO("NoiseRoute") },
                 onWeightClick = { TODO("WeightRoute") },
                 onHiveListClick = { navController.navigate(HivesListRoute) },
-                onHiveEditClick = { hiveId -> navController.navigate(HiveEditorRoute(hiveId)) }
+                onHiveEditClick = { hiveName -> navController.navigate(HiveEditorRoute(hiveName)) }
             )
         }
 
@@ -189,17 +189,17 @@ fun AppNavigation(
             val queenViewModel: QueenViewModel = koinViewModel()
             QueenScreen(
                 queenViewModel,
-                onEditClick = { queenId ->
-                    navController.navigate(QueenEditorRoute(queenId))
+                onEditClick = { queenName ->
+                    navController.navigate(QueenEditorRoute(queenName))
                 },
-                onHiveClick = { hiveId ->
-                    navController.navigate(HiveRoute(hiveId))
+                onHiveClick = { hiveName ->
+                    navController.navigate(HiveRoute(hiveName))
                 },
                 onBackClick = {
                     navController.popBackStack()
                 },
-                onDeleteClick = { queenId ->
-                    // Пока ничего не делаем (заглушка)
+                onDeleteClick = { queenName ->
+                    // TODO: implement delete
                 }
             )
         }

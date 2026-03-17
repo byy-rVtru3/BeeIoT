@@ -53,7 +53,7 @@ fun QueenListScreen(
 
 	ObserveAsEvents(queenListViewModel.event) { event ->
 		when (event) {
-			is QueenListEvent.NavigateToQueen -> onQueenClick(event.queenId)
+			is QueenListEvent.NavigateToQueen -> onQueenClick(event.queenName)
 			is QueenListEvent.NavigateToAddQueen -> onAddClick()
 
 			is QueenListEvent.ShowSnackBar -> {
@@ -166,7 +166,7 @@ private fun QueenItem(queen: QueenPreviewModel, onQueenClick: (String) -> Unit) 
 	// ВАЖНО: Используем SHOW_HIVE, чтобы отобразить имя улья и день
 	QueenCard(
 		queen = queen,
-		onClick = { onQueenClick(queen.id) },
+		onClick = { onQueenClick(queen.name) },
 		displayMode = QueenCardDisplayMode.SHOW_HIVE
 	)
 }
