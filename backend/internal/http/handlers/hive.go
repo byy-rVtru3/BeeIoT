@@ -10,6 +10,8 @@ func dbHiveToListItem(h dbTypes.Hive) httpType.HiveListItem {
 	return httpType.HiveListItem{
 		Name:   h.NameHive,
 		Sensor: h.SensorID,
+		Hub:    h.HubName,
+		Queen:  h.QueenName,
 	}
 }
 
@@ -26,6 +28,8 @@ func dbHiveToDetails(h dbTypes.Hive) httpType.HiveDetails {
 		Name:   h.NameHive,
 		Sensor: h.SensorID,
 		Active: h.Status,
+		Hub:    h.HubName,
+		Queen:  h.QueenName,
 	}
 }
 
@@ -165,3 +169,60 @@ func (h *Handler) DeleteHive(w http.ResponseWriter, r *http.Request) {
 
 	h.writeBodyJSON(w, "Улей успешно удален", nil)
 }
+
+func (h *Handler) LinkHubToHive(w http.ResponseWriter, r *http.Request) {
+	email, err := h.getEmailFromContext(w, r)
+	if err != nil {
+		return
+	}
+
+	var req httpType.LinkToHiveRequest
+	if err := h.readBodyJSON(w, r, &req); err != nil {
+		return
+	}
+
+	if req.HiveName == "" {
+		h.logger.Warn().Str("email", email).Msg("hive name is empty in link hub request")
+		http.Error(w, "Имя улья обязательно", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.db.LinkHubToHive(r.Context(), email, req.HiveName, req.TargetName); err != nil {
+		h.logger.Error().Err(err).Str("email", email).
+			Str("hive", req.HiveName).Str("hub", req.TargetName).Msg("error linking hub to hive")
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
+	}
+
+	h.logger.Debug().Str("email", email).Str("hive", req.HiveName).Str("hub", req.TargetName).Msg("hub linked/unlinked")
+	h.writeBodyJSON(w, "Привязка успешна", nil)
+}
+
+func (h *Handler) LinkQueenToHive(w http.ResponseWriter, r *http.Request) {
+	email, err := h.getEmailFromContext(w, r)
+	if err != nil {
+		return
+	}
+
+	var req httpType.LinkToHiveRequest
+	if err := h.readBodyJSON(w, r, &req); err != nil {
+		return
+	}
+
+	if req.HiveName == "" {
+		h.logger.Warn().Str("email", email).Msg("hive name is empty in link queen request")
+		http.Error(w, "Имя улья обязательно", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.db.LinkQueenToHive(r.Context(), email, req.HiveName, req.TargetName); err != nil {
+		h.logger.Error().Err(err).Str("email", email).
+			Str("hive", req.HiveName).Str("queen", req.TargetName).Msg("error linking queen to hive")
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
+	}
+
+	h.logger.Debug().Str("email", email).Str("hive", req.HiveName).Str("queen", req.TargetName).Msg("queen linked/unlinked")
+	h.writeBodyJSON(w, "Привязка успешна", nil)
+}
+

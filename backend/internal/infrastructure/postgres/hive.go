@@ -31,10 +31,12 @@ func (db *Postgres) DeleteHive(ctx context.Context, email, nameHive string) erro
 }
 
 func (db *Postgres) GetHives(ctx context.Context, email string, active *bool) ([]dbTypes.Hive, error) {
-	base := `SELECT h.id, h.name, u.email, h.temperature_check, h.noise_check, COALESCE(s.sensor_id, ''), h.status
+	base := `SELECT h.id, h.name, u.email, h.temperature_check, h.noise_check, COALESCE(s.sensor_id, ''), h.status, COALESCE(hu.name, ''), COALESCE(q.name, '')
 	        FROM hives h
 	        JOIN users u ON h.user_id = u.id
-	        LEFT JOIN sensors s ON h.sensor_id = s.id`
+	        LEFT JOIN sensors s ON h.sensor_id = s.id
+	        LEFT JOIN hubs hu ON h.hub_id = hu.id
+	        LEFT JOIN queens q ON h.queen_id = q.id`
 
 	var rows pgx.Rows
 	var err error
@@ -56,7 +58,7 @@ func (db *Postgres) GetHives(ctx context.Context, email string, active *bool) ([
 	var hives []dbTypes.Hive
 	for rows.Next() {
 		var hive dbTypes.Hive
-		err := rows.Scan(&hive.Id, &hive.NameHive, &hive.Email, &hive.DateTemperature, &hive.DateNoise, &hive.SensorID, &hive.Status)
+		err := rows.Scan(&hive.Id, &hive.NameHive, &hive.Email, &hive.DateTemperature, &hive.DateNoise, &hive.SensorID, &hive.Status, &hive.HubName, &hive.QueenName)
 		if err != nil {
 			return nil, err
 		}
@@ -66,10 +68,12 @@ func (db *Postgres) GetHives(ctx context.Context, email string, active *bool) ([
 }
 
 func (db *Postgres) GetHiveByName(ctx context.Context, email, nameHive string, active *bool) (dbTypes.Hive, error) {
-	base := `SELECT h.id, h.name, u.email, h.temperature_check, h.noise_check, COALESCE(s.sensor_id, ''), h.status
+	base := `SELECT h.id, h.name, u.email, h.temperature_check, h.noise_check, COALESCE(s.sensor_id, ''), h.status, COALESCE(hu.name, ''), COALESCE(q.name, '')
 	        FROM hives h
 	        INNER JOIN users u ON h.user_id = u.id
 	        LEFT JOIN sensors s ON h.sensor_id = s.id
+	        LEFT JOIN hubs hu ON h.hub_id = hu.id
+	        LEFT JOIN queens q ON h.queen_id = q.id
 	        WHERE h.name = $2 AND u.email = $1`
 
 	var row pgx.Row
@@ -79,7 +83,7 @@ func (db *Postgres) GetHiveByName(ctx context.Context, email, nameHive string, a
 		row = db.pull.QueryRow(ctx, base, email, nameHive)
 	}
 	var hive dbTypes.Hive
-	err := row.Scan(&hive.Id, &hive.NameHive, &hive.Email, &hive.DateTemperature, &hive.DateNoise, &hive.SensorID, &hive.Status)
+	err := row.Scan(&hive.Id, &hive.NameHive, &hive.Email, &hive.DateTemperature, &hive.DateNoise, &hive.SensorID, &hive.Status, &hive.HubName, &hive.QueenName)
 	if err != nil {
 		return dbTypes.Hive{}, err
 	}
@@ -120,18 +124,18 @@ func (db *Postgres) UpdateHive(ctx context.Context, email string, data httpType.
 		var sensorID int
 		err = tx.QueryRow(ctx, `SELECT s.id FROM sensors s JOIN users u ON s.user_id = u.id WHERE u.email = $1 AND s.sensor_id = $2`, email, *data.Sensor).Scan(&sensorID)
 		if err != nil {
-			return err // Sensor not found or not owned by user
+			return err
 		}
 		_, err = tx.Exec(ctx, `UPDATE hives SET sensor_id = $1 WHERE id = $2`, sensorID, hiveID)
 		if err != nil {
 			return err
 		}
 	} else if data.Sensor != nil && *data.Sensor == "" {
-        _, err = tx.Exec(ctx, `UPDATE hives SET sensor_id = NULL WHERE id = $1`, hiveID)
+		_, err = tx.Exec(ctx, `UPDATE hives SET sensor_id = NULL WHERE id = $1`, hiveID)
 		if err != nil {
 			return err
 		}
-    }
+	}
 
 	return tx.Commit(ctx)
 }
@@ -216,4 +220,34 @@ WHERE u.email = $1 AND h.name = $2`
 		return err
 	}
 	return tr.Commit(ctx)
+}
+
+func (db *Postgres) LinkHubToHive(ctx context.Context, email, hiveName, hubName string) error {
+	var err error
+	if hubName == "" {
+		q := `UPDATE hives SET hub_id = NULL WHERE user_id = (SELECT id FROM users WHERE email = $1) AND name = $2`
+		_, err = db.pull.Exec(ctx, q, email, hiveName)
+	} else {
+		q := `UPDATE hives SET hub_id = (SELECT id FROM hubs WHERE email = $1 AND name = $3) WHERE user_id = (SELECT id FROM users WHERE email = $1) AND name = $2`
+		_, err = db.pull.Exec(ctx, q, email, hiveName, hubName)
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (db *Postgres) LinkQueenToHive(ctx context.Context, email, hiveName, queenName string) error {
+	var err error
+	if queenName == "" {
+		q := `UPDATE hives SET queen_id = NULL WHERE user_id = (SELECT id FROM users WHERE email = $1) AND name = $2`
+		_, err = db.pull.Exec(ctx, q, email, hiveName)
+	} else {
+		q := `UPDATE hives SET queen_id = (SELECT id FROM queens WHERE email = $1 AND name = $3) WHERE user_id = (SELECT id FROM users WHERE email = $1) AND name = $2`
+		_, err = db.pull.Exec(ctx, q, email, hiveName, queenName)
+	}
+	if err != nil {
+		return err
+	}
+	return nil
 }

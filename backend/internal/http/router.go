@@ -51,9 +51,6 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.With(m.CheckAuth).Post("/change/name", h.ChangeName)
 			r.With(m.CheckAuth).Post("/fcm/update", h.UpdateFcmToken)
 		})
-		r.Route("/calcQueen", func(r chi.Router) {
-			r.With(m.CheckAuth).Post("/calc", h.QueenCalculator)
-		})
 		r.Route("/hive", func(r chi.Router) {
 			r.Use(m.CheckAuth)
 			r.Post("/create", h.CreateHive)
@@ -61,6 +58,23 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.Get("/", h.GetHive)
 			r.Put("/update", h.UpdateHive)
 			r.Delete("/delete", h.DeleteHive)
+			r.Post("/link/hub", h.LinkHubToHive)
+			r.Post("/link/queen", h.LinkQueenToHive)
+		})
+		r.Route("/hub", func(r chi.Router) {
+			r.Use(m.CheckAuth)
+			r.Post("/create", h.CreateHub)
+			r.Get("/list", h.GetHubs)
+			r.Get("/", h.GetHub)
+			r.Put("/update", h.UpdateHub)
+		})
+		r.Route("/queen", func(r chi.Router) {
+			r.Use(m.CheckAuth)
+			r.Post("/create", h.CreateQueen)
+			r.Get("/list", h.GetQueens)
+			r.Get("/", h.GetQueen)
+			r.Put("/update", h.UpdateQueen)
+			r.Delete("/delete", h.DeleteQueen)
 		})
 		r.Route("/mqtt", func(r chi.Router) {
 			r.Use(m.CheckAuth)

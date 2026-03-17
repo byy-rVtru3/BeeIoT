@@ -536,34 +536,6 @@ func TestChangePassword(t *testing.T) {
 	}
 }
 
-func TestQueenCalculator(t *testing.T) {
-	logger := zerolog.Nop()
-	h := &Handler{logger: logger}
-
-	body := []byte(`{"start_date": "2023-05-01"}`)
-	req := httptest.NewRequest("POST", "/api/queen/calc", bytes.NewBuffer(body))
-	w := httptest.NewRecorder()
-
-	h.QueenCalculator(w, req)
-
-	if w.Result().StatusCode != http.StatusOK {
-		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
-	}
-
-	var resp Response
-	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
-	}
-
-	// Basic check if calendar data is present
-	dataMap, ok := resp.Data.(map[string]interface{})
-	if !ok {
-		t.Errorf("Expected data map, got %T", resp.Data)
-	} else if dataMap["start_date"] != "2023-05-01" {
-		t.Errorf("Expected start_date 2023-05-01, got %v", dataMap["start_date"])
-	}
-}
-
 func TestGetNoiseAndTemp(t *testing.T) {
 	t.Setenv("JWT_SECRET", "testsecret")
 	logger := zerolog.Nop()

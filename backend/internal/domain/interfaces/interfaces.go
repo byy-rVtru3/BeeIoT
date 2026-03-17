@@ -29,6 +29,20 @@ type DB interface {
 	UpdateHiveTemperatureCheck(ctx context.Context, hiveId int, t time.Time) error
 	UpdateHiveNoiseCheck(ctx context.Context, hiveId int, t time.Time) error
 	GetEmailHiveBySensorID(ctx context.Context, sensorID string) (string, string, error)
+	LinkHubToHive(ctx context.Context, email, hiveName, hubName string) error
+	LinkQueenToHive(ctx context.Context, email, hiveName, queenName string) error
+
+	NewHub(ctx context.Context, email, nameHub, sensorName string) error
+	GetHubs(ctx context.Context, email string) ([]dbTypes.Hub, error)
+	GetHubByName(ctx context.Context, email, nameHub string) (dbTypes.Hub, error)
+	DeleteHub(ctx context.Context, email, nameHub string) error
+	UpdateHub(ctx context.Context, email string, data httpType.UpdateHub) error
+
+	NewQueen(ctx context.Context, email, name, startDate string) error
+	GetQueens(ctx context.Context, email string) ([]dbTypes.Queen, error)
+	GetQueenByName(ctx context.Context, email, name string) (dbTypes.Queen, error)
+	DeleteQueen(ctx context.Context, email, name string) error
+	UpdateQueen(ctx context.Context, email string, data httpType.UpdateQueen) error
 
 	NewTemperature(ctx context.Context, temp httpType.Temperature) error
 	GetTemperaturesSinceTime(ctx context.Context, hive dbTypes.Hive, time time.Time) ([]dbTypes.HivesTemperatureData, error)

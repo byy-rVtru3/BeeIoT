@@ -69,12 +69,16 @@ type Hive struct {
 type HiveListItem struct {
 	Name   string `json:"name"`
 	Sensor string `json:"sensor"`
+	Hub    string `json:"hub"`
+	Queen  string `json:"queen"`
 }
 
 type HiveDetails struct {
 	Name   string `json:"name"`
 	Sensor string `json:"sensor"`
 	Active bool   `json:"active"`
+	Hub    string `json:"hub"`
+	Queen  string `json:"queen"`
 }
 
 type CreateHive struct {
@@ -108,4 +112,51 @@ type LastSensorReading struct {
 	TemperatureTime int64   `json:"temperature_time"`
 	Noise           float64 `json:"noise"`
 	NoiseTime       int64   `json:"noise_time"`
+}
+
+type CreateHub struct {
+	Name   string `json:"name"`
+	Sensor string `json:"sensor,omitempty"`
+}
+
+type HubListItem struct {
+	Name   string `json:"name"`
+	Sensor string `json:"sensor,omitempty"`
+}
+
+type HubDetails struct {
+	Name   string `json:"name"`
+	Sensor string `json:"sensor,omitempty"`
+}
+
+type UpdateHub struct {
+	OldName string  `json:"old_name"`
+	NewName *string `json:"new_name,omitempty"`
+	Sensor  *string `json:"sensor,omitempty"`
+}
+
+type CreateQueen struct {
+	Name      string `json:"name"`
+	StartDate string `json:"start_date"`
+}
+
+type QueenListItem struct {
+	Name      string `json:"name"`
+	StartDate string `json:"start_date"`
+}
+
+type QueenDetails struct {
+	Name     string      `json:"name"`
+	Calendar interface{} `json:"calendar"`
+}
+
+type UpdateQueen struct {
+	OldName   string  `json:"old_name"`
+	NewName   *string `json:"new_name,omitempty"`
+	StartDate *string `json:"start_date,omitempty"`
+}
+
+type LinkToHiveRequest struct {
+	HiveName   string `json:"hive_name"`
+	TargetName string `json:"target_name"`
 }
