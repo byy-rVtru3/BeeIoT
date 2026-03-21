@@ -110,11 +110,10 @@ services:
     container_name: swagger_ui_container
     ports:
       - "8081:8080"
-    environment:
-      SWAGGER_JSON: /swagger/swagger.yaml
-      BASE_URL: /swagger
     volumes:
-      - ../openapi.yml:/swagger/swagger.yaml:ro
+      - ../openapi.yml:/openapi.yml
+    environment:
+        - SWAGGER_JSON=/openapi.yml
     networks:
       - app-net
     restart: unless-stopped
