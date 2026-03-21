@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"BeeIOT/internal/domain/models/dbTypes"
 	"BeeIOT/internal/domain/models/httpType"
 	"BeeIOT/internal/domain/models/mqttTypes"
 	"encoding/json"
@@ -16,7 +15,7 @@ func (h *Handler) SetHiveWeight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var weight httpType.HiveWeight // не нравится мне
+	var weight httpType.HubWeight
 	err = h.readBodyJSON(w, r, &weight)
 	if err != nil {
 		return
@@ -39,7 +38,7 @@ func (h *Handler) DeleteHiveWeight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var weight httpType.HiveWeight // не нравится мне
+	var weight httpType.HubWeight
 	if err = h.readBodyJSON(w, r, &weight); err != nil {
 		return
 	}
@@ -61,10 +60,10 @@ func (h *Handler) GetWeightSinceTime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hiveName := r.URL.Query().Get("name")
-	if hiveName == "" {
-		h.logger.Warn().Str("email", email).Msg("missing query param 'name'")
-		http.Error(w, "Параметр \"name\" обязателен", http.StatusBadRequest)
+	hubID := r.URL.Query().Get("hub")
+	if hubID == "" {
+		h.logger.Warn().Str("email", email).Msg("missing query param 'hub'")
+		http.Error(w, "Параметр \"hub\" обязателен", http.StatusBadRequest)
 		return
 	}
 
@@ -75,9 +74,9 @@ func (h *Handler) GetWeightSinceTime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	weights, err := h.db.GetWeightSinceTime(r.Context(), httpType.Hive{Email: email, NameHive: hiveName}, since)
+	weights, err := h.db.GetWeightSinceTime(r.Context(), email, hubID, since)
 	if err != nil {
-		h.logger.Error().Err(err).Str("email", email).Str("hive", hiveName).Msg("failed to get weight data")
+		h.logger.Error().Err(err).Str("email", email).Str("hub", hubID).Msg("failed to get weight data")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
@@ -96,10 +95,10 @@ func (h *Handler) GetNoiseSinceTime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hiveName := r.URL.Query().Get("name")
-	if hiveName == "" {
-		h.logger.Warn().Str("email", email).Msg("missing query param 'name'")
-		http.Error(w, "Параметр \"name\" обязателен", http.StatusBadRequest)
+	hubID := r.URL.Query().Get("hub")
+	if hubID == "" {
+		h.logger.Warn().Str("email", email).Msg("missing query param 'hub'")
+		http.Error(w, "Параметр \"hub\" обязателен", http.StatusBadRequest)
 		return
 	}
 
@@ -110,9 +109,9 @@ func (h *Handler) GetNoiseSinceTime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	noiseLevels, err := h.db.GetNoiseSinceTime(r.Context(), email, hiveName, since)
+	noiseLevels, err := h.db.GetNoiseSinceTime(r.Context(), email, hubID, since)
 	if err != nil {
-		h.logger.Error().Err(err).Str("email", email).Str("hive", hiveName).Msg("failed to get noise data")
+		h.logger.Error().Err(err).Str("email", email).Str("hub", hubID).Msg("failed to get noise data")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
@@ -131,10 +130,10 @@ func (h *Handler) GetTemperatureSinceTime(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	hiveName := r.URL.Query().Get("name")
-	if hiveName == "" {
-		h.logger.Warn().Str("email", email).Msg("missing query param 'name'")
-		http.Error(w, "Параметр \"name\" обязателен", http.StatusBadRequest)
+	hubID := r.URL.Query().Get("hub")
+	if hubID == "" {
+		h.logger.Warn().Str("email", email).Msg("missing query param 'hub'")
+		http.Error(w, "Параметр \"hub\" обязателен", http.StatusBadRequest)
 		return
 	}
 
@@ -145,9 +144,9 @@ func (h *Handler) GetTemperatureSinceTime(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	temperatures, err := h.db.GetTemperaturesSinceTime(r.Context(), dbTypes.Hive{Email: email, NameHive: hiveName}, since)
+	temperatures, err := h.db.GetTemperaturesSinceTime(r.Context(), email, hubID, since)
 	if err != nil {
-		h.logger.Error().Err(err).Str("email", email).Str("hive", hiveName).Msg("failed to get temperature data")
+		h.logger.Error().Err(err).Str("email", email).Str("hub", hubID).Msg("failed to get temperature data")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
@@ -159,6 +158,7 @@ func (h *Handler) GetTemperatureSinceTime(w http.ResponseWriter, r *http.Request
 
 	h.writeBodyJSON(w, "Данные температуры успешно получены", response)
 }
+
 func parseSince(sinceStr string) (time.Time, bool) {
 	if sinceStr == "" {
 		return time.Now().AddDate(0, 0, -1), true
@@ -176,35 +176,30 @@ func (h *Handler) GetLastSensorReading(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hiveName := r.URL.Query().Get("name")
-	if hiveName == "" {
-		h.logger.Warn().Str("email", email).Msg("missing query param 'name'")
-		http.Error(w, "Параметр \"name\" обязателен", http.StatusBadRequest)
+	hubID := r.URL.Query().Get("hub")
+	if hubID == "" {
+		h.logger.Warn().Str("email", email).Msg("missing query param 'hub'")
+		http.Error(w, "Параметр \"hub\" обязателен", http.StatusBadRequest)
 		return
 	}
 
-	hive, err := h.db.GetHiveByName(r.Context(), email, hiveName, nil)
+	hub, err := h.db.GetHubBySensor(r.Context(), email, hubID)
 	if err != nil {
-		h.logger.Error().Err(err).Str("email", email).Str("hive", hiveName).Msg("hive not found")
-		http.Error(w, "Улей не найден", http.StatusNotFound)
+		h.logger.Error().Err(err).Str("email", email).Str("hub", hubID).Msg("hub not found")
+		http.Error(w, "Хаб не найден", http.StatusNotFound)
 		return
 	}
 
-	if hive.SensorID == "" {
-		http.Error(w, "К данному улью не привязан датчик", http.StatusNotFound)
-		return
-	}
-
-	data, err := h.inMemDb.GetLastSensorData(r.Context(), hive.SensorID)
+	data, err := h.inMemDb.GetLastSensorData(r.Context(), hub.Sensor)
 	if err != nil {
-		h.logger.Warn().Err(err).Str("sensor", hive.SensorID).Msg("no last sensor data")
+		h.logger.Warn().Err(err).Str("hub", hub.Sensor).Msg("no last sensor data")
 		http.Error(w, "Нет данных от датчика", http.StatusNotFound)
 		return
 	}
 
 	var sensorData mqttTypes.DeviceData
 	if err := json.Unmarshal([]byte(data), &sensorData); err != nil {
-		h.logger.Error().Err(err).Str("sensor", hive.SensorID).Msg("failed to unmarshal sensor data")
+		h.logger.Error().Err(err).Str("hub", hub.Sensor).Msg("failed to unmarshal sensor data")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}

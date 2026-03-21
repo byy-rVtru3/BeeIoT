@@ -493,26 +493,26 @@ components:
     GetTelemetryRequest:
       type: object
       properties:
-        hive:
+        hub:
           type: string
-          description: Название улья
-          example: Улей-1
+          description: Физический идентификатор хаба
+          example: hub-serial-001
         since:
           type: integer
           format: int64
           description: "Unix timestamp начала выборки (в секундах, не миллисекундах)"
           example: 1708704000
       required:
-        - hive
+        - hub
         - since
 
     SetWeightRequest:
       type: object
       properties:
-        hive:
+        hub:
           type: string
-          description: Название улья
-          example: Улей-1
+          description: Физический идентификатор хаба
+          example: hub-serial-001
         time:
           type: string
           format: date-time
@@ -524,24 +524,24 @@ components:
           description: Значение веса
           example: 45.5
       required:
-        - hive
+        - hub
         - time
         - weight
 
     DeleteWeightRequest:
       type: object
       properties:
-        hive:
+        hub:
           type: string
-          description: Название улья
-          example: Улей-1
+          description: Физический идентификатор хаба
+          example: hub-serial-001
         time:
           type: string
           format: date-time
           description: Время записи для удаления в формате RFC3339
           example: "2024-02-23T12:00:00Z"
       required:
-        - hive
+        - hub
         - time
 
     DeviceConfigRequest:
@@ -1669,18 +1669,18 @@ paths:
       description: |
         **Требует middleware `CheckAuth`.**
 
-        Возвращает данные шума для улья с заданного момента времени.
+        Возвращает данные шума для хаба с заданного момента времени.
         Данные выдаются с агрегацией по часам.
       security:
         - BearerAuth: []
       parameters:
-        - name: name
+        - name: hub
           in: query
           required: true
           schema:
             type: string
-          description: Название улья
-          example: Улей-1
+          description: Физический идентификатор хаба
+          example: hub-serial-001
         - name: since
           in: query
           required: false
@@ -1706,12 +1706,12 @@ paths:
                         items:
                           $ref: '#/components/schemas/TelemetryDataPoint'
         '400':
-          description: Параметр name не указан
+          description: Параметр hub не указан
           content:
             text/plain:
               schema:
                 type: string
-                example: Параметр "name" обязателен
+                example: Параметр "hub" обязателен
         '401':
           description: Не авторизован (middleware CheckAuth)
           content:
@@ -1732,18 +1732,18 @@ paths:
       description: |
         **Требует middleware `CheckAuth`.**
 
-        Возвращает данные веса для улья с заданного момента времени.
+        Возвращает данные веса для хаба с заданного момента времени.
         Данные выдаются с агрегацией по часам.
       security:
         - BearerAuth: []
       parameters:
-        - name: name
+        - name: hub
           in: query
           required: true
           schema:
             type: string
-          description: Название улья
-          example: Улей-1
+          description: Физический идентификатор хаба
+          example: hub-serial-001
         - name: since
           in: query
           required: false
@@ -1769,12 +1769,12 @@ paths:
                         items:
                           $ref: '#/components/schemas/TelemetryDataPoint'
         '400':
-          description: Параметр name не указан
+          description: Параметр hub не указан
           content:
             text/plain:
               schema:
                 type: string
-                example: Параметр "name" обязателен
+                example: Параметр "hub" обязателен
         '401':
           description: Не авторизован (middleware CheckAuth)
           content:
@@ -1795,18 +1795,18 @@ paths:
       description: |
         **Требует middleware `CheckAuth`.**
 
-        Возвращает данные температуры для улья с заданного момента времени.
+        Возвращает данные температуры для хаба с заданного момента времени.
         Данные выдаются с агрегацией по часам.
       security:
         - BearerAuth: []
       parameters:
-        - name: name
+        - name: hub
           in: query
           required: true
           schema:
             type: string
-          description: Название улья
-          example: Улей-1
+          description: Физический идентификатор хаба
+          example: hub-serial-001
         - name: since
           in: query
           required: false
@@ -1832,12 +1832,12 @@ paths:
                         items:
                           $ref: '#/components/schemas/TelemetryDataPoint'
         '400':
-          description: Параметр name не указан
+          description: Параметр hub не указан
           content:
             text/plain:
               schema:
                 type: string
-                example: Параметр "name" обязателен
+                example: Параметр "hub" обязателен
         '401':
           description: Не авторизован (middleware CheckAuth)
           content:
@@ -1858,18 +1858,18 @@ paths:
       description: |
         **Требует middleware `CheckAuth`.**
 
-        Возвращает последние показания датчика, привязанного к улью.
+        Возвращает последние показания датчика, привязанного к хабу.
         Данные хранятся в Redis и обновляются при каждом получении данных от датчика по MQTT.
       security:
         - BearerAuth: []
       parameters:
-        - name: name
+        - name: hub
           in: query
           required: true
           schema:
             type: string
-          description: Название улья
-          example: Улей-1
+          description: Физический идентификатор хаба
+          example: hub-serial-001
       responses:
         '200':
           description: Последние данные датчика получены
@@ -1884,12 +1884,12 @@ paths:
                       data:
                         $ref: '#/components/schemas/LastSensorReading'
         '400':
-          description: Параметр name не указан
+          description: Параметр hub не указан
           content:
             text/plain:
               schema:
                 type: string
-                example: Параметр "name" обязателен
+                example: Параметр "hub" обязателен
         '401':
           description: Не авторизован (middleware CheckAuth)
           content:

@@ -8,22 +8,20 @@ import (
 )
 
 func (db *Postgres) NewTemperature(ctx context.Context, temp httpType.Temperature) error {
-	text := `INSERT INTO temperature (hive_id, level, recorded_at)
+	text := `INSERT INTO temperature (hub_id, level, recorded_at)
              SELECT id, $3, $4
-             FROM hives h
-             INNER JOIN users u ON h.user_id = u.id
-             WHERE u.email = $1 AND h.name = $2
-             ON CONFLICT (hive_id, recorded_at) DO NOTHING;`
-	_, err := db.pull.Exec(ctx, text, temp.Email, temp.Hive, temp.Temperature, temp.Time)
+             FROM hubs
+             WHERE email = $1 AND sensor = $2
+             ON CONFLICT (hub_id, recorded_at) DO NOTHING;`
+	_, err := db.pull.Exec(ctx, text, temp.Email, temp.Hub, temp.Temperature, temp.Time)
 	return err
 }
 
-func (db *Postgres) GetTemperaturesSinceTime(ctx context.Context, hive dbTypes.Hive, time time.Time) ([]dbTypes.HivesTemperatureData, error) {
-	text := `SELECT level, recorded_at FROM temperature n
-             INNER JOIN hives h ON n.hive_id = h.id
-             INNER JOIN users u ON h.user_id = u.id
-             WHERE h.name = $2 AND u.email = $1 AND n.recorded_at >= $3;`
-	rows, err := db.pull.Query(ctx, text, hive.Email, hive.NameHive, time)
+func (db *Postgres) GetTemperaturesSinceTime(ctx context.Context, email, hub string, t time.Time) ([]dbTypes.HivesTemperatureData, error) {
+	text := `SELECT level, recorded_at FROM temperature t
+             INNER JOIN hubs h ON t.hub_id = h.id
+             WHERE h.email = $1 AND h.sensor = $2 AND t.recorded_at >= $3;`
+	rows, err := db.pull.Query(ctx, text, email, hub, t)
 	if err != nil {
 		return nil, err
 	}
@@ -31,8 +29,7 @@ func (db *Postgres) GetTemperaturesSinceTime(ctx context.Context, hive dbTypes.H
 	var temperatures []dbTypes.HivesTemperatureData
 	for rows.Next() {
 		var temp dbTypes.HivesTemperatureData
-		err := rows.Scan(&temp.Temperature, &temp.Date)
-		if err != nil {
+		if err := rows.Scan(&temp.Temperature, &temp.Date); err != nil {
 			return nil, err
 		}
 		temperatures = append(temperatures, temp)
@@ -40,11 +37,11 @@ func (db *Postgres) GetTemperaturesSinceTime(ctx context.Context, hive dbTypes.H
 	return temperatures, nil
 }
 
-func (db *Postgres) GetTemperaturesSinceTimeById(ctx context.Context, hiveId int, time time.Time) ([]dbTypes.HivesTemperatureData, error) {
+func (db *Postgres) GetTemperaturesSinceTimeById(ctx context.Context, hubId int, t time.Time) ([]dbTypes.HivesTemperatureData, error) {
 	text := `SELECT level, recorded_at FROM temperature
-             WHERE hive_id = $1
+             WHERE hub_id = $1
 			 AND recorded_at >= $2;`
-	rows, err := db.pull.Query(ctx, text, hiveId, time)
+	rows, err := db.pull.Query(ctx, text, hubId, t)
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +49,7 @@ func (db *Postgres) GetTemperaturesSinceTimeById(ctx context.Context, hiveId int
 	var temperatures []dbTypes.HivesTemperatureData
 	for rows.Next() {
 		var temp dbTypes.HivesTemperatureData
-		err := rows.Scan(&temp.Temperature, &temp.Date)
-		if err != nil {
+		if err := rows.Scan(&temp.Temperature, &temp.Date); err != nil {
 			return nil, err
 		}
 		temperatures = append(temperatures, temp)

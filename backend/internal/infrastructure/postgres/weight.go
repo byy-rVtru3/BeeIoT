@@ -7,36 +7,33 @@ import (
 	"time"
 )
 
-func (db *Postgres) NewHiveWeight(ctx context.Context, weight httpType.HiveWeight) error {
-	text := `INSERT INTO weight (hive_id, level, recorded_at)
-             SELECT h.id, $1, $2
-             FROM hives h
-             INNER JOIN users u ON h.user_id = u.id
-			 WHERE u.email = $3 AND h.name = $4
-			 ON CONFLICT (hive_id, recorded_at) DO NOTHING;`
-	_, err := db.pull.Exec(ctx, text, weight.Weight, weight.Time, weight.Email, weight.Hive)
+func (db *Postgres) NewHiveWeight(ctx context.Context, weight httpType.HubWeight) error {
+	text := `INSERT INTO weight (hub_id, level, recorded_at)
+             SELECT id, $1, $2
+             FROM hubs
+			 WHERE email = $3 AND sensor = $4
+			 ON CONFLICT (hub_id, recorded_at) DO NOTHING;`
+	_, err := db.pull.Exec(ctx, text, weight.Weight, weight.Time, weight.Email, weight.Hub)
 	return err
 }
 
-func (db *Postgres) DeleteHiveWeight(ctx context.Context, weight httpType.HiveWeight) error {
+func (db *Postgres) DeleteHiveWeight(ctx context.Context, weight httpType.HubWeight) error {
 	text := `DELETE FROM weight w
-             USING hives h, users u
-             WHERE w.hive_id = h.id 
-              AND h.user_id = u.id
-              AND u.email = $1 
-              AND h.name = $2 
+             USING hubs h
+             WHERE w.hub_id = h.id
+              AND h.email = $1
+              AND h.sensor = $2
               AND w.recorded_at = $3;`
-	_, err := db.pull.Exec(ctx, text, weight.Email, weight.Hive, weight.Time)
+	_, err := db.pull.Exec(ctx, text, weight.Email, weight.Hub, weight.Time)
 	return err
 }
 
-func (db *Postgres) GetWeightSinceTime(ctx context.Context, hive httpType.Hive, time time.Time) ([]dbTypes.HivesWeightData, error) {
-	text := `SELECT level, recorded_at 
+func (db *Postgres) GetWeightSinceTime(ctx context.Context, email, hub string, t time.Time) ([]dbTypes.HivesWeightData, error) {
+	text := `SELECT level, recorded_at
              FROM weight w
-             INNER JOIN hives h ON h.id = w.hive_id
-             INNER JOIN users u ON h.user_id = u.id
-             WHERE h.name = $2 AND u.email = $1 AND w.recorded_at >= $3;`
-	rows, err := db.pull.Query(ctx, text, hive.Email, hive.NameHive, time)
+             INNER JOIN hubs h ON h.id = w.hub_id
+             WHERE h.email = $1 AND h.sensor = $2 AND w.recorded_at >= $3;`
+	rows, err := db.pull.Query(ctx, text, email, hub, t)
 	if err != nil {
 		return nil, err
 	}
@@ -44,8 +41,7 @@ func (db *Postgres) GetWeightSinceTime(ctx context.Context, hive httpType.Hive, 
 	var weights []dbTypes.HivesWeightData
 	for rows.Next() {
 		var weight dbTypes.HivesWeightData
-		err := rows.Scan(&weight.Weight, &weight.Date)
-		if err != nil {
+		if err := rows.Scan(&weight.Weight, &weight.Date); err != nil {
 			return nil, err
 		}
 		weights = append(weights, weight)

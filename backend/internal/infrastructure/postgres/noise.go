@@ -8,44 +8,39 @@ import (
 )
 
 func (db *Postgres) NewNoise(ctx context.Context, noise httpType.NoiseLevel) error {
-	text := `INSERT INTO noise (hive_id, level, recorded_at)
-             SELECT h.id, $3, $4
-             FROM hives h
-             INNER JOIN users u ON h.user_id = u.id
-             WHERE u.email = $1 AND h.name = $2
-             ON CONFLICT (hive_id, recorded_at) DO NOTHING;`
-	_, err := db.pull.Exec(ctx, text, noise.Email, noise.Hive, noise.Level, noise.Time)
+	text := `INSERT INTO noise (hub_id, level, recorded_at)
+             SELECT id, $3, $4
+             FROM hubs
+             WHERE email = $1 AND sensor = $2
+             ON CONFLICT (hub_id, recorded_at) DO NOTHING;`
+	_, err := db.pull.Exec(ctx, text, noise.Email, noise.Hub, noise.Level, noise.Time)
 	return err
 }
 
-func (db *Postgres) GetNoiseSinceTime(
-	ctx context.Context, email, nameHive string, time time.Time) ([]dbTypes.HivesNoiseData, error) {
+func (db *Postgres) GetNoiseSinceTime(ctx context.Context, email, hub string, t time.Time) ([]dbTypes.HivesNoiseData, error) {
 	text := `SELECT level, recorded_at FROM noise n
-             INNER JOIN hives h ON n.hive_id = h.id
-	         INNER JOIN users u ON h.user_id = u.id
-	         WHERE h.name = $2 AND u.email = $1 AND n.recorded_at >= $3;`
-	rows, err := db.pull.Query(ctx, text, email, nameHive, time)
+             INNER JOIN hubs h ON n.hub_id = h.id
+	         WHERE h.email = $1 AND h.sensor = $2 AND n.recorded_at >= $3;`
+	rows, err := db.pull.Query(ctx, text, email, hub, t)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	var noiseLevels []dbTypes.HivesNoiseData
 	for rows.Next() {
-		var noise dbTypes.HivesNoiseData
-		err := rows.Scan(&noise.Level, &noise.Date)
-		if err != nil {
+		var n dbTypes.HivesNoiseData
+		if err := rows.Scan(&n.Level, &n.Date); err != nil {
 			return nil, err
 		}
-		noiseLevels = append(noiseLevels, noise)
+		noiseLevels = append(noiseLevels, n)
 	}
 	return noiseLevels, nil
 }
 
-func (db *Postgres) GetNoiseSinceDay(
-	ctx context.Context, id int, date time.Time) (map[time.Time][]dbTypes.HivesNoiseData, error) {
+func (db *Postgres) GetNoiseSinceDay(ctx context.Context, hubId int, date time.Time) (map[time.Time][]dbTypes.HivesNoiseData, error) {
 	text := `SELECT level, recorded_at FROM noise
-			 WHERE hive_id = $1 AND recorded_at >= $2;`
-	rows, err := db.pull.Query(ctx, text, id, date)
+			 WHERE hub_id = $1 AND recorded_at >= $2;`
+	rows, err := db.pull.Query(ctx, text, hubId, date)
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +48,7 @@ func (db *Postgres) GetNoiseSinceDay(
 	noiseDataMap := make(map[time.Time][]dbTypes.HivesNoiseData)
 	for rows.Next() {
 		var noiseData dbTypes.HivesNoiseData
-		err := rows.Scan(&noiseData.Level, &noiseData.Date)
-		if err != nil {
+		if err := rows.Scan(&noiseData.Level, &noiseData.Date); err != nil {
 			return nil, err
 		}
 		day := db.createStartDayTime(noiseData.Date.Year(), noiseData.Date.Month(), noiseData.Date.Day())

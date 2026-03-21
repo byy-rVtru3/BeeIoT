@@ -52,24 +52,24 @@ CREATE INDEX ON hives (user_id);
 
 CREATE TABLE temperature (
                              id SERIAL PRIMARY KEY,
-                             hive_id INTEGER REFERENCES hives(id) ON DELETE CASCADE,
+                             hub_id INTEGER REFERENCES hubs(id) ON DELETE CASCADE,
                              level FLOAT NOT NULL,
                              recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                             UNIQUE (hive_id, recorded_at)
+                             UNIQUE (hub_id, recorded_at)
 );
 
 CREATE TABLE weight (
                         id SERIAL PRIMARY KEY,
-                        hive_id INTEGER REFERENCES hives(id) ON DELETE CASCADE,
+                        hub_id INTEGER REFERENCES hubs(id) ON DELETE CASCADE,
                         level FLOAT NOT NULL,
                         recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        UNIQUE (hive_id, recorded_at)
+                        UNIQUE (hub_id, recorded_at)
 );
 
 CREATE TABLE noise (
                        id SERIAL PRIMARY KEY,
-                       hive_id INTEGER REFERENCES hives(id) ON DELETE CASCADE,
+                       hub_id INTEGER REFERENCES hubs(id) ON DELETE CASCADE,
                        level FLOAT NOT NULL,
                        recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                       UNIQUE (hive_id, recorded_at)
+                       UNIQUE (hub_id, recorded_at)
 );

@@ -47,7 +47,10 @@ func (a *Analyzer) analyzeTemperature() {
 		return
 	}
 	for _, hive := range hives {
-		data, err := a.db.GetTemperaturesSinceTimeById(a.ctx, hive.Id, hive.DateTemperature)
+		if hive.HubID == nil {
+			continue
+		}
+		data, err := a.db.GetTemperaturesSinceTimeById(a.ctx, *hive.HubID, hive.DateTemperature)
 		if err != nil {
 			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Msg("failed to get temperature")
 			continue

@@ -55,38 +55,41 @@ func (m *Client) handleDeviceData(_ mqtt.Client, msg mqtt.Message) {
 		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to get hive name")
 		return
 	}
-	if err := m.addNoise(ctx, email, hiveName, data); err != nil {
+	hubSensor, err := m.db.GetHubSensorByHive(ctx, email, hiveName)
+	if err != nil {
+		m.logger.Warn().Err(err).Str("topic", topic).Str("hive", hiveName).Msg("Hive has no hub, skipping telemetry storage")
+		return
+	}
+	if err := m.addNoise(ctx, email, hubSensor, data); err != nil {
 		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to add noise")
 	}
-	if err := m.addTemperature(ctx, email, hiveName, data); err != nil {
+	if err := m.addTemperature(ctx, email, hubSensor, data); err != nil {
 		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to add temperature")
 	}
 }
 
-func (m *Client) addNoise(ctx context.Context, email, hiveName string, data mqttTypes.DeviceData) error {
+func (m *Client) addNoise(ctx context.Context, email, hubSensor string, data mqttTypes.DeviceData) error {
 	if data.Noise == -1 {
 		return nil
 	}
-	err := m.db.NewNoise(ctx, httpType.NoiseLevel{
+	return m.db.NewNoise(ctx, httpType.NoiseLevel{
 		Level: data.Noise,
 		Time:  time.Unix(data.NoiseTime, 0),
 		Email: email,
-		Hive:  hiveName,
+		Hub:   hubSensor,
 	})
-	return err
 }
 
-func (m *Client) addTemperature(ctx context.Context, email, hiveName string, data mqttTypes.DeviceData) error {
+func (m *Client) addTemperature(ctx context.Context, email, hubSensor string, data mqttTypes.DeviceData) error {
 	if data.Temperature == -1 {
 		return nil
 	}
-	err := m.db.NewTemperature(ctx, httpType.Temperature{
+	return m.db.NewTemperature(ctx, httpType.Temperature{
 		Temperature: data.Temperature,
 		Time:        time.Unix(data.TemperatureTime, 0),
 		Email:       email,
-		Hive:        hiveName,
+		Hub:         hubSensor,
 	})
-	return err
 }
 
 // handleDeviceStatus обработчик топика /device/{id}/status

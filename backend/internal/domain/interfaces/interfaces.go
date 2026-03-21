@@ -35,6 +35,7 @@ type DB interface {
 	NewHub(ctx context.Context, email, nameHub, sensorName string) error
 	GetHubs(ctx context.Context, email string) ([]dbTypes.Hub, error)
 	GetHubBySensor(ctx context.Context, email, sensor string) (dbTypes.Hub, error)
+	GetHubSensorByHive(ctx context.Context, email, hiveName string) (string, error)
 	DeleteHub(ctx context.Context, email, nameHub string) error
 	UpdateHub(ctx context.Context, email string, data httpType.UpdateHub) error
 
@@ -45,19 +46,16 @@ type DB interface {
 	UpdateQueen(ctx context.Context, email string, data httpType.UpdateQueen) error
 
 	NewTemperature(ctx context.Context, temp httpType.Temperature) error
-	GetTemperaturesSinceTime(ctx context.Context, hive dbTypes.Hive, time time.Time) ([]dbTypes.HivesTemperatureData, error)
-	GetTemperaturesSinceTimeById(
-		ctx context.Context, hiveId int, time time.Time) ([]dbTypes.HivesTemperatureData, error)
+	GetTemperaturesSinceTime(ctx context.Context, email, hub string, time time.Time) ([]dbTypes.HivesTemperatureData, error)
+	GetTemperaturesSinceTimeById(ctx context.Context, hubId int, time time.Time) ([]dbTypes.HivesTemperatureData, error)
 
 	NewNoise(ctx context.Context, noise httpType.NoiseLevel) error
-	GetNoiseSinceTime(
-		ctx context.Context, email, nameHive string, time time.Time) ([]dbTypes.HivesNoiseData, error)
-	GetNoiseSinceDay(
-		ctx context.Context, id int, date time.Time) (map[time.Time][]dbTypes.HivesNoiseData, error)
+	GetNoiseSinceTime(ctx context.Context, email, hub string, time time.Time) ([]dbTypes.HivesNoiseData, error)
+	GetNoiseSinceDay(ctx context.Context, hubId int, date time.Time) (map[time.Time][]dbTypes.HivesNoiseData, error)
 
-	NewHiveWeight(ctx context.Context, weight httpType.HiveWeight) error
-	DeleteHiveWeight(ctx context.Context, weight httpType.HiveWeight) error
-	GetWeightSinceTime(ctx context.Context, hive httpType.Hive, time time.Time) ([]dbTypes.HivesWeightData, error)
+	NewHiveWeight(ctx context.Context, weight httpType.HubWeight) error
+	DeleteHiveWeight(ctx context.Context, weight httpType.HubWeight) error
+	GetWeightSinceTime(ctx context.Context, email, hub string, time time.Time) ([]dbTypes.HivesWeightData, error)
 
 	SetFirebaseToken(ctx context.Context, email, device, fcm string) error
 	GetFirebaseToken(ctx context.Context, email string) ([]string, error)

@@ -50,7 +50,10 @@ func (a *Analyzer) analyzeNoise() {
 		return
 	}
 	for _, hive := range hives {
-		SchumeikoDataMap, err := a.db.GetNoiseSinceDay(a.ctx, hive.Id, computingStartTime)
+		if hive.HubID == nil {
+			continue
+		}
+		SchumeikoDataMap, err := a.db.GetNoiseSinceDay(a.ctx, *hive.HubID, computingStartTime)
 		if err != nil {
 			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Msg("failed to get noise since time map")
 			continue

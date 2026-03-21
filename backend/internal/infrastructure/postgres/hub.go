@@ -57,6 +57,19 @@ func (d *Postgres) DeleteHub(ctx context.Context, email, nameHub string) error {
 	return nil
 }
 
+func (d *Postgres) GetHubSensorByHive(ctx context.Context, email, hiveName string) (string, error) {
+	q := `SELECT hu.sensor FROM hives h
+	      JOIN users u ON h.user_id = u.id
+	      JOIN hubs hu ON h.hub_id = hu.id
+	      WHERE u.email = $1 AND h.name = $2`
+	var sensor string
+	err := d.pull.QueryRow(ctx, q, email, hiveName).Scan(&sensor)
+	if err != nil {
+		return "", fmt.Errorf("failed to get hub sensor by hive: %w", err)
+	}
+	return sensor, nil
+}
+
 func (d *Postgres) UpdateHub(ctx context.Context, email string, data httpType.UpdateHub) error {
 	if data.Name == nil {
 		return nil // Nothing to update

@@ -44,21 +44,21 @@ type NoiseLevel struct {
 	Level float64   `json:"level"`
 	Time  time.Time `json:"time"`
 	Email string    `json:"email"`
-	Hive  string    `json:"hive"`
+	Hub   string    `json:"hub"`
 }
 
-type HiveWeight struct {
+type HubWeight struct {
 	Weight float64   `json:"weight"`
 	Time   time.Time `json:"time"`
 	Email  string    `json:"email"`
-	Hive   string    `json:"hive"`
+	Hub    string    `json:"hub"`
 }
 
 type Temperature struct {
 	Temperature float64   `json:"temperature"`
 	Time        time.Time `json:"time"`
 	Email       string    `json:"email"`
-	Hive        string    `json:"hive"`
+	Hub         string    `json:"hub"`
 }
 
 type Hive struct {
