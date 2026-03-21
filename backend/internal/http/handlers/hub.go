@@ -16,19 +16,24 @@ func (h *Handler) CreateHub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if createData.ID == "" {
+		h.logger.Warn().Str("email", email).Msg("hub id is empty")
+		http.Error(w, "Идентификатор хаба обязателен", http.StatusBadRequest)
+		return
+	}
 	if createData.Name == "" {
 		h.logger.Warn().Str("email", email).Msg("hub name is empty")
 		http.Error(w, "Имя хаба обязательно", http.StatusBadRequest)
 		return
 	}
 
-	if err := h.db.NewHub(r.Context(), email, createData.Name, createData.Sensor); err != nil {
+	if err := h.db.NewHub(r.Context(), email, createData.Name, createData.ID); err != nil {
 		h.logger.Error().Err(err).Str("email", email).
-			Str("hub_name", createData.Name).Msg("error creating hub")
+			Str("hub_id", createData.ID).Msg("error creating hub")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
-	h.logger.Debug().Str("email", email).Str("hub_name", createData.Name).Msg("hub created")
+	h.logger.Debug().Str("email", email).Str("hub_id", createData.ID).Msg("hub created")
 
 	h.writeBodyJSON(w, "Хаб успешно создан", nil)
 }
@@ -45,12 +50,12 @@ func (h *Handler) GetHubs(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
-	
+
 	result := make([]httpType.HubListItem, 0, len(hubs))
 	for _, hb := range hubs {
 		result = append(result, httpType.HubListItem{
-			Name:   hb.NameHub,
-			Sensor: hb.Sensor,
+			ID:   hb.Sensor,
+			Name: hb.NameHub,
 		})
 	}
 	h.writeBodyJSON(w, "Список хабов успешно получен", result)
@@ -62,23 +67,23 @@ func (h *Handler) GetHub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hubName := r.URL.Query().Get("name")
-	if hubName == "" {
-		h.logger.Error().Msg("no \"name\" in request")
-		http.Error(w, "Параметр \"name\" обязателен", http.StatusBadRequest)
+	hubID := r.URL.Query().Get("id")
+	if hubID == "" {
+		h.logger.Error().Msg("no \"id\" in request")
+		http.Error(w, "Параметр \"id\" обязателен", http.StatusBadRequest)
 		return
 	}
 
-	hub, err := h.db.GetHubByName(r.Context(), email, hubName)
+	hub, err := h.db.GetHubBySensor(r.Context(), email, hubID)
 	if err != nil {
-		h.logger.Error().Err(err).Str("email", email).Str("hub_name", hubName).Msg("error getting hub")
+		h.logger.Error().Err(err).Str("email", email).Str("hub_id", hubID).Msg("error getting hub")
 		http.Error(w, "Хаб не найден", http.StatusNotFound)
 		return
 	}
 
 	h.writeBodyJSON(w, "Хаб успешно получен", httpType.HubDetails{
-		Name:   hub.NameHub,
-		Sensor: hub.Sensor,
+		ID:   hub.Sensor,
+		Name: hub.NameHub,
 	})
 }
 
@@ -93,19 +98,19 @@ func (h *Handler) UpdateHub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if updateData.OldName == "" {
-		h.logger.Warn().Str("email", email).Msg("old hub name is empty")
-		http.Error(w, "Старое имя хаба не может быть пустым", http.StatusBadRequest)
+	if updateData.ID == "" {
+		h.logger.Warn().Str("email", email).Msg("hub id is empty")
+		http.Error(w, "Идентификатор хаба не может быть пустым", http.StatusBadRequest)
 		return
 	}
 
 	if err := h.db.UpdateHub(r.Context(), email, updateData); err != nil {
 		h.logger.Error().Err(err).Str("email", email).
-			Str("old_name", updateData.OldName).Msg("error updating hub")
+			Str("hub_id", updateData.ID).Msg("error updating hub")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
-	h.logger.Debug().Str("email", email).Str("old_name", updateData.OldName).Msg("hub updated")
+	h.logger.Debug().Str("email", email).Str("hub_id", updateData.ID).Msg("hub updated")
 
 	h.writeBodyJSON(w, "Хаб успешно обновлен", nil)
 }

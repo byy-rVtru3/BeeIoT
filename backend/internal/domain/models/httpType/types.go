@@ -115,24 +115,23 @@ type LastSensorReading struct {
 }
 
 type CreateHub struct {
-	Name   string `json:"name"`
-	Sensor string `json:"sensor,omitempty"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type HubListItem struct {
-	Name   string `json:"name"`
-	Sensor string `json:"sensor,omitempty"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type HubDetails struct {
-	Name   string `json:"name"`
-	Sensor string `json:"sensor,omitempty"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type UpdateHub struct {
-	OldName string  `json:"old_name"`
-	NewName *string `json:"new_name,omitempty"`
-	Sensor  *string `json:"sensor,omitempty"`
+	ID   string  `json:"id"`
+	Name *string `json:"name,omitempty"`
 }
 
 type CreateQueen struct {

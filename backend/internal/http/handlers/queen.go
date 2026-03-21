@@ -41,7 +41,10 @@ func (h *Handler) CreateQueen(w http.ResponseWriter, r *http.Request) {
 	calendar.CalculatePreciseCalendar(startDate)
 	h.logger.Debug().Str("email", email).Str("queen_name", req.Name).Msg("queen created")
 
-	h.writeBodyJSON(w, "Матка создана, календарь рассчитан", calendar)
+	h.writeBodyJSON(w, "Матка создана, календарь рассчитан", httpType.QueenDetails{
+		Name:     req.Name,
+		Calendar: calendar,
+	})
 }
 
 func (h *Handler) GetQueens(w http.ResponseWriter, r *http.Request) {

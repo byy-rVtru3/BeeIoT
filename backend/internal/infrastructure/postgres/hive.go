@@ -31,7 +31,7 @@ func (db *Postgres) DeleteHive(ctx context.Context, email, nameHive string) erro
 }
 
 func (db *Postgres) GetHives(ctx context.Context, email string, active *bool) ([]dbTypes.Hive, error) {
-	base := `SELECT h.id, h.name, u.email, h.temperature_check, h.noise_check, COALESCE(s.sensor_id, ''), h.status, COALESCE(hu.name, ''), COALESCE(q.name, '')
+	base := `SELECT h.id, h.name, u.email, h.temperature_check, h.noise_check, COALESCE(s.sensor_id, ''), h.status, COALESCE(hu.sensor, ''), COALESCE(q.name, '')
 	        FROM hives h
 	        JOIN users u ON h.user_id = u.id
 	        LEFT JOIN sensors s ON h.sensor_id = s.id
@@ -68,7 +68,7 @@ func (db *Postgres) GetHives(ctx context.Context, email string, active *bool) ([
 }
 
 func (db *Postgres) GetHiveByName(ctx context.Context, email, nameHive string, active *bool) (dbTypes.Hive, error) {
-	base := `SELECT h.id, h.name, u.email, h.temperature_check, h.noise_check, COALESCE(s.sensor_id, ''), h.status, COALESCE(hu.name, ''), COALESCE(q.name, '')
+	base := `SELECT h.id, h.name, u.email, h.temperature_check, h.noise_check, COALESCE(s.sensor_id, ''), h.status, COALESCE(hu.sensor, ''), COALESCE(q.name, '')
 	        FROM hives h
 	        INNER JOIN users u ON h.user_id = u.id
 	        LEFT JOIN sensors s ON h.sensor_id = s.id
@@ -228,7 +228,7 @@ func (db *Postgres) LinkHubToHive(ctx context.Context, email, hiveName, hubName 
 		q := `UPDATE hives SET hub_id = NULL WHERE user_id = (SELECT id FROM users WHERE email = $1) AND name = $2`
 		_, err = db.pull.Exec(ctx, q, email, hiveName)
 	} else {
-		q := `UPDATE hives SET hub_id = (SELECT id FROM hubs WHERE email = $1 AND name = $3) WHERE user_id = (SELECT id FROM users WHERE email = $1) AND name = $2`
+		q := `UPDATE hives SET hub_id = (SELECT id FROM hubs WHERE email = $1 AND sensor = $3) WHERE user_id = (SELECT id FROM users WHERE email = $1) AND name = $2`
 		_, err = db.pull.Exec(ctx, q, email, hiveName, hubName)
 	}
 	if err != nil {

@@ -52,7 +52,7 @@ func (h *Handler) DeleteHiveWeight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.writeBodyJSON(w, "Вес удален успешно", nil)
+	h.writeBodyJSON(w, "Данные веса успешно удалены", nil)
 }
 
 func (h *Handler) GetWeightSinceTime(w http.ResponseWriter, r *http.Request) {

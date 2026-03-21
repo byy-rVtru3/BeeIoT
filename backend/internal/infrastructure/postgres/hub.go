@@ -35,12 +35,12 @@ func (d *Postgres) GetHubs(ctx context.Context, email string) ([]dbTypes.Hub, er
 	return hubs, nil
 }
 
-func (d *Postgres) GetHubByName(ctx context.Context, email, nameHub string) (dbTypes.Hub, error) {
-	q := `SELECT id, name, email, sensor FROM hubs WHERE email = $1 AND name = $2`
+func (d *Postgres) GetHubBySensor(ctx context.Context, email, sensor string) (dbTypes.Hub, error) {
+	q := `SELECT id, name, email, sensor FROM hubs WHERE email = $1 AND sensor = $2`
 	var hub dbTypes.Hub
-	err := d.pull.QueryRow(ctx, q, email, nameHub).Scan(&hub.Id, &hub.NameHub, &hub.Email, &hub.Sensor)
+	err := d.pull.QueryRow(ctx, q, email, sensor).Scan(&hub.Id, &hub.NameHub, &hub.Email, &hub.Sensor)
 	if err != nil {
-		return hub, fmt.Errorf("failed to get hub by name: %w", err)
+		return hub, fmt.Errorf("failed to get hub by sensor: %w", err)
 	}
 	return hub, nil
 }
@@ -58,31 +58,12 @@ func (d *Postgres) DeleteHub(ctx context.Context, email, nameHub string) error {
 }
 
 func (d *Postgres) UpdateHub(ctx context.Context, email string, data httpType.UpdateHub) error {
-	args := []interface{}{email, data.OldName}
-	queryStr := "UPDATE hubs SET "
-	argId := 3
-
-	if data.NewName != nil {
-		queryStr += fmt.Sprintf("name = $%d", argId)
-		args = append(args, *data.NewName)
-		argId++
-	}
-	if data.Sensor != nil {
-		if argId > 3 {
-			queryStr += ", "
-		}
-		queryStr += fmt.Sprintf("sensor = $%d", argId)
-		args = append(args, *data.Sensor)
-		argId++
-	}
-
-	if argId == 3 {
+	if data.Name == nil {
 		return nil // Nothing to update
 	}
 
-	queryStr += " WHERE email = $1 AND name = $2"
-
-	res, err := d.pull.Exec(ctx, queryStr, args...)
+	q := `UPDATE hubs SET name = $3 WHERE email = $1 AND sensor = $2`
+	res, err := d.pull.Exec(ctx, q, email, data.ID, *data.Name)
 	if err != nil {
 		return fmt.Errorf("failed to update hub: %w", err)
 	}

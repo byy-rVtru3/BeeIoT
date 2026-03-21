@@ -270,7 +270,7 @@ func (h *Handler) UpdateFcmToken(w http.ResponseWriter, r *http.Request) {
 	}
 	var data struct {
 		FcmToken string `json:"token"`
-		Device   string `json:"device_id"`
+		Device   string `json:"device"`
 	}
 	if err := h.readBodyJSON(w, r, &data); err != nil {
 		return
