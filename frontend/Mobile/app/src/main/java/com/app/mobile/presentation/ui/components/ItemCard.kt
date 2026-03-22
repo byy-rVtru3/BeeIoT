@@ -362,16 +362,55 @@ fun QueenCard(
 
 
 @Composable
+fun WorkTileCard(
+    title: String,
+    dateTime: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    SelectableCardContainer(
+        onClick = onClick,
+        modifier = modifier.height(Dimens.Size120)
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(Dimens.ItemCardPadding)
+                .fillMaxSize()
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.TopStart)
+            )
+            Text(
+                text = dateTime,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.Disabled),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.BottomStart)
+            )
+        }
+    }
+}
+
+
+@Composable
 fun DetailsItemCard(
     title: String,
     description: String,
     footer: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
 ) {
     Surface(
         shape = RoundedCornerShape(Dimens.ItemCardRadius),
         color = MaterialTheme.colorScheme.surface,
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
     ) {
         Column(
             modifier = Modifier
