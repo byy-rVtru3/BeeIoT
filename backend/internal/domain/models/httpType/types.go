@@ -112,6 +112,8 @@ type LastSensorReading struct {
 	TemperatureTime int64   `json:"temperature_time"`
 	Noise           float64 `json:"noise"`
 	NoiseTime       int64   `json:"noise_time"`
+	Weight          float64 `json:"weight"`
+	WeightTime      int64   `json:"weight_time"`
 }
 
 type CreateHub struct {

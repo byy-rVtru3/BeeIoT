@@ -14,6 +14,12 @@ type DeviceData struct {
 
 	// NoiseTime - метка времени измерения шума (UNIX Seconds)
 	NoiseTime int64 `json:"noise_time"`
+
+	// Weight - вес улья в кг. Значение -1 означает отсутствие данных
+	Weight float64 `json:"weight"`
+
+	// WeightTime - метка времени измерения веса (UNIX Seconds)
+	WeightTime int64 `json:"weight_time"`
 }
 
 // DeviceStatus представляет статус датчика (топик /device/{id}/status)

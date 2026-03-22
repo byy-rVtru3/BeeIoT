@@ -209,6 +209,8 @@ func (h *Handler) GetLastSensorReading(w http.ResponseWriter, r *http.Request) {
 		TemperatureTime: sensorData.TemperatureTime,
 		Noise:           sensorData.Noise,
 		NoiseTime:       sensorData.NoiseTime,
+		Weight:          sensorData.Weight,
+		WeightTime:      sensorData.WeightTime,
 	}
 
 	h.writeBodyJSON(w, "Последние данные датчика получены", lastReading)

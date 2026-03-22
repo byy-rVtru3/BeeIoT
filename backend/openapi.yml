@@ -638,6 +638,16 @@ components:
           format: int64
           description: Unix timestamp измерения шума
           example: 1708704000
+        weight:
+          type: number
+          format: float64
+          description: Вес улья в кг. -1 означает отсутствие данных
+          example: 45.2
+        weight_time:
+          type: integer
+          format: int64
+          description: Unix timestamp измерения веса
+          example: 1708704000
 
 paths:
   # ==================== AUTH ====================
