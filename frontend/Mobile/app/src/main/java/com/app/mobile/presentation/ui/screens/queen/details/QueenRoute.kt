@@ -3,4 +3,4 @@ package com.app.mobile.presentation.ui.screens.queen.details
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class QueenRoute(val queenName: String)
+data class QueenRoute(val queenName: String, val fromHiveName: String? = null)

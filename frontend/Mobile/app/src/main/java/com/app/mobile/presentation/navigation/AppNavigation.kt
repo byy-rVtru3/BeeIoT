@@ -14,6 +14,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppRoute
 import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppScreen
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppViewModel
@@ -59,6 +60,9 @@ import com.app.mobile.presentation.ui.screens.registration.viewmodel.Registratio
 import com.app.mobile.presentation.ui.screens.settings.SettingsRoute
 import com.app.mobile.presentation.ui.screens.settings.SettingsScreen
 import com.app.mobile.presentation.ui.screens.settings.viewmodel.SettingsViewModel
+import com.app.mobile.presentation.ui.screens.works.detail.WorkDetailRoute
+import com.app.mobile.presentation.ui.screens.works.detail.WorkDetailScreen
+import com.app.mobile.presentation.ui.screens.works.detail.viewmodel.WorkDetailViewModel
 import com.app.mobile.presentation.ui.screens.works.editor.WorkEditorRoute
 import com.app.mobile.presentation.ui.screens.works.editor.WorksEditorScreen
 import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorViewModel
@@ -171,11 +175,17 @@ fun AppNavigation(
         }
 
         animatedComposable<HiveRoute> {
+            val route = it.toRoute<HiveRoute>()
             val hiveViewModel: HiveViewModel = koinViewModel()
             HiveScreen(
                 hiveViewModel,
-                onQueenClick = { queenName -> navController.navigate(QueenRoute(queenName)) },
+                onQueenClick = { queenName ->
+                    navController.navigate(QueenRoute(queenName, fromHiveName = route.hiveName))
+                },
                 onWorksClick = { navController.navigate(WorksListRoute(it)) },
+                onWorkDetailClick = { workId, hiveName ->
+                    navController.navigate(WorkDetailRoute(workId, hiveName))
+                },
                 onNotificationsClick = { TODO("NotificationsRoute") },
                 onTemperatureClick = { TODO("TemperatureRoute") },
                 onNoiseClick = { TODO("NoiseRoute") },
@@ -236,9 +246,7 @@ fun AppNavigation(
             WorksListScreen(
                 worksListViewModel,
                 onWorkClick = { workId, hiveId ->
-                    navController.navigate(
-                        WorkEditorRoute(workId = workId, hiveId = hiveId)
-                    )
+                    navController.navigate(WorkDetailRoute(workId, hiveId))
                 },
                 onCreateClick = { hiveId ->
                     navController.navigate(
@@ -248,6 +256,17 @@ fun AppNavigation(
                 onBackClick = {
                     navController.popBackStack()
                 }
+            )
+        }
+
+        animatedComposable<WorkDetailRoute> {
+            val workDetailViewModel: WorkDetailViewModel = koinViewModel()
+            WorkDetailScreen(
+                workDetailViewModel,
+                onEditClick = { workId, hiveId ->
+                    navController.navigate(WorkEditorRoute(workId = workId, hiveId = hiveId))
+                },
+                onBackClick = { navController.popBackStack() }
             )
         }
 

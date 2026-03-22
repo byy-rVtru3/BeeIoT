@@ -102,6 +102,7 @@ fun QueenScreen(
 		is QueenUiState.Content -> {
 			QueenContent(
 				queen = state.queen,
+				fromHiveName = state.fromHiveName,
 				snackbarHostState,
 				onEditClick = { queenViewModel.onEditQueenClick() },
 				onHiveClick = { queenViewModel.onHiveClick() },
@@ -116,6 +117,7 @@ fun QueenScreen(
 @Composable
 private fun QueenContent(
 	queen: QueenUiModel,
+	fromHiveName: String?,
 	snackbarHostState: SnackbarHostState,
 	onEditClick: () -> Unit,
 	onHiveClick: () -> Unit,
@@ -169,8 +171,11 @@ private fun QueenContent(
 
 						InfoCard(
 							title = stringResource(R.string.hive_format),
-							value = stringResource(R.string.no_hive),
-							modifier = Modifier.weight(1f).fillMaxWidth(0.48f)
+							value = fromHiveName ?: stringResource(R.string.no_hive),
+							modifier = if (fromHiveName != null)
+								Modifier.weight(1f).fillMaxWidth(0.48f).clickable { onHiveClick() }
+							else
+								Modifier.weight(1f).fillMaxWidth(0.48f)
 						)
 					}
 

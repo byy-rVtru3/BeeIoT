@@ -17,6 +17,7 @@ class QueenViewModel(
 
     private val route = savedStateHandle.toRoute<QueenRoute>()
     private val queenName = route.queenName
+    private val fromHiveName = route.fromHiveName
 
     override fun handleError(exception: Throwable) {
         updateState { QueenUiState.Error(exception.message ?: "Unknown error") }
@@ -29,7 +30,7 @@ class QueenViewModel(
         launch {
             when (val result = getQueenUseCase(queenName)) {
                 is ApiResult.Success -> {
-                    updateState { QueenUiState.Content(result.data.toUiModel()) }
+                    updateState { QueenUiState.Content(result.data.toUiModel(), fromHiveName) }
                 }
 
                 else -> {
@@ -52,7 +53,7 @@ class QueenViewModel(
     }
 
     fun onHiveClick() {
-        // Hive navigation from queen details is no longer supported
-        // since queen no longer knows its hive
+        val hiveName = fromHiveName ?: return
+        launch { sendEvent(QueenEvent.NavigateToHive(hiveName)) }
     }
 }

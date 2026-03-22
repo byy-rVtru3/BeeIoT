@@ -145,18 +145,18 @@ private fun HubContent(
 					modifier = Modifier.fillMaxWidth()
 				) {
 					val temp = hub.sensorReadings?.temperatureSensor?.temperature?.toString()
-						?: "нет показаний"
+						?: "-"
 
 					val noise = hub.sensorReadings?.noiseSensor?.noise?.toString()
-						?: "нет показаний"
+						?: "-"
 
 					val weight = hub.sensorReadings?.weightSensor?.weight?.toString()
-						?: "нет показаний"
+						?: "-"
 
 					InfoCard(
 						title = stringResource(R.string.label_temperature),
 						value = temp,
-						modifier = Modifier.weight(1f)
+						modifier = Modifier.weight(1.5f)
 					)
 					InfoCard(
 						title = stringResource(R.string.label_noise),
