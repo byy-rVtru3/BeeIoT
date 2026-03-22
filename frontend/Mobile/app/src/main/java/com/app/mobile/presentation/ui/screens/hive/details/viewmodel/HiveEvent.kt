@@ -9,6 +9,7 @@ sealed interface HiveEvent {
     data class NavigateToNoiseByHive(val hiveName: String) : HiveEvent
     data class NavigateToWeightByHive(val hiveName: String) : HiveEvent
     data class NavigateToHiveEdit(val hiveName: String) : HiveEvent
+    data class NavigateToWorkDetail(val workId: String, val hiveName: String) : HiveEvent
 
     data class ShowSnackBar(val message: String) : HiveEvent
 }

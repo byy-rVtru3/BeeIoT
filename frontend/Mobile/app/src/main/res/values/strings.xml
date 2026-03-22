@@ -82,6 +82,9 @@
     <string name="label_temperature">Температура:</string>
     <string name="label_noise">Шум:</string>
     <string name="label_weight">Вес:</string>
+    <string name="sensor_temperature_format">%1$s°C</string>
+    <string name="sensor_noise_format">%1$s дБ</string>
+    <string name="sensor_weight_format">%1$s кг</string>
     <string name="label_ip_address">IP адрес:</string>
     <string name="label_port">Порт:</string>
     <string name="edit">Редактировать</string>
@@ -114,12 +117,14 @@
     <string name="available_hives">Доступные ульи</string>
 
     <!-- Works (Работы) -->
-
     <string name="add_work_title">Добавление работы</string>
     <string name="edit_work_title">Редактирование работы</string>
+    <string name="work_detail_title">Работа по улью</string>
+    <string name="work_title_label">Название работы:</string>
     <string name="work_title_placeholder">Название работы</string>
     <string name="work_text_label">Текст работы:</string>
     <string name="work_text_placeholder">Опишите выполненную работу</string>
+    <string name="work_hive_format">Улей: %1$s</string>
 
     <!-- Queen Timeline (График развития матки) -->
     <string name="queen_timeline_title">График развития</string>
