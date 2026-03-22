@@ -226,33 +226,33 @@ private fun QueenStatusSection(queen: QueenUiModel) {
 
 	val statusColor = MaterialTheme.colorScheme.primary
 
-    Surface(
-        shape = RoundedCornerShape(Dimens.ItemCardRadius),
-        color = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(Dimens.ItemCardPadding)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(Dimens.ItemCardTextPadding)
-        ) {
+	Surface(
+		shape = RoundedCornerShape(Dimens.ItemCardRadius),
+		color = MaterialTheme.colorScheme.surface,
+		modifier = Modifier.fillMaxWidth()
+	) {
+		Column(
+			modifier = Modifier
+				.padding(Dimens.ItemCardPadding)
+				.fillMaxWidth(),
+			verticalArrangement = Arrangement.spacedBy(Dimens.ItemCardTextPadding)
+		) {
 			Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = currentStage?.title ?: stringResource(R.string.queen_stage_start),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = currentStage?.dateFormatted ?: "",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
+				modifier = Modifier.fillMaxWidth(),
+				horizontalArrangement = Arrangement.SpaceBetween,
+				verticalAlignment = Alignment.CenterVertically
+			) {
+				Text(
+					text = currentStage?.title ?: stringResource(R.string.queen_stage_start),
+					style = MaterialTheme.typography.titleSmall,
+					color = MaterialTheme.colorScheme.onSurface
+				)
+				Text(
+					text = currentStage?.dateFormatted ?: "",
+					style = MaterialTheme.typography.bodySmall,
+					color = MaterialTheme.colorScheme.onSurface
+				)
+			}
 			LinearProgressIndicator(
 				progress = { progress },
 				modifier = Modifier
@@ -262,25 +262,24 @@ private fun QueenStatusSection(queen: QueenUiModel) {
 				trackColor = MaterialTheme.colorScheme.surfaceVariant,
 				strokeCap = StrokeCap.Round,
 			)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = if (progress >= 1f) stringResource(R.string.queen_stage_completed) else stringResource(R.string.queen_stage_in_progress),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = currentStage?.description ?: "",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1
-                )
-            }
-        }
-    }
+			Row(
+				modifier = Modifier.fillMaxWidth(),
+				horizontalArrangement = Arrangement.SpaceBetween
+			) {
+				Text(
+					text = if (progress >= 1f) stringResource(R.string.queen_stage_completed) else stringResource(R.string.queen_stage_in_progress),
+					style = MaterialTheme.typography.bodySmall,
+					color = MaterialTheme.colorScheme.onSurfaceVariant
+				)
+				Text(
+					text = currentStage?.description ?: "",
+					style = MaterialTheme.typography.bodySmall,
+					color = MaterialTheme.colorScheme.onSurface,
+					maxLines = 1
+				)
+			}
+		}
+	}
 }
 
 @Composable
