@@ -8,10 +8,9 @@ import (
 
 func dbHiveToListItem(h dbTypes.Hive) httpType.HiveListItem {
 	return httpType.HiveListItem{
-		Name:   h.NameHive,
-		Sensor: h.SensorID,
-		Hub:    h.HubName,
-		Queen:  h.QueenName,
+		Name:  h.NameHive,
+		Hub:   h.HubID,
+		Queen: h.QueenName,
 	}
 }
 
@@ -26,9 +25,8 @@ func dbHivesToListItems(hives []dbTypes.Hive) []httpType.HiveListItem {
 func dbHiveToDetails(h dbTypes.Hive) httpType.HiveDetails {
 	return httpType.HiveDetails{
 		Name:   h.NameHive,
-		Sensor: h.SensorID,
 		Active: h.Status,
-		Hub:    h.HubName,
+		Hub:    h.HubID,
 		Queen:  h.QueenName,
 	}
 }

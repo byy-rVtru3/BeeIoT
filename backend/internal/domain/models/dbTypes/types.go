@@ -14,10 +14,9 @@ type Hive struct {
 	DateNoise       time.Time
 	SensorID        string
 	Status          bool
-	HubID           *int
-	QueenID         *int
-	HubName         string
-	QueenName       string
+	HubID     *int
+	QueenID   *int
+	QueenName string
 }
 
 type Hub struct {

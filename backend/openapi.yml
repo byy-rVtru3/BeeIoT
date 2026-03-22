@@ -240,14 +240,11 @@ components:
         name:
           type: string
           example: Улей-1
-        sensor:
-          type: string
-          example: sensor-001
-          description: Идентификатор датчика, привязанного к улью
         hub:
-          type: string
-          example: "hub-serial-001"
-          description: Физический идентификатор привязанного хаба
+          type: integer
+          nullable: true
+          example: 1
+          description: ID привязанного хаба
         queen:
           type: string
           example: Матка-2026
@@ -259,14 +256,11 @@ components:
         name:
           type: string
           example: Улей-1
-        sensor:
-          type: string
-          example: sensor-001
-          description: Идентификатор датчика, привязанного к улью
         hub:
-          type: string
-          example: "hub-serial-001"
-          description: Физический идентификатор привязанного хаба
+          type: integer
+          nullable: true
+          example: 1
+          description: ID привязанного хаба
         queen:
           type: string
           example: Матка-2026
