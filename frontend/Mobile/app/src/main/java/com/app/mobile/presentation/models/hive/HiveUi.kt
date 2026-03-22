@@ -1,9 +1,10 @@
 package com.app.mobile.presentation.models.hive
 
+import com.app.mobile.presentation.models.hub.HubDetailUi
+import com.app.mobile.presentation.models.queen.QueenUiModel
+
 data class HiveUi(
     val name: String,
-    val sensor: String?,
-    val hubName: String?,
-    val queenName: String?,
-    val active: Boolean
+    val hub: HubDetailUi?,
+    val queen: QueenUiModel?,
 )
