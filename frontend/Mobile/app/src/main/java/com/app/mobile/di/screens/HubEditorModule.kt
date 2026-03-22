@@ -8,7 +8,7 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val hubEditorModule = module {
-    factoryOf(::GetHubByIdUseCase)
     factoryOf(::SaveHubUseCase)
+    factoryOf(::GetHubByIdUseCase)
     viewModelOf(::HubEditorViewModel)
 }

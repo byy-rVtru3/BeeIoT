@@ -5,7 +5,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class HiveDetailsDto(
     val name: String,
-    val sensor: String? = null,
     val hub: String? = null,
     val queen: String? = null,
     val active: Boolean? = null
