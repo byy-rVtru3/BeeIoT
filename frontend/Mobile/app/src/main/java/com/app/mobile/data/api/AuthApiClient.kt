@@ -12,6 +12,7 @@ import com.app.mobile.data.api.models.hub.CreateHubRequest
 import com.app.mobile.data.api.models.hub.HubDetailsResponse
 import com.app.mobile.data.api.models.hub.HubListResponse
 import com.app.mobile.data.api.models.hub.UpdateHubRequest
+import com.app.mobile.data.api.models.telemetry.LastSensorReadingResponse
 import com.app.mobile.data.api.models.queen.CalcQueenRequest
 import com.app.mobile.data.api.models.queen.CreateQueenRequest
 import com.app.mobile.data.api.models.queen.DeleteQueenRequest
@@ -77,6 +78,11 @@ interface AuthApiClient {
 
     @PUT("hub/update")
     suspend fun updateHub(@Body request: UpdateHubRequest): Response<ResponseApiModel>
+
+    // --- Telemetry ---
+
+    @GET("telemetry/sensor/last")
+    suspend fun getLastSensorReading(@Query("hub") hubId: String): Response<LastSensorReadingResponse>
 
     // --- Queen ---
 
