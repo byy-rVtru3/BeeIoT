@@ -31,6 +31,7 @@ import com.app.mobile.di.screens.queenListModule
 import com.app.mobile.di.screens.queenModule
 import com.app.mobile.di.screens.registrationModule
 import com.app.mobile.di.screens.settingsModule
+import com.app.mobile.di.screens.workDetailModule
 import com.app.mobile.di.screens.workEditorModule
 import com.app.mobile.di.screens.workListModule
 import com.app.mobile.di.sessionModule
@@ -78,6 +79,7 @@ class MobileApp : Application() {
 				queenEditorModule,
 				queenListModule,
 				workLocalRepositoryModule,
+				workDetailModule,
 				workEditorModule,
 				workListModule,
 				notificationsModule,

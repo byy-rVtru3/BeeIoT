@@ -41,7 +41,7 @@ class WorksListViewModel(
 
 	fun onWorkClick(workId: String) {
 		if (currentState is WorksListUiState.Content) {
-			sendEvent(WorksListEvent.NavigateToWorkEditor(workId, hiveId))
+			sendEvent(WorksListEvent.NavigateToWorkDetail(workId, hiveId))
 		}
 	}
 }

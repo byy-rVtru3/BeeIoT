@@ -8,4 +8,6 @@ interface WorkLocalRepository {
     suspend fun getWorks(hiveId: String): List<WorkDomain>
 
     suspend fun saveWork(work: WorkDomain)
+
+    suspend fun deleteWork(workId: String)
 }
