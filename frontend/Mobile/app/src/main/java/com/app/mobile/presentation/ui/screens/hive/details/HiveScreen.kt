@@ -143,18 +143,22 @@ private fun HiveContent(
 					InfoCard(
 						title = stringResource(R.string.label_name),
 						value = hive.name,
-						modifier = Modifier.weight(0.6f).fillMaxWidth(0.48f)
+						modifier = Modifier
+							.weight(0.6f)
+							.fillMaxWidth(0.48f)
 					)
 
 					InfoCard(
 						title = stringResource(R.string.label_connected_hub),
-						value = hive.hubName ?: stringResource(R.string.no),
-						modifier = Modifier.weight(1f).fillMaxWidth(0.48f)
+						value = hive.hub?.name ?: stringResource(R.string.no),
+						modifier = Modifier
+							.weight(1f)
+							.fillMaxWidth(0.48f)
 					)
 				}
 			}
 
-			if (hive.queenName != null) {
+			if (hive.queen?.name != null) {
 				Column(
 					modifier = Modifier.fillMaxWidth(),
 					verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
@@ -162,7 +166,7 @@ private fun HiveContent(
 					SectionTitle(title = stringResource(R.string.queen))
 					InfoCard(
 						title = stringResource(R.string.queen),
-						value = hive.queenName
+						value = hive.queen.name
 					)
 				}
 			}

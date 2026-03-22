@@ -76,10 +76,8 @@
     <string name="hub_add_title">Добавление хаба</string>
     <string name="hub_name_label">Название хаба</string>
     <string name="hub_name_placeholder">Введите название хаба</string>
-    <string name="hub_ip_label">IP адрес</string>
-    <string name="hub_ip_placeholder">Введите IP адрес</string>
-    <string name="hub_port_label">Порт</string>
-    <string name="hub_port_placeholder">Введите порт</string>
+    <string name="hub_id_label">ID хаба</string>
+    <string name="hub_id_placeholder">Введите ID хаба</string>
     <string name="section_latest_readings">Последние показания с хаба</string>
     <string name="label_temperature">Температура:</string>
     <string name="label_noise">Шум:</string>

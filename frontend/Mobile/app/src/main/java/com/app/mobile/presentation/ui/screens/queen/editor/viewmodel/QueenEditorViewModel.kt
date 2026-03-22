@@ -25,7 +25,6 @@ class QueenEditorViewModel(
 
     private val route = savedStateHandle.toRoute<QueenEditorRoute>()
     private val queenName = route.queenName
-    private val isNew = queenName == null
 
     override fun handleError(exception: Throwable) {
         updateState { QueenEditorUiState.Error(exception.message ?: "Unknown error") }
@@ -82,7 +81,7 @@ class QueenEditorViewModel(
                     .atZone(ZoneId.of("UTC"))
                     .toLocalDate()
 
-                when (val result = saveQueenUseCase(name, startDate)) {
+                when (val result = saveQueenUseCase(queenName, name, startDate)) {
                     is ApiResult.Success -> {
                         sendEvent(QueenEditorEvent.NavigateBack)
                     }

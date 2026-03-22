@@ -26,13 +26,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.mobile.R
 import com.app.mobile.presentation.models.hub.HubDetailUi
 import com.app.mobile.presentation.ui.components.AppTopBar
-import com.app.mobile.presentation.ui.components.DetailsItemCard
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.InfoCard
 import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.components.PrimaryButton
-import com.app.mobile.presentation.ui.components.SectionHeaderWithAction
 import com.app.mobile.presentation.ui.components.SectionTitle
 import com.app.mobile.presentation.ui.components.TopBarAction
 import com.app.mobile.presentation.ui.screens.hub.details.models.HubActions
@@ -43,167 +41,143 @@ import com.app.mobile.ui.theme.Dimens
 
 @Composable
 fun HubScreen(
-    hubViewModel: HubViewModel,
-    onHubListClick: () -> Unit,
-    onHubEditClick: (hubId: String) -> Unit,
-    onNotificationsClick: (hubId: String) -> Unit
+	hubViewModel: HubViewModel,
+	onHubListClick: () -> Unit,
+	onHubEditClick: (hubId: String) -> Unit,
+	onNotificationsClick: (hubId: String) -> Unit
 ) {
-    val hubUiState by hubViewModel.uiState.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
+	val hubUiState by hubViewModel.uiState.collectAsStateWithLifecycle()
+	val snackbarHostState = remember { SnackbarHostState() }
 
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        hubViewModel.loadHub()
-    }
+	LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+		hubViewModel.loadHub()
+	}
 
-    ObserveAsEvents(hubViewModel.event) { event ->
-        when (event) {
-            is HubEvent.NavigateToHubList            -> onHubListClick()
-            is HubEvent.NavigateToHubEdit            -> onHubEditClick(event.hubId)
-            is HubEvent.NavigateToNotificationByHub  -> onNotificationsClick(event.hubId)
-            is HubEvent.ShowSnackBar                 -> snackbarHostState.showSnackbar(
-                message = event.message,
-                duration = SnackbarDuration.Short
-            )
-        }
-    }
+	ObserveAsEvents(hubViewModel.event) { event ->
+		when (event) {
+			is HubEvent.NavigateToHubList           -> onHubListClick()
+			is HubEvent.NavigateToHubEdit           -> onHubEditClick(event.hubId)
+			is HubEvent.NavigateToNotificationByHub -> onNotificationsClick(event.hubId)
+			is HubEvent.ShowSnackBar                -> snackbarHostState.showSnackbar(
+				message = event.message,
+				duration = SnackbarDuration.Short
+			)
+		}
+	}
 
-    when (val state = hubUiState) {
-        is HubUiState.Loading -> FullScreenProgressIndicator()
+	when (val state = hubUiState) {
+		is HubUiState.Loading -> FullScreenProgressIndicator()
 
-        is HubUiState.Error -> ErrorMessage(
-            message = state.message,
-            onRetry = hubViewModel::resetError
-        )
+		is HubUiState.Error   -> ErrorMessage(
+			message = state.message,
+			onRetry = hubViewModel::resetError
+		)
 
-        is HubUiState.Content -> {
-            val actions = HubActions(
-                onEditClick = hubViewModel::onEditClick,
-                onDeleteClick = {}, // необходимо добавить удаление
-                onNotificationsClick = hubViewModel::onNotificationsClick
-            )
-            HubContent(
-                hub = state.hub,
-                snackbarHostState = snackbarHostState,
-                actions = actions,
-                onBackClick = onHubListClick
-            )
-        }
-    }
+		is HubUiState.Content -> {
+			val actions = HubActions(
+				onEditClick = hubViewModel::onEditClick,
+				onDeleteClick = {}, // необходимо добавить удаление
+			)
+			HubContent(
+				hub = state.hub,
+				snackbarHostState = snackbarHostState,
+				actions = actions,
+				onBackClick = onHubListClick
+			)
+		}
+	}
 }
 
 @Composable
 private fun HubContent(
-    hub: HubDetailUi,
-    snackbarHostState: SnackbarHostState,
-    actions: HubActions,
-    onBackClick: () -> Unit
+	hub: HubDetailUi,
+	snackbarHostState: SnackbarHostState,
+	actions: HubActions,
+	onBackClick: () -> Unit
 ) {
-    Scaffold(
-        topBar = {
-            AppTopBar(
-                title = stringResource(R.string.hub),
-                onBackClick = onBackClick,
-                action = TopBarAction.Delete(onClick = actions.onDeleteClick)
-            )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(Dimens.ScreenContentPadding),
-            verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingLarge)
-        ) {
+	Scaffold(
+		topBar = {
+			AppTopBar(
+				title = stringResource(R.string.hub),
+				onBackClick = onBackClick,
+				action = TopBarAction.Delete(onClick = actions.onDeleteClick)
+			)
+		},
+		snackbarHost = { SnackbarHost(snackbarHostState) },
+		containerColor = MaterialTheme.colorScheme.surfaceVariant
+	) { innerPadding ->
+		Column(
+			modifier = Modifier
+				.padding(innerPadding)
+				.fillMaxSize()
+				.verticalScroll(rememberScrollState())
+				.padding(Dimens.ScreenContentPadding),
+			verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingLarge)
+		) {
 
-            // Основная информация
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
-            ) {
-                SectionTitle(title = stringResource(R.string.section_main_info))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    InfoCard(
-                        title = stringResource(R.string.label_name),
-                        value = hub.name,
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                    )
-                    InfoCard(
-                        title = stringResource(R.string.label_ip_address),
-                        value = hub.ipAddress,
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                    )
-                }
-            }
+			// Основная информация
+			Column(
+				modifier = Modifier.fillMaxWidth(),
+				verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
+			) {
+				SectionTitle(title = stringResource(R.string.section_main_info))
+				Row(
+					horizontalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
+					modifier = Modifier.fillMaxWidth()
+				) {
+					InfoCard(
+						title = stringResource(R.string.label_name),
+						value = hub.name,
+						modifier = Modifier
+							.weight(1f)
+							.fillMaxWidth()
+					)
+				}
+			}
 
-            // Последние показания с хаба
-            // TODO: Добавьте поля temperature, noise, weight в HubDetailUi после появления sensor API
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
-            ) {
-                SectionTitle(title = stringResource(R.string.section_latest_readings))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    InfoCard(
-                        title = stringResource(R.string.label_temperature),
-                        value = "—",
-                        modifier = Modifier.weight(1f)
-                    )
-                    InfoCard(
-                        title = stringResource(R.string.label_noise),
-                        value = "—",
-                        modifier = Modifier.weight(1f)
-                    )
-                    InfoCard(
-                        title = stringResource(R.string.label_weight),
-                        value = "—",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
+			Column(
+				modifier = Modifier.fillMaxWidth(),
+				verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
+			) {
+				SectionTitle(title = stringResource(R.string.section_latest_readings))
+				Row(
+					horizontalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
+					modifier = Modifier.fillMaxWidth()
+				) {
+					val temp = hub.sensorReadings?.temperatureSensor?.temperature?.toString()
+						?: "нет показаний"
 
-            // Уведомления
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
-            ) {
-                SectionHeaderWithAction(
-                    title = stringResource(R.string.notifications),
-                    actionText = stringResource(R.string.see_all),
-                    onActionClick = actions.onNotificationsClick
-                )
-                if (hub.notifications.isNotEmpty()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)) {
-                        hub.notifications.take(2).forEach { notification ->
-                            DetailsItemCard(
-                                title = stringResource(R.string.notification),
-                                description = notification.message,
-                                footer = notification.dateTime
-                            )
-                        }
-                    }
-                }
-            }
+					val noise = hub.sensorReadings?.noiseSensor?.noise?.toString()
+						?: "нет показаний"
 
-            Spacer(modifier = Modifier.height(Dimens.ItemsSpacingLarge))
+					val weight = hub.sensorReadings?.weightSensor?.weight?.toString()
+						?: "нет показаний"
 
-            PrimaryButton(
-                text = stringResource(R.string.edit),
-                onClick = actions.onEditClick,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-    }
+					InfoCard(
+						title = stringResource(R.string.label_temperature),
+						value = temp,
+						modifier = Modifier.weight(1f)
+					)
+					InfoCard(
+						title = stringResource(R.string.label_noise),
+						value = noise,
+						modifier = Modifier.weight(1f)
+					)
+					InfoCard(
+						title = stringResource(R.string.label_weight),
+						value = weight,
+						modifier = Modifier.weight(1f)
+					)
+				}
+			}
+
+			Spacer(modifier = Modifier.height(Dimens.ItemsSpacingLarge))
+
+			PrimaryButton(
+				text = stringResource(R.string.edit),
+				onClick = actions.onEditClick,
+				modifier = Modifier.fillMaxWidth()
+			)
+		}
+	}
 }

@@ -38,6 +38,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import com.app.mobile.R
 import com.app.mobile.presentation.models.queen.QueenPreviewModel
+import com.app.mobile.presentation.models.queen.QueenUiModel
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.Alpha
 
@@ -290,15 +291,6 @@ fun QueenCard(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "${queen.hiveName}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false)
-                            )
-                            Spacer(modifier = Modifier.width(Dimens.ItemSpacingNormal))
                             Text(
                                 text = queen.stage.title,
                                 style = MaterialTheme.typography.bodySmall,

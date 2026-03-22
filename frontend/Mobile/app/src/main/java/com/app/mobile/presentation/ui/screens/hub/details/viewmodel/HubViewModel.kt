@@ -3,14 +3,16 @@ package com.app.mobile.presentation.ui.screens.hub.details.viewmodel
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.toRoute
-import com.app.mobile.domain.mappers.toDetailUi
-import com.app.mobile.domain.usecase.hives.hub.GetHubByIdUseCase
+import com.app.mobile.data.api.mappers.toErrorMessage
+import com.app.mobile.data.api.models.ApiResult
+import com.app.mobile.domain.mappers.toUiModel
+import com.app.mobile.domain.usecase.hives.hub.GetHubWithSensorsUseCase
 import com.app.mobile.presentation.ui.components.BaseViewModel
 import com.app.mobile.presentation.ui.screens.hub.details.HubRoute
 
 class HubViewModel(
     savedStateHandle: SavedStateHandle,
-    private val getHubByIdUseCase: GetHubByIdUseCase
+    private val getHubWithSensorsUseCase: GetHubWithSensorsUseCase
 ) : BaseViewModel<HubUiState, HubEvent>(HubUiState.Loading) {
 
     private val hubId = savedStateHandle.toRoute<HubRoute>().hubId
@@ -23,11 +25,13 @@ class HubViewModel(
     fun loadHub() {
         updateState { HubUiState.Loading }
         launch {
-            val hub = getHubByIdUseCase(hubId)
-            if (hub == null) {
-                sendEvent(HubEvent.ShowSnackBar("Хаб не найден"))
-            } else {
-                updateState { HubUiState.Content(hub.toDetailUi()) }
+            when (val result = getHubWithSensorsUseCase(hubId)) {
+                is ApiResult.Success -> {
+                    updateState { HubUiState.Content(result.data.toUiModel()) }
+                }
+                else -> {
+                    sendEvent(HubEvent.ShowSnackBar(result.toErrorMessage()))
+                }
             }
         }
     }
@@ -44,11 +48,5 @@ class HubViewModel(
 
     fun onHubListClick() {
         sendEvent(HubEvent.NavigateToHubList)
-    }
-
-    fun onNotificationsClick() {
-        if (currentState is HubUiState.Content) {
-            sendEvent(HubEvent.NavigateToNotificationByHub(hubId))
-        }
     }
 }

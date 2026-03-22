@@ -21,6 +21,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.mobile.R
+import com.app.mobile.presentation.models.queen.QueenPreviewListModel
 import com.app.mobile.presentation.models.queen.QueenPreviewModel
 import com.app.mobile.presentation.ui.components.EmptyStub
 import com.app.mobile.presentation.ui.components.ErrorMessage

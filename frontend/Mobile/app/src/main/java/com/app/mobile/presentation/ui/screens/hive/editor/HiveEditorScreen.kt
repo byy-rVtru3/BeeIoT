@@ -180,7 +180,7 @@ fun SelectionGridSection(
 	selectedId: String?,
 	onItemSelected: (String) -> Unit,
 	onCreateClick: () -> Unit,
-	iconVector: androidx.compose.ui.graphics.vector.ImageVector? = null
+	iconVector: ImageVector? = null
 ) {
 	Column(
 		modifier = Modifier.fillMaxWidth(),
@@ -223,7 +223,7 @@ fun SelectionGridSection(
 private fun ItemSelectionCard(
 	name: String,
 	isSelected: Boolean,
-	iconVector: androidx.compose.ui.graphics.vector.ImageVector?,
+	iconVector: ImageVector?,
 	onClick: () -> Unit,
 	modifier: Modifier = Modifier
 ) {

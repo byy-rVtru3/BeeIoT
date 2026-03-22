@@ -5,10 +5,11 @@ import com.app.mobile.data.api.mappers.toErrorMessage
 import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.domain.mappers.toPreviewModel
 import com.app.mobile.domain.usecase.hives.queen.GetQueensUseCase
+import com.app.mobile.domain.usecase.hives.queen.GetQueensWithCalendarsUseCase
 import com.app.mobile.presentation.ui.components.BaseViewModel
 
 class QueenListViewModel(
-    private val getQueensUseCase: GetQueensUseCase
+    private val getQueensUseCase: GetQueensWithCalendarsUseCase
 ) : BaseViewModel<QueenListUiState, QueenListEvent>(QueenListUiState.Loading) {
 
     override fun handleError(exception: Throwable) {
