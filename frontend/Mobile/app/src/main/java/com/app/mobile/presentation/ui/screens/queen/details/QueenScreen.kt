@@ -237,7 +237,7 @@ private fun QueenStatusSection(queen: QueenUiModel) {
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(Dimens.ItemCardTextPadding)
         ) {
-            Row(
+			Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -253,7 +253,6 @@ private fun QueenStatusSection(queen: QueenUiModel) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-
 			LinearProgressIndicator(
 				progress = { progress },
 				modifier = Modifier
@@ -313,7 +312,7 @@ private fun TimelineItemView(item: TimelineItem) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
+			Box(
                 modifier = Modifier
                     .size(Dimens.TimelineIconSize)
                     .clip(CircleShape)
