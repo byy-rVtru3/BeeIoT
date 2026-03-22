@@ -16,6 +16,7 @@ type Hive struct {
 	Status          bool
 	HubID     *int
 	QueenID   *int
+	HubName   string
 	QueenName string
 }
 

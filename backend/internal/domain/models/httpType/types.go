@@ -68,14 +68,14 @@ type Hive struct {
 
 type HiveListItem struct {
 	Name  string `json:"name"`
-	Hub   *int   `json:"hub"`
+	Hub   string `json:"hub"`
 	Queen string `json:"queen"`
 }
 
 type HiveDetails struct {
 	Name   string `json:"name"`
 	Active bool   `json:"active"`
-	Hub    *int   `json:"hub"`
+	Hub    string `json:"hub"`
 	Queen  string `json:"queen"`
 }
 

@@ -241,10 +241,9 @@ components:
           type: string
           example: Улей-1
         hub:
-          type: integer
-          nullable: true
-          example: 1
-          description: ID привязанного хаба
+          type: string
+          example: hub-serial-001
+          description: Идентификатор привязанного хаба
         queen:
           type: string
           example: Матка-2026
@@ -257,10 +256,9 @@ components:
           type: string
           example: Улей-1
         hub:
-          type: integer
-          nullable: true
-          example: 1
-          description: ID привязанного хаба
+          type: string
+          example: hub-serial-001
+          description: Идентификатор привязанного хаба
         queen:
           type: string
           example: Матка-2026

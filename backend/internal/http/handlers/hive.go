@@ -9,7 +9,7 @@ import (
 func dbHiveToListItem(h dbTypes.Hive) httpType.HiveListItem {
 	return httpType.HiveListItem{
 		Name:  h.NameHive,
-		Hub:   h.HubID,
+		Hub:   h.HubName,
 		Queen: h.QueenName,
 	}
 }
@@ -26,7 +26,7 @@ func dbHiveToDetails(h dbTypes.Hive) httpType.HiveDetails {
 	return httpType.HiveDetails{
 		Name:   h.NameHive,
 		Active: h.Status,
-		Hub:    h.HubID,
+		Hub:    h.HubName,
 		Queen:  h.QueenName,
 	}
 }
