@@ -1,9 +1,9 @@
-package com.app.mobile.domain.repository
+package com.app.mobile.domain.repository.datasource
 
 import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.domain.models.hives.HubDomain
 
-interface HubRepository {
+interface HubDataSource {
     suspend fun getHubs(): ApiResult<List<HubDomain>>
     suspend fun getHub(id: String): ApiResult<HubDomain>
     suspend fun createHub(id: String, name: String): ApiResult<Unit>

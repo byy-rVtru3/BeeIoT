@@ -1,8 +1,8 @@
 package com.app.mobile.domain.usecase.hives.queen
 
-import com.app.mobile.domain.repository.HivesRepository
+import com.app.mobile.domain.repository.datasource.HivesDataSource
 
-class AddHiveToQueenUseCase(private val hivesRepository: HivesRepository) {
+class AddHiveToQueenUseCase(private val hivesDataSource: HivesDataSource) {
     suspend operator fun invoke(hiveName: String, queenName: String) =
-        hivesRepository.linkQueenToHive(hiveName, queenName)
+        hivesDataSource.linkQueenToHive(hiveName, queenName)
 }

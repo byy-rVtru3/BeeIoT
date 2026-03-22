@@ -5,11 +5,11 @@ import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.data.mock.MockDataProvider
 import com.app.mobile.domain.models.hives.queen.QueenDomain
 import com.app.mobile.domain.models.hives.queen.QueenDomainPreview
-import com.app.mobile.domain.repository.QueenRepository
+import com.app.mobile.domain.repository.datasource.QueenDataSource
 import kotlinx.coroutines.delay
 import java.time.LocalDate
 
-class QueenRepositoryImpl(private val context: Context) : QueenRepository {
+class QueenDataSourceImpl(private val context: Context) : QueenDataSource {
 
     override suspend fun getQueens(): ApiResult<List<QueenDomainPreview>> {
         delay(100)
@@ -41,5 +41,16 @@ class QueenRepositoryImpl(private val context: Context) : QueenRepository {
     override suspend fun deleteQueen(name: String): ApiResult<Unit> {
         delay(100)
         return ApiResult.Success(Unit)
+    }
+
+    override suspend fun getQueensWithCalendars(): ApiResult<List<QueenDomain>> {
+        delay(100)
+        val lifecycle = MockDataProvider.getQueenLifecycle(context)
+        return ApiResult.Success(
+            listOf(
+                QueenDomain(name = "Матка-1", stages = lifecycle),
+                QueenDomain(name = "Матка-2", stages = lifecycle)
+            )
+        )
     }
 }

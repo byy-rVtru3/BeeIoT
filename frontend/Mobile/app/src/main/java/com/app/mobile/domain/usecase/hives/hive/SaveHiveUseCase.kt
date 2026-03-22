@@ -1,9 +1,9 @@
 package com.app.mobile.domain.usecase.hives.hive
 
-import com.app.mobile.domain.repository.HivesRepository
+import com.app.mobile.domain.repository.datasource.HivesDataSource
 
-class SaveHiveUseCase(private val hivesRepository: HivesRepository) {
-    suspend operator fun invoke(name: String, isNew: Boolean) =
-        if (isNew) hivesRepository.createHive(name)
-        else hivesRepository.updateHive(oldName = name)
+class SaveHiveUseCase(private val hivesDataSource: HivesDataSource) {
+    suspend operator fun invoke(oldName: String?, newName: String) =
+        if (oldName == null) hivesDataSource.createHive(newName)
+        else hivesDataSource.updateHive(oldName = oldName, newName = newName)
 }

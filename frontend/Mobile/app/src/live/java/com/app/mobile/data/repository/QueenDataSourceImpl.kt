@@ -9,12 +9,15 @@ import com.app.mobile.data.api.models.queen.UpdateQueenRequest
 import com.app.mobile.data.api.safeApiCall
 import com.app.mobile.domain.models.hives.queen.QueenDomain
 import com.app.mobile.domain.models.hives.queen.QueenDomainPreview
-import com.app.mobile.domain.repository.QueenRepository
+import com.app.mobile.domain.repository.datasource.QueenDataSource
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import java.time.LocalDate
 
-class QueenRepositoryImpl(
+class QueenDataSourceImpl(
     private val authApiClient: AuthApiClient
-) : QueenRepository {
+) : QueenDataSource {
 
     override suspend fun getQueens(): ApiResult<List<QueenDomainPreview>> =
         safeApiCall(
@@ -53,4 +56,23 @@ class QueenRepositoryImpl(
 
     override suspend fun deleteQueen(name: String): ApiResult<Unit> =
         safeApiCall { authApiClient.deleteQueen(DeleteQueenRequest(name = name)) }
+
+    override suspend fun getQueensWithCalendars(): ApiResult<List<QueenDomain>> {
+        val queensResult = getQueens()
+        if (queensResult !is ApiResult.Success) {
+            @Suppress("UNCHECKED_CAST")
+            return queensResult as ApiResult<List<QueenDomain>>
+        }
+
+        val queensWithCalendars = coroutineScope {
+            queensResult.data.map { preview ->
+                async {
+                    val queenResult = getQueen(preview.name)
+                    (queenResult as? ApiResult.Success)?.data
+                }
+            }.awaitAll().filterNotNull()
+        }
+
+        return ApiResult.Success(queensWithCalendars)
+    }
 }

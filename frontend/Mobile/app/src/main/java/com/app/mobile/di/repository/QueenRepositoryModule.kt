@@ -1,11 +1,11 @@
 package com.app.mobile.di.repository
 
-import com.app.mobile.data.repository.QueenRepositoryImpl
-import com.app.mobile.domain.repository.QueenRepository
+import com.app.mobile.data.repository.QueenDataSourceImpl
+import com.app.mobile.domain.repository.datasource.QueenDataSource
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
-val queenRepositoryModule = module {
-    singleOf(::QueenRepositoryImpl) bind QueenRepository::class
+val queenDataSourceModule = module {
+    singleOf(::QueenDataSourceImpl) bind QueenDataSource::class
 }

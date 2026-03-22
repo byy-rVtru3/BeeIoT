@@ -10,11 +10,12 @@ import com.app.mobile.data.api.models.hive.UpdateHiveRequest
 import com.app.mobile.data.api.safeApiCall
 import com.app.mobile.domain.models.hives.HiveDomain
 import com.app.mobile.domain.models.hives.HiveDomainPreview
-import com.app.mobile.domain.repository.HivesRepository
+import com.app.mobile.domain.models.hives.HiveResult
+import com.app.mobile.domain.repository.datasource.HivesDataSource
 
-class HivesRepositoryImpl(
+class HivesDataSourceImpl(
     private val authApiClient: AuthApiClient
-) : HivesRepository {
+) : HivesDataSource {
 
     override suspend fun getHives(): ApiResult<List<HiveDomainPreview>> =
         safeApiCall(
@@ -22,7 +23,7 @@ class HivesRepositoryImpl(
             onSuccess = { response -> response.data?.map { it.toDomain() } ?: emptyList() }
         )
 
-    override suspend fun getHive(name: String): ApiResult<HiveDomain> =
+    override suspend fun getHive(name: String): ApiResult<HiveResult> =
         safeApiCall(
             apiCall = { authApiClient.getHive(name) },
             onSuccess = { response ->

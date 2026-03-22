@@ -3,10 +3,10 @@ package com.app.mobile.data.repository
 import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.domain.models.hives.HubDomain
 import com.app.mobile.domain.models.telemetry.SensorReadings
-import com.app.mobile.domain.repository.HubRepository
+import com.app.mobile.domain.repository.datasource.HubDataSource
 import kotlinx.coroutines.delay
 
-class HubRepositoryImpl : HubRepository {
+class HubDataSourceImpl : HubDataSource {
 
     private val mockSensorReadings = SensorReadings(
         temperature = 34.5,
