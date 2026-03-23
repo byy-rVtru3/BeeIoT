@@ -1,8 +1,8 @@
 package com.app.mobile.presentation.ui.screens.hive.details
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,14 +26,14 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.mobile.R
 import com.app.mobile.presentation.models.hive.HiveUi
-import com.app.mobile.presentation.models.hive.HubUi
-import com.app.mobile.presentation.models.hive.QueenUi
+import com.app.mobile.presentation.models.hive.WorkUi
 import com.app.mobile.presentation.ui.components.AppTopBar
-import com.app.mobile.presentation.ui.components.DetailsItemCard
+import com.app.mobile.presentation.ui.components.WorkTileCard
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.InfoCard
 import com.app.mobile.presentation.ui.components.ObserveAsEvents
+import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.components.QueenCard
 import com.app.mobile.presentation.ui.components.QueenCardDisplayMode
 import com.app.mobile.presentation.ui.components.SectionHeaderWithAction
@@ -48,14 +48,15 @@ import com.app.mobile.ui.theme.Dimens
 @Composable
 fun HiveScreen(
 	hiveViewModel: HiveViewModel,
-	onQueenClick: (queenId: String) -> Unit,
-	onWorksClick: (hiveId: String) -> Unit,
-	onNotificationsClick: (hiveId: String) -> Unit,
-	onTemperatureClick: (hiveId: String) -> Unit,
-	onNoiseClick: (hiveId: String) -> Unit,
-	onWeightClick: (hiveId: String) -> Unit,
+	onQueenClick: (queenName: String) -> Unit,
+	onWorksClick: (hiveName: String) -> Unit,
+	onWorkDetailClick: (workId: String, hiveName: String) -> Unit,
+	onNotificationsClick: (hiveName: String) -> Unit,
+	onTemperatureClick: (hubId: String, hubName: String, currentValue: Double?) -> Unit,
+	onNoiseClick: (hubId: String, hubName: String, currentValue: Double?) -> Unit,
+	onWeightClick: (hubId: String, hubName: String, currentValue: Double?) -> Unit,
 	onHiveListClick: () -> Unit,
-	onHiveEditClick: (hiveId: String) -> Unit
+	onHiveEditClick: (hiveName: String) -> Unit
 ) {
 	val hiveUiState by hiveViewModel.uiState.collectAsStateWithLifecycle()
 	val snackbarHostState = remember { SnackbarHostState() }
@@ -67,16 +68,14 @@ fun HiveScreen(
 	ObserveAsEvents(hiveViewModel.event) { event ->
 		when (event) {
 			is HiveEvent.NavigateToHiveList           -> onHiveListClick()
-			is HiveEvent.NavigateToQueenByHive        -> onQueenClick(event.queenId)
-			is HiveEvent.NavigateToWorkByHive         -> onWorksClick(event.hiveId)
-			is HiveEvent.NavigateToNotificationByHive -> onNotificationsClick(
-				event.hiveId
-			)
-
-			is HiveEvent.NavigateToTemperatureByHive  -> onTemperatureClick(event.hiveId)
-			is HiveEvent.NavigateToNoiseByHive        -> onNoiseClick(event.hiveId)
-			is HiveEvent.NavigateToWeightByHive       -> onWeightClick(event.hiveId)
-			is HiveEvent.NavigateToHiveEdit           -> onHiveEditClick(event.hiveId)
+			is HiveEvent.NavigateToQueenByHive        -> onQueenClick(event.queenName)
+			is HiveEvent.NavigateToWorkByHive         -> onWorksClick(event.hiveName)
+			is HiveEvent.NavigateToWorkDetail         -> onWorkDetailClick(event.workId, event.hiveName)
+			is HiveEvent.NavigateToNotificationByHive -> onNotificationsClick(event.hiveName)
+			is HiveEvent.NavigateToTemperatureByHive  -> onTemperatureClick(event.hubId, event.hubName, event.currentValue)
+			is HiveEvent.NavigateToNoiseByHive        -> onNoiseClick(event.hubId, event.hubName, event.currentValue)
+			is HiveEvent.NavigateToWeightByHive       -> onWeightClick(event.hubId, event.hubName, event.currentValue)
+			is HiveEvent.NavigateToHiveEdit           -> onHiveEditClick(event.hiveName)
 
 			is HiveEvent.ShowSnackBar                 -> {
 				snackbarHostState.showSnackbar(
@@ -105,19 +104,25 @@ fun HiveScreen(
 				onWeightClick = hiveViewModel::onWeightClick,
 				onHiveListClick = hiveViewModel::onHiveListClick,
 				onHiveEditClick = hiveViewModel::onHiveEditClick,
-				onDeleteClick = {} // необходимо добавить удаление, сейчас мне лень
+				onDeleteClick = hiveViewModel::onDeleteClick
 			)
-			HiveContent(state.hive, snackbarHostState, actions, onBackClick = onHiveListClick)
+			HiveContent(
+				hive = state.hive,
+				snackbarHostState = snackbarHostState,
+				actions = actions,
+				onWorkClick = hiveViewModel::onWorkClick,
+				onBackClick = onHiveListClick
+			)
 		}
 	}
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun HiveContent(
 	hive: HiveUi,
 	snackbarHostState: SnackbarHostState,
 	actions: HiveActions,
+	onWorkClick: (String) -> Unit,
 	onBackClick: () -> Unit
 ) {
 	Scaffold(
@@ -139,7 +144,7 @@ private fun HiveContent(
 				.padding(Dimens.ScreenContentPadding),
 			verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingLarge)
 		) {
-
+			
 			Column(
 				modifier = Modifier.fillMaxWidth(),
 				verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
@@ -152,55 +157,76 @@ private fun HiveContent(
 					InfoCard(
 						title = stringResource(R.string.label_name),
 						value = hive.name,
-						modifier = Modifier.weight(0.6f).fillMaxWidth(0.48f)
+						modifier = Modifier.weight(0.6f)
 					)
-
-					val hubName = if (hive.connectedHub is HubUi.Present) {
-						hive.connectedHub.name
-					} else {
-						stringResource(R.string.no)
-					}
 					InfoCard(
 						title = stringResource(R.string.label_connected_hub),
-						value = hubName,
-						modifier = Modifier.weight(1f).fillMaxWidth(0.48f)
+						value = hive.hub?.name ?: stringResource(R.string.no),
+						modifier = Modifier.weight(1f)
 					)
 				}
-
 			}
 
-			if (hive.queen is QueenUi.Present) {
+			if (hive.hub != null) {
+				Column(
+					modifier = Modifier.fillMaxWidth(),
+					verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
+				) {
+					SectionTitle(title = stringResource(R.string.section_latest_readings))
+					Row(
+						horizontalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
+						modifier = Modifier.fillMaxWidth()
+					) {
+						val temp = hive.hub.sensorReadings?.temperatureSensor
+							?.let { stringResource(R.string.sensor_temperature_format, it.temperature) }
+							?: stringResource(R.string.no)
+
+						val noise = hive.hub.sensorReadings?.noiseSensor
+							?.let { stringResource(R.string.sensor_noise_format, it.noise) }
+							?: stringResource(R.string.no)
+
+						val weight = hive.hub.sensorReadings?.weightSensor
+							?.let { stringResource(R.string.sensor_weight_format, it.weight) }
+							?: stringResource(R.string.no)
+
+						InfoCard(
+							title = stringResource(R.string.label_temperature),
+							value = temp,
+							modifier = Modifier
+								.weight(1.5f)
+								.clickable { actions.onTemperatureClick() }
+						)
+						InfoCard(
+							title = stringResource(R.string.label_noise),
+							value = noise,
+							modifier = Modifier
+								.weight(1f)
+								.clickable { actions.onNoiseClick() }
+						)
+						InfoCard(
+							title = stringResource(R.string.label_weight),
+							value = weight,
+							modifier = Modifier
+								.weight(1f)
+								.clickable { actions.onWeightClick() }
+						)
+					}
+				}
+			}
+
+			if (hive.queen != null) {
 				Column(
 					modifier = Modifier.fillMaxWidth(),
 					verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
 				) {
 					SectionTitle(title = stringResource(R.string.queen))
-					QueenCard(queen = hive.queen.queen, onClick = actions.onQueenClick, displayMode = QueenCardDisplayMode.Compact)
+					QueenCard(
+						queen = hive.queen,
+						onClick = actions.onQueenClick,
+						displayMode = QueenCardDisplayMode.Compact
+					)
 				}
 			}
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
-            ) {
-                SectionHeaderWithAction(
-                    title = stringResource(R.string.notifications),
-                    actionText = stringResource(R.string.see_all),
-                    onActionClick = actions.onNotificationClick
-                )
-
-                if (hive.notifications.isNotEmpty()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)) {
-                        hive.notifications.take(2).forEach { notification ->
-                            DetailsItemCard(
-                                title = stringResource(R.string.notification),
-                                description = notification.message,
-                                footer = notification.dateTime
-                            )
-                        }
-                    }
-                }
-            }
 
 			Column(
 				modifier = Modifier.fillMaxWidth(),
@@ -211,21 +237,37 @@ private fun HiveContent(
 					actionText = stringResource(R.string.see_all),
 					onActionClick = actions.onWorkClick
 				)
-
-				if (hive.works.isNotEmpty()) {
-					Column(verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)) {
-						hive.works.take(2).forEach { work ->
-							DetailsItemCard(
-								title = work.title,
-								description = work.text,
-								footer = work.dateTime
-							)
-						}
+				Row(
+					horizontalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
+					modifier = Modifier.fillMaxWidth()
+				) {
+					hive.recentWorks.forEach { work ->
+						RecentWorkCard(
+							work = work,
+							onClick = { onWorkClick(work.id) },
+							modifier = Modifier.weight(1f)
+						)
 					}
 				}
 			}
 
 			Spacer(modifier = Modifier.height(Dimens.ItemsSpacingLarge))
+
+			PrimaryButton(
+				text = stringResource(R.string.edit),
+				onClick = actions.onHiveEditClick,
+				modifier = Modifier.fillMaxWidth()
+			)
 		}
 	}
+}
+
+@Composable
+private fun RecentWorkCard(work: WorkUi, onClick: () -> Unit, modifier: Modifier = Modifier) {
+	WorkTileCard(
+		title = work.title,
+		dateTime = work.dateTime,
+		onClick = onClick,
+		modifier = modifier
+	)
 }

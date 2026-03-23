@@ -1,7 +1,7 @@
 package com.app.mobile.domain.usecase.hives.hive
 
-import com.app.mobile.domain.repository.HivesLocalRepository
+import com.app.mobile.domain.repository.datasource.HivesDataSource
 
-class GetHiveUseCase(private val hivesLocalRepository: HivesLocalRepository) {
-    suspend operator fun invoke(hiveId: String) = hivesLocalRepository.getHive(hiveId)
+class GetHiveUseCase(private val hivesDataSource: HivesDataSource) {
+    suspend operator fun invoke(name: String) = hivesDataSource.getHive(name)
 }

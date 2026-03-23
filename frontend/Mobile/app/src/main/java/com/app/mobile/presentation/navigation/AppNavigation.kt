@@ -14,6 +14,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppRoute
 import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppScreen
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppViewModel
@@ -32,6 +33,15 @@ import com.app.mobile.presentation.ui.screens.hive.details.viewmodel.HiveViewMod
 import com.app.mobile.presentation.ui.screens.hive.editor.HiveEditorRoute
 import com.app.mobile.presentation.ui.screens.hive.editor.HiveEditorScreen
 import com.app.mobile.presentation.ui.screens.hive.editor.viewmodel.HiveEditorViewModel
+import com.app.mobile.presentation.ui.screens.hub.details.HubRoute
+import com.app.mobile.presentation.ui.screens.hub.details.HubScreen
+import com.app.mobile.presentation.ui.screens.hub.details.viewmodel.HubViewModel
+import com.app.mobile.presentation.ui.screens.hub.editor.HubEditorRoute
+import com.app.mobile.presentation.ui.screens.hub.editor.HubEditorScreen
+import com.app.mobile.presentation.ui.screens.hub.editor.viewmodel.HubEditorViewModel
+import com.app.mobile.presentation.ui.screens.hub.list.HubsListRoute
+import com.app.mobile.presentation.ui.screens.hub.list.HubsListScreen
+import com.app.mobile.presentation.ui.screens.hub.list.viewmodel.HubsListViewModel
 import com.app.mobile.presentation.ui.screens.hive.list.HivesListRoute
 import com.app.mobile.presentation.ui.screens.hive.list.HivesListScreen
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListViewModel
@@ -45,11 +55,17 @@ import com.app.mobile.presentation.ui.screens.queen.list.QueenListRoute
 import com.app.mobile.presentation.ui.screens.queen.list.QueenListScreen
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListViewModel
 import com.app.mobile.presentation.ui.screens.registration.RegistrationRoute
+import com.app.mobile.presentation.ui.screens.sensorchart.SensorChartRoute
+import com.app.mobile.presentation.ui.screens.sensorchart.SensorChartScreen
+import com.app.mobile.presentation.ui.screens.sensorchart.viewmodel.SensorChartViewModel
 import com.app.mobile.presentation.ui.screens.registration.RegistrationScreen
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationViewModel
 import com.app.mobile.presentation.ui.screens.settings.SettingsRoute
 import com.app.mobile.presentation.ui.screens.settings.SettingsScreen
 import com.app.mobile.presentation.ui.screens.settings.viewmodel.SettingsViewModel
+import com.app.mobile.presentation.ui.screens.works.detail.WorkDetailRoute
+import com.app.mobile.presentation.ui.screens.works.detail.WorkDetailScreen
+import com.app.mobile.presentation.ui.screens.works.detail.viewmodel.WorkDetailViewModel
 import com.app.mobile.presentation.ui.screens.works.editor.WorkEditorRoute
 import com.app.mobile.presentation.ui.screens.works.editor.WorksEditorScreen
 import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorViewModel
@@ -125,6 +141,36 @@ fun AppNavigation(
             )
         }
 
+        animatedComposable<HubsListRoute> {
+            val hubsListViewModel: HubsListViewModel = koinViewModel()
+            HubsListScreen(
+                hubsListViewModel,
+                onHubClick = { navController.navigate(HubRoute(it)) },
+                onCreateHubClick = { navController.navigate(HubEditorRoute(null)) }
+            )
+        }
+
+        animatedComposable<HubRoute> {
+            val hubViewModel: HubViewModel = koinViewModel()
+            HubScreen(
+                hubViewModel,
+                onHubListClick = { navController.popBackStack() },
+                onHubEditClick = { hubId -> navController.navigate(HubEditorRoute(hubId)) },
+                onNotificationsClick = { TODO("NotificationsRoute") },
+                onSensorChartClick = { hubId, sensorType, hubName, currentValue ->
+                    navController.navigate(SensorChartRoute(hubId, sensorType, hubName, currentValue))
+                }
+            )
+        }
+
+        animatedComposable<HubEditorRoute> {
+            val hubEditorViewModel: HubEditorViewModel = koinViewModel()
+            HubEditorScreen(
+                hubEditorViewModel,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
         animatedComposable<HivesListRoute> {
             val hivesListViewModel: HivesListViewModel = koinViewModel()
             HivesListScreen(
@@ -135,17 +181,29 @@ fun AppNavigation(
         }
 
         animatedComposable<HiveRoute> {
+            val route = it.toRoute<HiveRoute>()
             val hiveViewModel: HiveViewModel = koinViewModel()
             HiveScreen(
                 hiveViewModel,
-                onQueenClick = { queenId -> navController.navigate(QueenRoute(queenId)) },
+                onQueenClick = { queenName ->
+                    navController.navigate(QueenRoute(queenName, fromHiveName = route.hiveName))
+                },
                 onWorksClick = { navController.navigate(WorksListRoute(it)) },
+                onWorkDetailClick = { workId, hiveName ->
+                    navController.navigate(WorkDetailRoute(workId, hiveName))
+                },
                 onNotificationsClick = { TODO("NotificationsRoute") },
-                onTemperatureClick = { TODO("TemperatureRoute") },
-                onNoiseClick = { TODO("NoiseRoute") },
-                onWeightClick = { TODO("WeightRoute") },
+                onTemperatureClick = { hubId, hubName, currentValue ->
+                    navController.navigate(SensorChartRoute(hubId, "temperature", hubName, currentValue))
+                },
+                onNoiseClick = { hubId, hubName, currentValue ->
+                    navController.navigate(SensorChartRoute(hubId, "noise", hubName, currentValue))
+                },
+                onWeightClick = { hubId, hubName, currentValue ->
+                    navController.navigate(SensorChartRoute(hubId, "weight", hubName, currentValue))
+                },
                 onHiveListClick = { navController.navigate(HivesListRoute) },
-                onHiveEditClick = { hiveId -> navController.navigate(HiveEditorRoute(hiveId)) }
+                onHiveEditClick = { hiveName -> navController.navigate(HiveEditorRoute(hiveName)) }
             )
         }
 
@@ -153,18 +211,15 @@ fun AppNavigation(
             val queenViewModel: QueenViewModel = koinViewModel()
             QueenScreen(
                 queenViewModel,
-                onEditClick = { queenId ->
-                    navController.navigate(QueenEditorRoute(queenId))
+                onEditClick = { queenName ->
+                    navController.navigate(QueenEditorRoute(queenName))
                 },
-                onHiveClick = { hiveId ->
-                    navController.navigate(HiveRoute(hiveId))
+                onHiveClick = { hiveName ->
+                    navController.navigate(HiveRoute(hiveName))
                 },
                 onBackClick = {
                     navController.popBackStack()
                 },
-                onDeleteClick = { queenId ->
-                    // Пока ничего не делаем (заглушка)
-                }
             )
         }
 
@@ -191,7 +246,7 @@ fun AppNavigation(
                 hiveEditorViewModel,
                 onBackClick = { navController.popBackStack() },
                 onCreateQueenClick = { navController.navigate(QueenEditorRoute(null)) },
-                onCreateHubClick = { TODO("HiveCreateHubRoute") }
+                onCreateHubClick = { navController.navigate(HubEditorRoute(null)) }
             )
         }
 
@@ -200,9 +255,7 @@ fun AppNavigation(
             WorksListScreen(
                 worksListViewModel,
                 onWorkClick = { workId, hiveId ->
-                    navController.navigate(
-                        WorkEditorRoute(workId = workId, hiveId = hiveId)
-                    )
+                    navController.navigate(WorkDetailRoute(workId, hiveId))
                 },
                 onCreateClick = { hiveId ->
                     navController.navigate(
@@ -212,6 +265,25 @@ fun AppNavigation(
                 onBackClick = {
                     navController.popBackStack()
                 }
+            )
+        }
+
+        animatedComposable<WorkDetailRoute> {
+            val workDetailViewModel: WorkDetailViewModel = koinViewModel()
+            WorkDetailScreen(
+                workDetailViewModel,
+                onEditClick = { workId, hiveId ->
+                    navController.navigate(WorkEditorRoute(workId = workId, hiveId = hiveId))
+                },
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        animatedComposable<SensorChartRoute> {
+            val sensorChartViewModel: SensorChartViewModel = koinViewModel()
+            SensorChartScreen(
+                sensorChartViewModel,
+                onBackClick = { navController.popBackStack() }
             )
         }
 

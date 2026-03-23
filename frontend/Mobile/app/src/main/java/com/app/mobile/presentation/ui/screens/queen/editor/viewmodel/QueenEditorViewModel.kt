@@ -3,33 +3,29 @@ package com.app.mobile.presentation.ui.screens.queen.editor.viewmodel
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.toRoute
-import com.app.mobile.domain.mappers.toDomain
-import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.data.api.mappers.toErrorMessage
-import com.app.mobile.domain.usecase.hives.hive.GetHivesPreviewUseCase
-import com.app.mobile.domain.usecase.hives.queen.CalcQueenCalendarUseCase
+import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.domain.usecase.hives.queen.CreateQueenUseCase
 import com.app.mobile.domain.usecase.hives.queen.GetQueenUseCase
 import com.app.mobile.domain.usecase.hives.queen.SaveQueenUseCase
-import com.app.mobile.presentation.mappers.toDomain
-import com.app.mobile.presentation.mappers.toEditor
 import com.app.mobile.presentation.mappers.toPresentation
+import com.app.mobile.presentation.mappers.toEditor
 import com.app.mobile.presentation.ui.components.BaseViewModel
 import com.app.mobile.presentation.ui.screens.queen.editor.QueenEditorRoute
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.util.concurrent.ConcurrentMap
 
 class QueenEditorViewModel(
     savedStateHandle: SavedStateHandle,
     private val createQueenUseCase: CreateQueenUseCase,
     private val getQueenUseCase: GetQueenUseCase,
-    private val getHivesPreviewUseCase: GetHivesPreviewUseCase,
-    private val calcQueenCalendarUseCase: CalcQueenCalendarUseCase,
     private val saveQueenUseCase: SaveQueenUseCase
 ) : BaseViewModel<QueenEditorUiState, QueenEditorEvent>(QueenEditorUiState.Loading) {
 
     private val route = savedStateHandle.toRoute<QueenEditorRoute>()
-    private val queenId = route.queenId
+    private val queenName = route.queenName
 
     override fun handleError(exception: Throwable) {
         updateState { QueenEditorUiState.Error(exception.message ?: "Unknown error") }
@@ -39,19 +35,19 @@ class QueenEditorViewModel(
     fun loadQueen() {
         updateState { QueenEditorUiState.Loading }
         launch {
-            coroutineScope {
-                val hivesDeferred = async { getHivesPreviewUseCase() }
+            if (queenName != null) {
+                when (val result = getQueenUseCase(queenName)) {
+                    is ApiResult.Success -> {
+                        val uiModel = result.data.toEditor()
+                        updateState { QueenEditorUiState.Content(uiModel) }
+                    }
 
-                val queenDeferred = async {
-                    if (queenId != null) getQueenUseCase(queenId) else null
+                    else -> {
+                        updateState { QueenEditorUiState.Error(result.toErrorMessage()) }
+                    }
                 }
-
-                val hives = hivesDeferred.await()
-                val foundQueen = queenDeferred.await()
-
-                val uiModel =
-                    foundQueen?.toEditor(hives) ?: createQueenUseCase().toPresentation(hives)
-
+            } else {
+                val uiModel = createQueenUseCase().toPresentation()
                 updateState { QueenEditorUiState.Content(uiModel) }
             }
         }
@@ -73,35 +69,30 @@ class QueenEditorViewModel(
         }
     }
 
-    fun addHive(hiveId: String) {
-        val state = currentState
-        if (state is QueenEditorUiState.Content) {
-            val updatedQueen = state.queenEditorModel.copy(hiveId = hiveId)
-            updateState { QueenEditorUiState.Content(updatedQueen) }
-        }
-    }
-
     fun resetError() = loadQueen()
+
     fun onSaveClick() {
         val state = currentState
         if (state is QueenEditorUiState.Content) {
             launch {
-                when (val result = calcQueenCalendarUseCase(state.queenEditorModel.toDomain())) {
+                updateState { QueenEditorUiState.Loading }
+                val name = state.queenEditorModel.name
+                val startDate = Instant
+                    .ofEpochMilli(state.queenEditorModel.birthDate)
+                    .atZone(ZoneId.of("UTC"))
+                    .toLocalDate()
+
+                when (val result = saveQueenUseCase(queenName, name, startDate)) {
                     is ApiResult.Success -> {
-                        saveQueenUseCase(
-                            state.queenEditorModel
-                                .toDomain() // так себе но пойдет
-                                .toDomain(result.data)
-                        )
                         sendEvent(QueenEditorEvent.NavigateBack)
                     }
 
                     else -> {
                         sendEvent(QueenEditorEvent.ShowSnackBar(result.toErrorMessage()))
+                        updateState { QueenEditorUiState.Content(state.queenEditorModel) }
                     }
                 }
             }
         }
     }
-
 }

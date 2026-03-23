@@ -9,10 +9,11 @@ import com.app.mobile.di.firebaseModule
 import com.app.mobile.di.notificationsModule
 import com.app.mobile.di.themeModule
 import com.app.mobile.di.repository.authRepository
-import com.app.mobile.di.repository.hivesLocalRepositoryModule
-import com.app.mobile.di.repository.hubLocalRepositoryModule
-import com.app.mobile.di.repository.queenLocalRepositoryModule
+import com.app.mobile.di.repository.hivesDataSourceModule
+import com.app.mobile.di.repository.hubRepositoryModule
+import com.app.mobile.di.repository.queenDataSourceModule
 import com.app.mobile.di.repository.repositoryApiModule
+import com.app.mobile.di.repository.telemetryRepositoryModule
 import com.app.mobile.di.repository.repositoryDatabaseModule
 import com.app.mobile.di.repository.userLocalRepositoryModule
 import com.app.mobile.di.repository.workLocalRepositoryModule
@@ -20,6 +21,9 @@ import com.app.mobile.di.screens.aboutAppModule
 import com.app.mobile.di.screens.accountInfoModule
 import com.app.mobile.di.screens.authorizationModule
 import com.app.mobile.di.screens.confirmationModule
+import com.app.mobile.di.screens.hubsListModule
+import com.app.mobile.di.screens.hubModule
+import com.app.mobile.di.screens.hubEditorModule
 import com.app.mobile.di.screens.hiveEditorModule
 import com.app.mobile.di.screens.hiveModule
 import com.app.mobile.di.screens.hivesListModule
@@ -27,7 +31,9 @@ import com.app.mobile.di.screens.queenEditorModule
 import com.app.mobile.di.screens.queenListModule
 import com.app.mobile.di.screens.queenModule
 import com.app.mobile.di.screens.registrationModule
+import com.app.mobile.di.screens.sensorChartModule
 import com.app.mobile.di.screens.settingsModule
+import com.app.mobile.di.screens.workDetailModule
 import com.app.mobile.di.screens.workEditorModule
 import com.app.mobile.di.screens.workListModule
 import com.app.mobile.di.sessionModule
@@ -62,16 +68,22 @@ class MobileApp : Application() {
 				settingsModule,
 				aboutAppModule,
 				accountInfoModule,
-				hivesLocalRepositoryModule,
-				queenLocalRepositoryModule,
-				hubLocalRepositoryModule,
+				hivesDataSourceModule,
+				queenDataSourceModule,
+				hubRepositoryModule,
+				telemetryRepositoryModule,
 				hivesListModule,
 				hiveModule,
 				hiveEditorModule,
+				hubsListModule,
+				hubModule,
+				hubEditorModule,
 				queenModule,
 				queenEditorModule,
 				queenListModule,
 				workLocalRepositoryModule,
+				workDetailModule,
+				sensorChartModule,
 				workEditorModule,
 				workListModule,
 				notificationsModule,

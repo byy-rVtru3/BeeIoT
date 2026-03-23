@@ -1,10 +1,11 @@
 package com.app.mobile.presentation.models.hive
 
+import com.app.mobile.presentation.models.hub.HubDetailUi
+import com.app.mobile.presentation.models.queen.QueenPreviewModel
+
 data class HiveUi(
-    val id: String,
     val name: String,
-    val connectedHub: HubUi,
-    val notifications: List<NotificationUi> = emptyList(),
-    val queen: QueenUi,
-    val works: List<WorkUi> = emptyList()
+    val hub: HubDetailUi?,
+    val queen: QueenPreviewModel?,
+    val recentWorks: List<WorkUi> = emptyList(),
 )

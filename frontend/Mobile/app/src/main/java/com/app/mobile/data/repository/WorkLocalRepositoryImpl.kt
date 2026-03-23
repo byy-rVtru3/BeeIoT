@@ -12,4 +12,6 @@ class WorkLocalRepositoryImpl(private val workDao: WorkDao) : WorkLocalRepositor
     override suspend fun getWorks(hiveId: String) = workDao.getWorks(hiveId).map { it.toDomain() }
 
     override suspend fun saveWork(work: WorkDomain) = workDao.saveWork(work.toEntity())
+
+    override suspend fun deleteWork(workId: String) = workDao.deleteWork(workId)
 }

@@ -17,4 +17,7 @@ interface WorkDao {
     @Upsert
     suspend fun saveWork(work: WorkEntity)
 
+    @Query("DELETE FROM works WHERE id = :workId")
+    suspend fun deleteWork(workId: String)
+
 }

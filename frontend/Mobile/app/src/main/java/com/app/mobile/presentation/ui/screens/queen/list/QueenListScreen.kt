@@ -21,6 +21,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.mobile.R
+import com.app.mobile.presentation.models.queen.QueenPreviewListModel
 import com.app.mobile.presentation.models.queen.QueenPreviewModel
 import com.app.mobile.presentation.ui.components.EmptyStub
 import com.app.mobile.presentation.ui.components.ErrorMessage
@@ -53,7 +54,7 @@ fun QueenListScreen(
 
 	ObserveAsEvents(queenListViewModel.event) { event ->
 		when (event) {
-			is QueenListEvent.NavigateToQueen -> onQueenClick(event.queenId)
+			is QueenListEvent.NavigateToQueen -> onQueenClick(event.queenName)
 			is QueenListEvent.NavigateToAddQueen -> onAddClick()
 
 			is QueenListEvent.ShowSnackBar -> {
@@ -166,7 +167,7 @@ private fun QueenItem(queen: QueenPreviewModel, onQueenClick: (String) -> Unit) 
 	// ВАЖНО: Используем SHOW_HIVE, чтобы отобразить имя улья и день
 	QueenCard(
 		queen = queen,
-		onClick = { onQueenClick(queen.id) },
+		onClick = { onQueenClick(queen.name) },
 		displayMode = QueenCardDisplayMode.SHOW_HIVE
 	)
 }

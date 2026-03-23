@@ -23,8 +23,5 @@ val databaseModule = module {
     }
 
     single { get<AppDatabase>().userDao() }
-    single { get<AppDatabase>().hiveDao() }
-    single { get<AppDatabase>().queenDao() }
-    single { get<AppDatabase>().hubDao() }
     single { get<AppDatabase>().workDao() }
 }

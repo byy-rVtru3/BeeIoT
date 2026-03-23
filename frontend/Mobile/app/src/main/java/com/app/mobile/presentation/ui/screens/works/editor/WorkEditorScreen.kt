@@ -112,7 +112,15 @@ fun WorksEditorContent(
 			CustomTextField(
 				value = work.title,
 				onValueChange = actions.onTitleChange,
-				placeholder = stringResource(R.string.work_title_placeholder) // "Название работы"
+				placeholder = stringResource(R.string.work_title_placeholder)
+			)
+
+			Spacer(modifier = Modifier.height(Dimens.ItemsSpacingLarge))
+
+			Text(
+				text = stringResource(R.string.work_hive_format, work.hiveId),
+				style = MaterialTheme.typography.bodyMedium,
+				color = MaterialTheme.colorScheme.onSurfaceVariant
 			)
 
 			Spacer(modifier = Modifier.height(Dimens.ItemsSpacingLarge))

@@ -3,83 +3,153 @@ package com.app.mobile.presentation.ui.screens.hive.details.viewmodel
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.toRoute
+import com.app.mobile.data.api.mappers.toErrorMessage
+import com.app.mobile.data.api.models.ApiResult
+import com.app.mobile.domain.mappers.toPreviewModel
 import com.app.mobile.domain.mappers.toUiModel
-import com.app.mobile.domain.usecase.hives.hive.GetHiveUseCase
-import com.app.mobile.presentation.models.hive.QueenUi
+import com.app.mobile.domain.scenario.GetHiveScenario
+import com.app.mobile.domain.usecase.hives.hive.DeleteHiveUseCase
+import com.app.mobile.domain.usecase.hives.works.GetWorksUseCase
+import com.app.mobile.presentation.models.hive.HiveUi
 import com.app.mobile.presentation.ui.components.BaseViewModel
 import com.app.mobile.presentation.ui.screens.hive.details.HiveRoute
+import kotlinx.coroutines.async
 
 class HiveViewModel(
-    savedStateHandle: SavedStateHandle,
-    private val getHiveUseCase: GetHiveUseCase
+	savedStateHandle: SavedStateHandle,
+	private val getHiveScenario: GetHiveScenario,
+	private val getWorksUseCase: GetWorksUseCase,
+	private val deleteHiveUseCase: DeleteHiveUseCase,
 ) : BaseViewModel<HiveUiState, HiveEvent>(HiveUiState.Loading) {
-    private val route = savedStateHandle.toRoute<HiveRoute>()
 
-    private val hiveId = route.hiveId
+	private val route = savedStateHandle.toRoute<HiveRoute>()
 
-    override fun handleError(exception: Throwable) {
-        updateState { HiveUiState.Error(exception.message ?: "Unknown error") }
-        Log.e("HiveViewModel", "Error loading hive", exception)
-    }
+	private val hiveName = route.hiveName
 
-    fun loadHive() {
-        updateState { HiveUiState.Loading }
-        launch {
-            val hive = getHiveUseCase(hiveId)
-            if (hive == null) {
-                sendEvent(HiveEvent.ShowSnackBar("Улей не найден"))
-                sendEvent(HiveEvent.NavigateToHiveList)
-                return@launch
-            }
-            updateState {
-                hive.let { HiveUiState.Content(it.toUiModel()) }
-            }
-        }
-    }
+	override fun handleError(exception: Throwable) {
+		updateState { HiveUiState.Error(exception.message ?: "Unknown error") }
+		Log.e("HiveViewModel", "Error loading hive", exception)
+	}
 
-    fun resetError() = loadHive()
+	fun loadHive() {
+		updateState { HiveUiState.Loading }
+		launch {
+			val hiveDeferred = async { getHiveScenario(hiveName) }
+			val worksDeferred = async { getWorksUseCase(hiveName) }
 
-    fun onTemperatureClick() =
-        navigateWithId(HiveEvent::NavigateToTemperatureByHive)
+			when (val result = hiveDeferred.await()) {
+				is ApiResult.Success -> {
+					val hive = result.data
+					val recentWorks = worksDeferred.await()
+						.sortedByDescending { it.dateTime }
+						.take(2)
+						.map { it.toUiModel() }
 
-    fun onNoiseClick() =
-        navigateWithId(HiveEvent::NavigateToNoiseByHive)
+					updateState {
+						HiveUiState.Content(
+							HiveUi(
+								name = hive.name,
+								hub = hive.hub?.toUiModel(),
+								queen = hive.queen?.toPreviewModel(),
+								recentWorks = recentWorks,
+							)
+						)
+					}
+				}
 
-    fun onWeightClick() =
-        navigateWithId(HiveEvent::NavigateToWeightByHive)
+				else -> {
+					sendEvent(HiveEvent.ShowSnackBar(result.toErrorMessage()))
+					sendEvent(HiveEvent.NavigateToHiveList)
+				}
+			}
+		}
+	}
 
-    fun onNotificationsClick() =
-        navigateWithId(HiveEvent::NavigateToNotificationByHive)
+	fun resetError() = loadHive()
 
-    fun onQueenClick() {
-        val state = currentState
-        if (state is HiveUiState.Content) {
-            val queen = state.hive.queen
-            if (queen is QueenUi.Present) {
-                launch {
-                    sendEvent(HiveEvent.NavigateToQueenByHive(queen.queen.id))
-                }
-            }
-        }
-    }
+	fun onTemperatureClick() {
+		val state = currentState as? HiveUiState.Content ?: return
+		val hub = state.hive.hub ?: return
+		launch {
+			sendEvent(HiveEvent.NavigateToTemperatureByHive(
+				hubId = hub.id,
+				hubName = hub.name,
+				currentValue = hub.sensorReadings?.temperatureSensor?.temperature
+			))
+		}
+	}
 
-    fun onWorksClick() =
-        navigateWithId(HiveEvent::NavigateToWorkByHive)
+	fun onNoiseClick() {
+		val state = currentState as? HiveUiState.Content ?: return
+		val hub = state.hive.hub ?: return
+		launch {
+			sendEvent(HiveEvent.NavigateToNoiseByHive(
+				hubId = hub.id,
+				hubName = hub.name,
+				currentValue = hub.sensorReadings?.noiseSensor?.noise
+			))
+		}
+	}
 
-    fun onHiveListClick() {
-        launch {
-            sendEvent(HiveEvent.NavigateToHiveList)
-        }
-    }
+	fun onWeightClick() {
+		val state = currentState as? HiveUiState.Content ?: return
+		val hub = state.hive.hub ?: return
+		launch {
+			sendEvent(HiveEvent.NavigateToWeightByHive(
+				hubId = hub.id,
+				hubName = hub.name,
+				currentValue = hub.sensorReadings?.weightSensor?.weight
+			))
+		}
+	}
 
-    fun onHiveEditClick() =
-        navigateWithId(HiveEvent::NavigateToHiveEdit)
+	fun onNotificationsClick() =
+		navigateWithName(HiveEvent::NavigateToNotificationByHive)
 
-    private inline fun navigateWithId(crossinline navEvent: (String) -> HiveEvent) {
-        (currentState as? HiveUiState.Content)?.let {
-            launch {
-                sendEvent(navEvent(hiveId))
-            }
-        }
-    }
+	fun onQueenClick() {
+		val state = currentState
+		if (state is HiveUiState.Content) {
+			val queenName = state.hive.queen?.name
+			if (queenName != null) {
+				launch {
+					sendEvent(HiveEvent.NavigateToQueenByHive(queenName))
+				}
+			}
+		}
+	}
+
+	fun onWorksClick() =
+		navigateWithName(HiveEvent::NavigateToWorkByHive)
+
+	fun onWorkClick(workId: String) {
+		launch {
+			sendEvent(HiveEvent.NavigateToWorkDetail(workId, hiveName))
+		}
+	}
+
+	fun onHiveListClick() {
+		launch {
+			sendEvent(HiveEvent.NavigateToHiveList)
+		}
+	}
+
+	fun onDeleteClick() {
+		launch {
+			when (val result = deleteHiveUseCase(hiveName)) {
+				is ApiResult.Success -> sendEvent(HiveEvent.NavigateToHiveList)
+				else -> sendEvent(HiveEvent.ShowSnackBar(result.toErrorMessage()))
+			}
+		}
+	}
+
+	fun onHiveEditClick() =
+		navigateWithName(HiveEvent::NavigateToHiveEdit)
+
+	private inline fun navigateWithName(crossinline navEvent: (String) -> HiveEvent) {
+		(currentState as? HiveUiState.Content)?.let {
+			launch {
+				sendEvent(navEvent(hiveName))
+			}
+		}
+	}
 }

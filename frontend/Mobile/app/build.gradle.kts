@@ -127,6 +127,9 @@ dependencies {
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.androidx.material.icons.extended.android)
 
+    // Charts: Vico
+    implementation(libs.vico.compose.m3)
+
     // Инструменты для отладки и тестирования (Debug & Test).
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)

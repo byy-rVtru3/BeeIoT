@@ -68,10 +68,9 @@ import com.app.mobile.ui.theme.Dimens
 @Composable
 fun QueenScreen(
 	queenViewModel: QueenViewModel,
-	onEditClick: (queenId: String) -> Unit,
-	onHiveClick: (hiveId: String) -> Unit,
+	onEditClick: (queenName: String) -> Unit,
+	onHiveClick: (hiveName: String) -> Unit,
 	onBackClick: () -> Unit,
-	onDeleteClick: (queenId: String) -> Unit // Добавили колбэк удаления
 ) {
 	val queenUiState by queenViewModel.uiState.collectAsStateWithLifecycle()
 	val snackbarHostState = remember { SnackbarHostState() }
@@ -82,8 +81,8 @@ fun QueenScreen(
 
 	ObserveAsEvents(queenViewModel.event) { event ->
 		when (event) {
-			is QueenEvent.NavigateToEditQueen -> onEditClick(event.queenId)
-			is QueenEvent.NavigateToHive      -> onHiveClick(event.hiveId)
+			is QueenEvent.NavigateToEditQueen -> onEditClick(event.queenName)
+			is QueenEvent.NavigateToHive      -> onHiveClick(event.hiveName)
 			is QueenEvent.NavigateBack        -> onBackClick()
 
 			is QueenEvent.ShowSnackBar        -> {
@@ -102,10 +101,11 @@ fun QueenScreen(
 		is QueenUiState.Content -> {
 			QueenContent(
 				queen = state.queen,
+				fromHiveName = state.fromHiveName,
 				snackbarHostState,
 				onEditClick = { queenViewModel.onEditQueenClick() },
 				onHiveClick = { queenViewModel.onHiveClick() },
-				onDeleteClick = { onDeleteClick(state.queen.id) },
+				onDeleteClick = queenViewModel::onDeleteClick,
 				onBackClick = onBackClick
 			)
 		}
@@ -116,6 +116,7 @@ fun QueenScreen(
 @Composable
 private fun QueenContent(
 	queen: QueenUiModel,
+	fromHiveName: String?,
 	snackbarHostState: SnackbarHostState,
 	onEditClick: () -> Unit,
 	onHiveClick: () -> Unit,
@@ -167,20 +168,13 @@ private fun QueenContent(
 							modifier = Modifier.weight(1f).fillMaxWidth(0.48f)
 						)
 
-						val hiveName = queen.hive?.name ?: stringResource(R.string.no_hive)
-						val hiveModifier = if (queen.hive != null) {
-							Modifier
-								.weight(1f)
-                .fillMaxWidth(0.48f)
-								.clickable { onHiveClick() }
-						} else {
-							Modifier.weight(1f).fillMaxWidth(0.48f)
-						}
-
 						InfoCard(
 							title = stringResource(R.string.hive_format),
-							value = hiveName,
-							modifier = hiveModifier
+							value = fromHiveName ?: stringResource(R.string.no_hive),
+							modifier = if (fromHiveName != null)
+								Modifier.weight(1f).fillMaxWidth(0.48f).clickable { onHiveClick() }
+							else
+								Modifier.weight(1f).fillMaxWidth(0.48f)
 						)
 					}
 
@@ -231,34 +225,33 @@ private fun QueenStatusSection(queen: QueenUiModel) {
 
 	val statusColor = MaterialTheme.colorScheme.primary
 
-    Surface(
-        shape = RoundedCornerShape(Dimens.ItemCardRadius),
-        color = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(Dimens.ItemCardPadding)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(Dimens.ItemCardTextPadding)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = currentStage?.title ?: stringResource(R.string.queen_stage_start),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = currentStage?.dateFormatted ?: "",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
+	Surface(
+		shape = RoundedCornerShape(Dimens.ItemCardRadius),
+		color = MaterialTheme.colorScheme.surface,
+		modifier = Modifier.fillMaxWidth()
+	) {
+		Column(
+			modifier = Modifier
+				.padding(Dimens.ItemCardPadding)
+				.fillMaxWidth(),
+			verticalArrangement = Arrangement.spacedBy(Dimens.ItemCardTextPadding)
+		) {
+			Row(
+				modifier = Modifier.fillMaxWidth(),
+				horizontalArrangement = Arrangement.SpaceBetween,
+				verticalAlignment = Alignment.CenterVertically
+			) {
+				Text(
+					text = currentStage?.title ?: stringResource(R.string.queen_stage_start),
+					style = MaterialTheme.typography.titleSmall,
+					color = MaterialTheme.colorScheme.onSurface
+				)
+				Text(
+					text = currentStage?.dateFormatted ?: "",
+					style = MaterialTheme.typography.bodySmall,
+					color = MaterialTheme.colorScheme.onSurface
+				)
+			}
 			LinearProgressIndicator(
 				progress = { progress },
 				modifier = Modifier
@@ -268,25 +261,24 @@ private fun QueenStatusSection(queen: QueenUiModel) {
 				trackColor = MaterialTheme.colorScheme.surfaceVariant,
 				strokeCap = StrokeCap.Round,
 			)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = if (progress >= 1f) stringResource(R.string.queen_stage_completed) else stringResource(R.string.queen_stage_in_progress),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = currentStage?.description ?: "",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1
-                )
-            }
-        }
-    }
+			Row(
+				modifier = Modifier.fillMaxWidth(),
+				horizontalArrangement = Arrangement.SpaceBetween
+			) {
+				Text(
+					text = if (progress >= 1f) stringResource(R.string.queen_stage_completed) else stringResource(R.string.queen_stage_in_progress),
+					style = MaterialTheme.typography.bodySmall,
+					color = MaterialTheme.colorScheme.onSurfaceVariant
+				)
+				Text(
+					text = currentStage?.description ?: "",
+					style = MaterialTheme.typography.bodySmall,
+					color = MaterialTheme.colorScheme.onSurface,
+					maxLines = 1
+				)
+			}
+		}
+	}
 }
 
 @Composable
@@ -318,7 +310,7 @@ private fun TimelineItemView(item: TimelineItem) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
+			Box(
                 modifier = Modifier
                     .size(Dimens.TimelineIconSize)
                     .clip(CircleShape)

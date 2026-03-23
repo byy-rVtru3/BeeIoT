@@ -1,11 +1,9 @@
 package com.app.mobile.domain.models.hives
 
-import java.util.UUID
+import com.app.mobile.domain.models.telemetry.SensorReadings
 
 data class HubDomain(
-    val id: String = UUID.randomUUID().toString(),
-    val hiveId: String?,
+    val id: String,
     val name: String,
-    val ipAddress: String,
-    val port: Int
+    val sensorReadings: SensorReadings? = null
 )

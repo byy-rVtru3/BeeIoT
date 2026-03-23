@@ -7,14 +7,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -128,6 +128,89 @@ fun HiveItemCard(
 
 
 @Composable
+fun HubItemCard(
+    name: String,
+    lastConnection: String,
+    isSignalActive: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    SelectableCardContainer(
+        onClick = onClick,
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(Dimens.ItemCardPadding)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(Dimens.HiveItemPadding)
+        ) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.hive_last_connection_format, lastConnection),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_sensors),
+                    contentDescription = null,
+                    modifier = Modifier.size(Dimens.HiveItemCardIconSize),
+                    tint = if (isSignalActive) iconActiveColor() else iconInactiveColor()
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun HubTileCard(
+    name: String,
+    isSignalActive: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    SelectableCardContainer(
+        onClick = onClick,
+        modifier = modifier.height(Dimens.Size120)
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(Dimens.ItemCardPadding)
+                .fillMaxSize()
+        ) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.TopStart)
+            )
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.ic_sensors),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(Dimens.HiveItemCardIconSize),
+                tint = if (isSignalActive) iconActiveColor() else iconInactiveColor()
+            )
+        }
+    }
+}
+
+
+@Composable
 fun InfoCard(
     title: String,
     value: String,
@@ -206,15 +289,6 @@ fun QueenCard(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "${queen.hiveName}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false)
-                            )
-                            Spacer(modifier = Modifier.width(Dimens.ItemSpacingNormal))
-                            Text(
                                 text = queen.stage.title,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface,
@@ -285,16 +359,55 @@ fun QueenCard(
 
 
 @Composable
+fun WorkTileCard(
+    title: String,
+    dateTime: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    SelectableCardContainer(
+        onClick = onClick,
+        modifier = modifier.height(Dimens.Size120)
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(Dimens.ItemCardPadding)
+                .fillMaxSize()
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.TopStart)
+            )
+            Text(
+                text = dateTime,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.Disabled),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.BottomStart)
+            )
+        }
+    }
+}
+
+
+@Composable
 fun DetailsItemCard(
     title: String,
     description: String,
     footer: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
 ) {
     Surface(
         shape = RoundedCornerShape(Dimens.ItemCardRadius),
         color = MaterialTheme.colorScheme.surface,
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
     ) {
         Column(
             modifier = Modifier
