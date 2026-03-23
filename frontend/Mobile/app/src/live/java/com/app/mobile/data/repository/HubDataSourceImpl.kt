@@ -4,6 +4,7 @@ import com.app.mobile.data.api.AuthApiClient
 import com.app.mobile.data.api.mappers.toDomain
 import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.data.api.models.hub.CreateHubRequest
+import com.app.mobile.data.api.models.hub.DeleteHubRequest
 import com.app.mobile.data.api.models.hub.UpdateHubRequest
 import com.app.mobile.data.api.safeApiCall
 import com.app.mobile.domain.models.hives.HubDomain
@@ -36,6 +37,9 @@ class HubDataSourceImpl(
 
 	override suspend fun updateHub(id: String, name: String?): ApiResult<Unit> =
 		safeApiCall { authApiClient.updateHub(UpdateHubRequest(id = id, name = name)) }
+
+	override suspend fun deleteHub(id: String): ApiResult<Unit> =
+		safeApiCall { authApiClient.deleteHub(DeleteHubRequest(id = id)) }
 
 	override suspend fun getHubWithSensors(id: String): ApiResult<HubDomain> {
 		val hubResult = getHub(id)

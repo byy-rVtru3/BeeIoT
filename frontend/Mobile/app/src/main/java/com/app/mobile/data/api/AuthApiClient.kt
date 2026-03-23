@@ -9,6 +9,7 @@ import com.app.mobile.data.api.models.hive.HiveListResponse
 import com.app.mobile.data.api.models.hive.LinkToHiveRequest
 import com.app.mobile.data.api.models.hive.UpdateHiveRequest
 import com.app.mobile.data.api.models.hub.CreateHubRequest
+import com.app.mobile.data.api.models.hub.DeleteHubRequest
 import com.app.mobile.data.api.models.hub.HubDetailsResponse
 import com.app.mobile.data.api.models.hub.HubListResponse
 import com.app.mobile.data.api.models.hub.UpdateHubRequest
@@ -80,6 +81,9 @@ interface AuthApiClient {
 
     @PUT("hub/update")
     suspend fun updateHub(@Body request: UpdateHubRequest): Response<ResponseApiModel>
+
+    @DELETE("hub/delete")
+    suspend fun deleteHub(@Body request: DeleteHubRequest): Response<ResponseApiModel>
 
     // --- Telemetry ---
 

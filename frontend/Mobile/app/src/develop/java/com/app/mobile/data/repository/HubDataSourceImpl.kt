@@ -47,6 +47,11 @@ class HubDataSourceImpl : HubDataSource {
         return ApiResult.Success(Unit)
     }
 
+    override suspend fun deleteHub(id: String): ApiResult<Unit> {
+        delay(100)
+        return ApiResult.Success(Unit)
+    }
+
     override suspend fun getHubWithSensors(id: String): ApiResult<HubDomain> {
         delay(100)
         val hub = mockHubs.find { it.id == id }
