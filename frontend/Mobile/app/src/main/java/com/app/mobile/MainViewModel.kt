@@ -7,7 +7,6 @@ import com.app.mobile.presentation.navigation.Screen
 import com.app.mobile.presentation.ui.screens.authorization.AuthorizationRoute
 import com.app.mobile.presentation.ui.screens.hive.list.HivesListRoute
 import com.app.mobile.presentation.ui.screens.main.MainRoute
-import com.app.mobile.presentation.ui.screens.settings.SettingsRoute
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
@@ -29,7 +28,7 @@ class MainViewModel(
 			when (screen) {
 				Screen.SCREEN_HIVES -> HivesListRoute
 				Screen.SCREEN_MAIN  -> MainRoute
-				else                -> SettingsRoute
+				else                -> MainRoute
 			}
 		}
 	}
