@@ -188,15 +188,15 @@ private fun SensorChartContent(
 
 	val currentValueFormatted = when (state.sensorType) {
 		SensorType.TEMPERATURE -> state.currentValue?.let {
-			stringResource(R.string.sensor_temperature_format, it.toString())
+			stringResource(R.string.sensor_temperature_format, it.toFloat())
 		} ?: "-"
 
 		SensorType.NOISE       -> state.currentValue?.let {
-			stringResource(R.string.sensor_noise_format, it.toString())
+			stringResource(R.string.sensor_noise_format, it.toFloat())
 		} ?: "-"
 
 		SensorType.WEIGHT      -> state.currentValue?.let {
-			stringResource(R.string.sensor_weight_format, it.toString())
+			stringResource(R.string.sensor_weight_format, it.toFloat())
 		} ?: "-"
 	}
 
@@ -357,9 +357,12 @@ private fun SensorChart(
 	}
 
 	androidx.compose.runtime.LaunchedEffect(dataPoints) {
-		modelProducer.runTransaction {
-			lineSeries {
-				series(dataPoints.map { it.value })
+		val values = dataPoints.map { it.value }.filter { !it.isNaN() && it.isFinite() }
+		if (values.isNotEmpty()) {
+			modelProducer.runTransaction {
+				lineSeries {
+					series(values)
+				}
 			}
 		}
 	}
@@ -384,12 +387,14 @@ private fun SensorChart(
 				rangeProvider = remember {
 					object : CartesianLayerRangeProvider {
 						override fun getMinY(minY: Double, maxY: Double, extraStore: ExtraStore): Double {
-							val padding = (maxY - minY) * 0.2
+							val range = maxY - minY
+							val padding = if (range == 0.0) 1.0 else range * 0.2
 							return minY - padding
 						}
 
 						override fun getMaxY(minY: Double, maxY: Double, extraStore: ExtraStore): Double {
-							val padding = (maxY - minY) * 0.2
+							val range = maxY - minY
+							val padding = if (range == 0.0) 1.0 else range * 0.2
 							return maxY + padding
 						}
 					}
