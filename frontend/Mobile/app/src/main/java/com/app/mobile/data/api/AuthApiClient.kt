@@ -13,6 +13,8 @@ import com.app.mobile.data.api.models.hub.HubDetailsResponse
 import com.app.mobile.data.api.models.hub.HubListResponse
 import com.app.mobile.data.api.models.hub.UpdateHubRequest
 import com.app.mobile.data.api.models.telemetry.LastSensorReadingResponse
+import com.app.mobile.data.api.models.telemetry.SetWeightRequest
+import com.app.mobile.data.api.models.telemetry.TelemetryHistoryResponse
 import com.app.mobile.data.api.models.queen.CalcQueenRequest
 import com.app.mobile.data.api.models.queen.CreateQueenRequest
 import com.app.mobile.data.api.models.queen.DeleteQueenRequest
@@ -83,6 +85,27 @@ interface AuthApiClient {
 
     @GET("telemetry/sensor/last")
     suspend fun getLastSensorReading(@Query("hub") hubId: String): Response<LastSensorReadingResponse>
+
+    @GET("telemetry/temperature/get")
+    suspend fun getTemperatureHistory(
+        @Query("hub") hubId: String,
+        @Query("since") since: Long? = null
+    ): Response<TelemetryHistoryResponse>
+
+    @GET("telemetry/noise/get")
+    suspend fun getNoiseHistory(
+        @Query("hub") hubId: String,
+        @Query("since") since: Long? = null
+    ): Response<TelemetryHistoryResponse>
+
+    @GET("telemetry/weight/get")
+    suspend fun getWeightHistory(
+        @Query("hub") hubId: String,
+        @Query("since") since: Long? = null
+    ): Response<TelemetryHistoryResponse>
+
+    @POST("telemetry/weight/set")
+    suspend fun setWeight(@Body request: SetWeightRequest): Response<ResponseApiModel>
 
     // --- Queen ---
 
