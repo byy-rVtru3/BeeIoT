@@ -150,14 +150,17 @@ private fun HubContent(
 					horizontalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
 					modifier = Modifier.fillMaxWidth()
 				) {
-					val temp = hub.sensorReadings?.temperatureSensor?.temperature?.toString()
-						?: "-"
+					val temp = hub.sensorReadings?.temperatureSensor
+						?.let { stringResource(R.string.sensor_temperature_format, it.temperature) }
+						?: stringResource(R.string.no)
 
-					val noise = hub.sensorReadings?.noiseSensor?.noise?.toString()
-						?: "-"
+					val noise = hub.sensorReadings?.noiseSensor
+						?.let { stringResource(R.string.sensor_noise_format, it.noise) }
+						?: stringResource(R.string.no)
 
-					val weight = hub.sensorReadings?.weightSensor?.weight?.toString()
-						?: "-"
+					val weight = hub.sensorReadings?.weightSensor
+						?.let { stringResource(R.string.sensor_weight_format, it.weight) }
+						?: stringResource(R.string.no)
 
 					InfoCard(
 						title = stringResource(R.string.label_temperature),

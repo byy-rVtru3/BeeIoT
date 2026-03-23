@@ -220,9 +220,6 @@ fun AppNavigation(
                 onBackClick = {
                     navController.popBackStack()
                 },
-                onDeleteClick = { queenName ->
-                    // TODO: implement delete
-                }
             )
         }
 

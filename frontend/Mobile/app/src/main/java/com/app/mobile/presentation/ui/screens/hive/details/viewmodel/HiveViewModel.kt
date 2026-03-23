@@ -8,6 +8,7 @@ import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.domain.mappers.toPreviewModel
 import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.scenario.GetHiveScenario
+import com.app.mobile.domain.usecase.hives.hive.DeleteHiveUseCase
 import com.app.mobile.domain.usecase.hives.works.GetWorksUseCase
 import com.app.mobile.presentation.models.hive.HiveUi
 import com.app.mobile.presentation.ui.components.BaseViewModel
@@ -18,6 +19,7 @@ class HiveViewModel(
 	savedStateHandle: SavedStateHandle,
 	private val getHiveScenario: GetHiveScenario,
 	private val getWorksUseCase: GetWorksUseCase,
+	private val deleteHiveUseCase: DeleteHiveUseCase,
 ) : BaseViewModel<HiveUiState, HiveEvent>(HiveUiState.Loading) {
 
 	private val route = savedStateHandle.toRoute<HiveRoute>()
@@ -128,6 +130,15 @@ class HiveViewModel(
 	fun onHiveListClick() {
 		launch {
 			sendEvent(HiveEvent.NavigateToHiveList)
+		}
+	}
+
+	fun onDeleteClick() {
+		launch {
+			when (val result = deleteHiveUseCase(hiveName)) {
+				is ApiResult.Success -> sendEvent(HiveEvent.NavigateToHiveList)
+				else -> sendEvent(HiveEvent.ShowSnackBar(result.toErrorMessage()))
+			}
 		}
 	}
 

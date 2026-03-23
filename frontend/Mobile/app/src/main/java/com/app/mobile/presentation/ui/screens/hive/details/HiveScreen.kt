@@ -104,7 +104,7 @@ fun HiveScreen(
 				onWeightClick = hiveViewModel::onWeightClick,
 				onHiveListClick = hiveViewModel::onHiveListClick,
 				onHiveEditClick = hiveViewModel::onHiveEditClick,
-				onDeleteClick = {}
+				onDeleteClick = hiveViewModel::onDeleteClick
 			)
 			HiveContent(
 				hive = state.hive,

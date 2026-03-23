@@ -71,7 +71,6 @@ fun QueenScreen(
 	onEditClick: (queenName: String) -> Unit,
 	onHiveClick: (hiveName: String) -> Unit,
 	onBackClick: () -> Unit,
-	onDeleteClick: (queenName: String) -> Unit
 ) {
 	val queenUiState by queenViewModel.uiState.collectAsStateWithLifecycle()
 	val snackbarHostState = remember { SnackbarHostState() }
@@ -106,7 +105,7 @@ fun QueenScreen(
 				snackbarHostState,
 				onEditClick = { queenViewModel.onEditQueenClick() },
 				onHiveClick = { queenViewModel.onHiveClick() },
-				onDeleteClick = { onDeleteClick(state.queen.name) },
+				onDeleteClick = queenViewModel::onDeleteClick,
 				onBackClick = onBackClick
 			)
 		}

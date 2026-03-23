@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.toRoute
 import com.app.mobile.data.api.mappers.toErrorMessage
 import com.app.mobile.data.api.models.ApiResult
+import com.app.mobile.domain.usecase.hives.queen.DeleteQueenUseCase
 import com.app.mobile.domain.usecase.hives.queen.GetQueenUseCase
 import com.app.mobile.presentation.mappers.toUiModel
 import com.app.mobile.presentation.ui.components.BaseViewModel
@@ -12,7 +13,8 @@ import com.app.mobile.presentation.ui.screens.queen.details.QueenRoute
 
 class QueenViewModel(
     savedStateHandle: SavedStateHandle,
-    private val getQueenUseCase: GetQueenUseCase
+    private val getQueenUseCase: GetQueenUseCase,
+    private val deleteQueenUseCase: DeleteQueenUseCase,
 ) : BaseViewModel<QueenUiState, QueenEvent>(QueenUiState.Loading) {
 
     private val route = savedStateHandle.toRoute<QueenRoute>()
@@ -49,6 +51,15 @@ class QueenViewModel(
             sendEvent(
                 QueenEvent.NavigateToEditQueen(state.queen.name)
             )
+        }
+    }
+
+    fun onDeleteClick() {
+        launch {
+            when (val result = deleteQueenUseCase(queenName)) {
+                is ApiResult.Success -> sendEvent(QueenEvent.NavigateBack)
+                else -> sendEvent(QueenEvent.ShowSnackBar(result.toErrorMessage()))
+            }
         }
     }
 
