@@ -67,6 +67,7 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.Get("/list", h.GetHubs)
 			r.Get("/", h.GetHub)
 			r.Put("/update", h.UpdateHub)
+			r.Delete("/delete", h.DeleteHub)
 		})
 		r.Route("/queen", func(r chi.Router) {
 			r.Use(m.CheckAuth)

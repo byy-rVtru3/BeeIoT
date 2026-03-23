@@ -93,6 +93,13 @@ DEFAULT_SAMPLING_TEMP     = 5    # Интервал публикации дан�
 DEFAULT_STATUS_FREQUENCY  = 5    # Интервал отправки статуса, сек
 
 # ============================================================
+# WiFi FALLBACK (если GSM недоступен)
+# ============================================================
+WIFI_SSID        = "REDACTED_SSID"
+WIFI_PASSWORD    = "REDACTED"
+WIFI_TIMEOUT_MS  = 15_000    # Таймаут подключения к WiFi, мс
+
+# ============================================================
 # DEEP SLEEP
 # ============================================================
 DEEP_SLEEP_DURATION_MS = DEFAULT_SAMPLING_NOISE * 1_000    # Используется DEFAULT_SAMPLING_NOISE

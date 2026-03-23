@@ -1,12 +1,14 @@
 import { sleep } from 'k6';
 import { Counter } from 'k6/metrics';
 import { BeeIoTAPI } from '../utils/api-client.js';
-import { generateEmail, generateHiveName, DEFAULT_PASSWORD } from '../utils/test-data.js';
+import { generateEmail, generateHiveName, generateQueenName, DEFAULT_PASSWORD } from '../utils/test-data.js';
 import {
     fullUserRegistration,
     createHive,
     listHives,
     deleteHive,
+    createQueen,
+    deleteQueen,
     deleteUser,
 } from '../utils/tasks.js';
 
@@ -28,6 +30,8 @@ export function writeOperation() {
         hiveCreateErrors: scenarioErrors,
         hiveListErrors: scenarioErrors,
         hiveDeleteErrors: scenarioErrors,
+        queenCreateErrors: scenarioErrors,
+        queenDeleteErrors: scenarioErrors,
 
         userDeleteErrors: teardownErrors,
     };
@@ -36,7 +40,7 @@ export function writeOperation() {
     if (!regResult.success) return;
     const token = regResult.token;
 
-    // Loop операций записи (5 итераций)
+    // Loop создания и удаления ульёв (5 итераций)
     for (let i = 0; i < 5; i++) {
         const hiveName = generateHiveName(`Write-${i}`);
 
@@ -45,7 +49,18 @@ export function writeOperation() {
             sleep(0.5);
             deleteHive(api, token, hiveName, metrics.hiveDeleteErrors);
         }
-        sleep(0.5);
+        sleep(0.3);
+    }
+
+    // Loop создания и удаления маток (3 итерации)
+    for (let i = 0; i < 3; i++) {
+        const queenName = generateQueenName(`WQ-${i}`);
+
+        if (createQueen(api, token, queenName, '2026-01-01', metrics.queenCreateErrors).success) {
+            sleep(0.3);
+            deleteQueen(api, token, queenName, metrics.queenDeleteErrors);
+        }
+        sleep(0.3);
     }
 
     // Teardown

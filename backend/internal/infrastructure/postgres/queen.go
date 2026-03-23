@@ -47,12 +47,9 @@ func (d *Postgres) GetQueenByName(ctx context.Context, email, name string) (dbTy
 
 func (d *Postgres) DeleteQueen(ctx context.Context, email, name string) error {
 	q := `DELETE FROM queens WHERE email = $1 AND name = $2`
-	res, err := d.pull.Exec(ctx, q, email, name)
+	_, err := d.pull.Exec(ctx, q, email, name)
 	if err != nil {
 		return fmt.Errorf("failed to delete queen: %w", err)
-	}
-	if res.RowsAffected() == 0 {
-		return fmt.Errorf("queen not found or already deleted")
 	}
 	return nil
 }

@@ -45,9 +45,9 @@ func (d *Postgres) GetHubBySensor(ctx context.Context, email, sensor string) (db
 	return hub, nil
 }
 
-func (d *Postgres) DeleteHub(ctx context.Context, email, nameHub string) error {
-	q := `DELETE FROM hubs WHERE email = $1 AND name = $2`
-	res, err := d.pull.Exec(ctx, q, email, nameHub)
+func (d *Postgres) DeleteHub(ctx context.Context, email, hubID string) error {
+	q := `DELETE FROM hubs WHERE email = $1 AND sensor = $2`
+	res, err := d.pull.Exec(ctx, q, email, hubID)
 	if err != nil {
 		return fmt.Errorf("failed to delete hub: %w", err)
 	}

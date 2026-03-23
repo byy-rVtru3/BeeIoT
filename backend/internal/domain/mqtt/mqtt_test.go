@@ -69,6 +69,7 @@ type MockDB struct {
 	GetEmailByHubSensorError          error
 	NewNoiseError                     error
 	NewTemperatureError               error
+	NewHiveWeightError                error
 }
 
 func (m *MockDB) GetEmailHiveBySensorID(_ context.Context, _ string) (string, string, error) {
@@ -89,6 +90,10 @@ func (m *MockDB) NewNoise(_ context.Context, _ httpType.NoiseLevel) error {
 
 func (m *MockDB) NewTemperature(_ context.Context, _ httpType.Temperature) error {
 	return m.NewTemperatureError
+}
+
+func (m *MockDB) NewHiveWeight(_ context.Context, _ httpType.HubWeight) error {
+	return m.NewHiveWeightError
 }
 
 func (m *MockDB) GetFirebaseToken(_ context.Context, _ string) ([]string, error) {

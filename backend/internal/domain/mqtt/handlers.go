@@ -30,6 +30,13 @@ func (m *Client) handleDeviceData(_ mqtt.Client, msg mqtt.Message) {
 		return
 	}
 
+	m.logger.Info().
+		Str("sensor", sensorId).
+		Float64("temperature", data.Temperature).
+		Float64("noise", data.Noise).
+		Float64("weight", data.Weight).
+		Msg("Received device data")
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -65,6 +72,9 @@ func (m *Client) handleDeviceData(_ mqtt.Client, msg mqtt.Message) {
 		if err := m.addTemperature(ctx, email, sensorId, data); err != nil {
 			m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to add temperature")
 		}
+		if err := m.addWeight(ctx, email, sensorId, data); err != nil {
+			m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to add weight")
+		}
 		return
 	}
 	if err := m.checkNoiseLevel(ctx, email, hiveName, data); err != nil {
@@ -80,6 +90,9 @@ func (m *Client) handleDeviceData(_ mqtt.Client, msg mqtt.Message) {
 	}
 	if err := m.addTemperature(ctx, email, hubSensor, data); err != nil {
 		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to add temperature")
+	}
+	if err := m.addWeight(ctx, email, hubSensor, data); err != nil {
+		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to add weight")
 	}
 }
 
@@ -104,6 +117,18 @@ func (m *Client) addTemperature(ctx context.Context, email, hubSensor string, da
 		Time:        time.Unix(data.TemperatureTime, 0),
 		Email:       email,
 		Hub:         hubSensor,
+	})
+}
+
+func (m *Client) addWeight(ctx context.Context, email, hubSensor string, data mqttTypes.DeviceData) error {
+	if data.Weight == -1 {
+		return nil
+	}
+	return m.db.NewHiveWeight(ctx, httpType.HubWeight{
+		Weight: data.Weight,
+		Time:   time.Unix(data.WeightTime, 0),
+		Email:  email,
+		Hub:    hubSensor,
 	})
 }
 
@@ -229,6 +254,7 @@ func (m *Client) checkBatteryLevel(ctx context.Context, sensorId string, data mq
 	if m.notification == nil {
 		return nil
 	}
+	m.logger.Info().Str("sensor", sensorId).Int("battery", data.BatteryLevel).Str("email", email).Msg("Sending low battery notification")
 	badToken, err := m.notification.SendNotification(ctx, notification.Data{
 		Title:     fmt.Sprintf("Низкий уровень заряда батареи (%d%%) в улье", data.BatteryLevel),
 		Body:      "Пожалуйста, замените батарею в ближайшее время, чтобы обеспечить бесперебойную работу датчика.",
@@ -243,6 +269,7 @@ func (m *Client) checkBatteryLevel(ctx context.Context, sensorId string, data mq
 	case err != nil:
 		return fmt.Errorf("failed to send notification: %w", err)
 	}
+	m.logger.Info().Str("sensor", sensorId).Msg("Low battery notification sent successfully")
 	return nil
 }
 
@@ -261,6 +288,7 @@ func (m *Client) checkSignalStrength(ctx context.Context, sensorId string, data 
 	if m.notification == nil {
 		return nil
 	}
+	m.logger.Info().Str("sensor", sensorId).Int("signal", data.SignalStrength).Str("email", email).Msg("Sending low signal notification")
 	badToken, err := m.notification.SendNotification(ctx, notification.Data{
 		Title:     fmt.Sprintf("Низкий уровень сигнала (%d%%) в улье", data.SignalStrength),
 		Body:      "Пожалуйста, проверьте расположение датчика и убедитесь, что он находится в зоне стабильного сигнала.",
@@ -275,6 +303,7 @@ func (m *Client) checkSignalStrength(ctx context.Context, sensorId string, data 
 	case err != nil:
 		return fmt.Errorf("failed to send notification: %w", err)
 	}
+	m.logger.Info().Str("sensor", sensorId).Msg("Low signal notification sent successfully")
 	return nil
 }
 
@@ -293,6 +322,7 @@ func (m *Client) checkErrors(ctx context.Context, sensorId string, data mqttType
 	if m.notification == nil {
 		return nil
 	}
+	m.logger.Info().Str("sensor", sensorId).Strs("errors", data.Errors).Str("email", email).Msg("Sending device errors notification")
 	badToken, err := m.notification.SendNotification(ctx, notification.Data{
 		Title: fmt.Sprintf("Ошибки датчика в улье %s", hive),
 		Body: fmt.Sprintf("Датчик сообщил об ошибках: %s. Пожалуйста, проверьте состояние датчика.",
@@ -308,6 +338,7 @@ func (m *Client) checkErrors(ctx context.Context, sensorId string, data mqttType
 	case err != nil:
 		return fmt.Errorf("failed to send notification: %w", err)
 	}
+	m.logger.Info().Str("sensor", sensorId).Msg("Device errors notification sent successfully")
 	return nil
 }
 
@@ -323,6 +354,7 @@ func (m *Client) checkNoiseLevel(ctx context.Context, email, hive string, data m
 	if m.notification == nil {
 		return nil
 	}
+	m.logger.Info().Str("hive", hive).Float64("noise", data.Noise).Str("email", email).Msg("Sending high noise notification")
 	badToken, err := m.notification.SendNotification(ctx, notification.Data{
 		Title: fmt.Sprintf("Высокий уровень шума в улье %s", hive),
 		Body: fmt.Sprintf("Зафиксирован уровень шума %.1f дБ, превышающий допустимый порог (%d дБ). Пожалуйста, проверьте состояние улья.",
@@ -338,5 +370,6 @@ func (m *Client) checkNoiseLevel(ctx context.Context, email, hive string, data m
 	case err != nil:
 		return fmt.Errorf("failed to send noise notification: %w", err)
 	}
+	m.logger.Info().Str("hive", hive).Msg("High noise notification sent successfully")
 	return nil
 }

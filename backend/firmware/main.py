@@ -19,7 +19,7 @@ import urandom
 import config
 from sensors.temperature import TemperatureSensor
 from sensors.noise import NoiseSensor
-from network.sim800l import SIM800L
+from gsm.sim800l import SIM800L
 from storage.ring_buffer import RingBuffer
 
 
@@ -172,65 +172,140 @@ def run() -> None:
         # ============================================================
         _log("--- CONNECT_NETWORK ---")
 
-        if not sim.power_on():
-            _log("Сеть недоступна — сохраняем в буфер")
-            buf.push(data_payload)
-            return   # → finally: power_off + deepsleep
+        gsm_ok = False
+        use_wifi = False
 
-        if not sim.connect_gprs():
-            _log("GPRS недоступен — сохраняем в буфер")
-            buf.push(data_payload)
-            return   # → finally
+        # Быстрая проверка GSM (5 сек)
+        quick = sim._send_at("AT", "OK", 5000)
+        if quick is not None:
+            _log("GSM откликнулся, подключение...")
+            if sim.power_on() and sim.connect_gprs() and sim.mqtt_connect(
+                broker=config.MQTT_BROKER,
+                port=config.MQTT_PORT,
+                client_id=config.SENSOR_ID,
+                user=config.MQTT_USER,
+                password=config.MQTT_PASSWORD,
+                keepalive=config.MQTT_KEEPALIVE,
+            ):
+                gsm_ok = True
+        else:
+            _log("GSM не откликнулся за 5 сек")
 
-        if not sim.mqtt_connect(
-            broker=config.MQTT_BROKER,
-            port=config.MQTT_PORT,
-            client_id=config.SENSOR_ID,
-            user=config.MQTT_USER,
-            password=config.MQTT_PASSWORD,
-            keepalive=config.MQTT_KEEPALIVE,
-        ):
-            _log("MQTT соединение не удалось — сохраняем в буфер")
-            buf.push(data_payload)
-            return   # → finally
+        if not gsm_ok:
+            # WiFi fallback
+            _log("GSM недоступен — пробуем WiFi...")
+            try:
+                sim.power_off()
+            except Exception:
+                pass
+
+            try:
+                from wifi_manager import WiFiManager
+                from wifi_mqtt import WiFiMQTT
+            except ImportError as e:
+                _log("WiFi модули не найдены: {}".format(e))
+                buf.push(data_payload)
+                return
+
+            wifi = WiFiManager(config.WIFI_SSID, config.WIFI_PASSWORD,
+                               config.WIFI_TIMEOUT_MS // 1000)
+            if not wifi.connect():
+                _log("WiFi не удалось подключиться")
+                buf.push(data_payload)
+                return
+
+            wifi_mqtt = WiFiMQTT(
+                config.SENSOR_ID,
+                config.MQTT_BROKER,
+                config.MQTT_PORT,
+                config.MQTT_USER or None,
+                config.MQTT_PASSWORD or None,
+                config.MQTT_KEEPALIVE,
+                config.MQTT_CONNECT_TIMEOUT_MS // 1000,
+            )
+            if not wifi_mqtt.connect():
+                _log("WiFi MQTT не удалось подключиться")
+                wifi.disconnect()
+                buf.push(data_payload)
+                return
+
+            use_wifi = True
 
         # ============================================================
         # STATE: PUBLISH
         # ============================================================
         _log("--- PUBLISH ---")
 
-        # Сначала — накопленные офлайн-данные (актуальность важнее истории)
-        if not buf.is_empty():
-            _log("Отправка буферизованных данных...")
-            offline_records = buf.pop_all()
-            for record in offline_records:
-                success = sim.mqtt_publish(topic_data, ujson.dumps(record))
-                if not success:
-                    _log("WARN: не удалось отправить запись из буфера")
-            del offline_records
-            gc.collect()
+        if use_wifi:
+            # Подписка на конфиг
+            cfg_received = [None]
+            def on_msg(topic, msg):
+                try:
+                    cfg_received[0] = ujson.loads(msg)
+                except Exception:
+                    pass
+            wifi_mqtt.client.set_callback(on_msg)
+            wifi_mqtt.subscribe(topic_cfg)
 
-        # Текущие данные
-        sim.mqtt_publish(topic_data,   ujson.dumps(data_payload))
-        sim.mqtt_publish(topic_status, ujson.dumps(status_payload))
-        _log("Данные отправлены")
+            # Буферизованные данные
+            if not buf.is_empty():
+                _log("Отправка буферизованных данных...")
+                offline_records = buf.pop_all()
+                for record in offline_records:
+                    wifi_mqtt.publish(topic_data, ujson.dumps(record))
+                del offline_records
+                gc.collect()
 
-        # ============================================================
-        # STATE: LISTEN_CONFIG
-        # ============================================================
-        _log("--- LISTEN_CONFIG (ожидание {} мс) ---".format(
-            config.MQTT_CONFIG_WAIT_MS))
+            # Текущие данные
+            wifi_mqtt.publish(topic_data, ujson.dumps(data_payload))
+            wifi_mqtt.publish(topic_status, ujson.dumps(status_payload))
+            _log("Данные отправлены (WiFi)")
 
-        sim.mqtt_subscribe(topic_cfg)
-        cfg_msg = sim.mqtt_wait_msg(config.MQTT_CONFIG_WAIT_MS)
+            # Ожидание конфига
+            _log("--- LISTEN_CONFIG ({} мс) ---".format(config.MQTT_CONFIG_WAIT_MS))
+            deadline = utime.ticks_add(utime.ticks_ms(), config.MQTT_CONFIG_WAIT_MS)
+            while utime.ticks_diff(deadline, utime.ticks_ms()) > 0:
+                wifi_mqtt.check_messages()
+                if cfg_received[0] is not None:
+                    break
+                utime.sleep_ms(100)
 
-        if cfg_msg is not None:
-            _log("Получена конфигурация: {}".format(cfg_msg))
-            sim.mqtt_disconnect()   # Отключить до apply_config (может вызвать reset)
-            _apply_config(cfg_msg)
+            wifi_mqtt.disconnect()
+            wifi.disconnect()
+
+            if cfg_received[0] is not None:
+                _log("Получена конфигурация: {}".format(cfg_received[0]))
+                _apply_config(cfg_received[0])
+            else:
+                _log("Конфигурация не получена (таймаут)")
+
         else:
-            _log("Конфигурация не получена (таймаут)")
-            sim.mqtt_disconnect()
+            # GSM путь
+            if not buf.is_empty():
+                _log("Отправка буферизованных данных...")
+                offline_records = buf.pop_all()
+                for record in offline_records:
+                    success = sim.mqtt_publish(topic_data, ujson.dumps(record))
+                    if not success:
+                        _log("WARN: не удалось отправить запись из буфера")
+                del offline_records
+                gc.collect()
+
+            sim.mqtt_publish(topic_data, ujson.dumps(data_payload))
+            sim.mqtt_publish(topic_status, ujson.dumps(status_payload))
+            _log("Данные отправлены (GSM)")
+
+            _log("--- LISTEN_CONFIG ({} мс) ---".format(config.MQTT_CONFIG_WAIT_MS))
+            sim.mqtt_subscribe(topic_cfg)
+            cfg_msg = sim.mqtt_wait_msg(config.MQTT_CONFIG_WAIT_MS)
+
+            if cfg_msg is not None:
+                _log("Получена конфигурация: {}".format(cfg_msg))
+                sim.mqtt_disconnect()
+                _apply_config(cfg_msg)
+            else:
+                _log("Конфигурация не получена (таймаут)")
+                sim.mqtt_disconnect()
 
     except Exception as e:
         # Глобальный перехватчик — любая необработанная ошибка

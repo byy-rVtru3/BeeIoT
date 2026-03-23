@@ -3,6 +3,7 @@ package handlers
 import (
 	"BeeIOT/internal/domain/models/httpType"
 	"BeeIOT/internal/domain/models/mqttTypes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -29,7 +30,38 @@ func (h *Handler) SetHiveWeight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Обновляем вес в кеше Redis, чтобы GetLastSensorReading возвращал актуальный вес
+	h.updateCachedWeight(r.Context(), weight.Hub, weight.Weight, weight.Time.Unix())
+
 	h.writeBodyJSON(w, "Данные веса успешно установлены", nil)
+}
+
+func (h *Handler) updateCachedWeight(ctx context.Context, hubID string, weight float64, weightTime int64) {
+	raw, err := h.inMemDb.GetLastSensorData(ctx, hubID)
+	if err != nil {
+		// Нет кеша — создаём новый с весом
+		newData := mqttTypes.DeviceData{
+			Temperature:     -1,
+			TemperatureTime: 0,
+			Noise:           -1,
+			NoiseTime:       0,
+			Weight:          weight,
+			WeightTime:      weightTime,
+		}
+		if b, err := json.Marshal(newData); err == nil {
+			_ = h.inMemDb.SetLastSensorData(ctx, hubID, string(b))
+		}
+		return
+	}
+	var sensorData mqttTypes.DeviceData
+	if err := json.Unmarshal([]byte(raw), &sensorData); err != nil {
+		return
+	}
+	sensorData.Weight = weight
+	sensorData.WeightTime = weightTime
+	if b, err := json.Marshal(sensorData); err == nil {
+		_ = h.inMemDb.SetLastSensorData(ctx, hubID, string(b))
+	}
 }
 
 func (h *Handler) DeleteHiveWeight(w http.ResponseWriter, r *http.Request) {

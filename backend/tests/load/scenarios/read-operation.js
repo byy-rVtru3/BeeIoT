@@ -1,13 +1,15 @@
 import { sleep } from 'k6';
 import { Counter } from 'k6/metrics';
 import { BeeIoTAPI } from '../utils/api-client.js';
-import { generateEmail, generateHiveName, DEFAULT_PASSWORD } from '../utils/test-data.js';
+import { generateEmail, generateHiveName, generateQueenName, DEFAULT_PASSWORD } from '../utils/test-data.js';
 import {
     fullUserRegistration,
     createHive,
+    createQueen,
     listHives,
     getHive,
-    calculateQueen,
+    listQueens,
+    getQueen,
     deleteUser,
 } from '../utils/tasks.js';
 
@@ -21,16 +23,19 @@ export function readOperation() {
     const email = generateEmail('read');
     const password = DEFAULT_PASSWORD;
     const hiveName = generateHiveName('Read');
+    const queenName = generateQueenName('Read');
 
     const metrics = {
         registrationErrors: setupErrors,
         confirmationErrors: setupErrors,
         loginErrors: setupErrors,
         hiveCreateErrors: setupErrors,
+        queenCreateErrors: setupErrors,
 
         hiveListErrors: scenarioErrors,
         hiveGetErrors: scenarioErrors,
-        calcErrors: scenarioErrors,
+        queenListErrors: scenarioErrors,
+        queenGetErrors: scenarioErrors,
         userDeleteErrors: teardownErrors,
     };
 
@@ -43,11 +48,15 @@ export function readOperation() {
         return;
     }
 
+    // Создаём матку для операций чтения
+    createQueen(api, token, queenName, '2026-01-01', metrics.queenCreateErrors);
+
     // Loop операций чтения (10 итераций)
     for (let i = 0; i < 10; i++) {
         listHives(api, token, metrics.hiveListErrors);
         getHive(api, token, hiveName, metrics.hiveGetErrors);
-        calculateQueen(api, token, { start_date: "2026-05-01" }, metrics.calcErrors);
+        listQueens(api, token, metrics.queenListErrors);
+        getQueen(api, token, queenName, metrics.queenGetErrors);
         sleep(0.5);
     }
 

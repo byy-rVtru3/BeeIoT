@@ -87,6 +87,34 @@ func (h *Handler) GetHub(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *Handler) DeleteHub(w http.ResponseWriter, r *http.Request) {
+	email, err := h.getEmailFromContext(w, r)
+	if err != nil {
+		return
+	}
+
+	var deleteData httpType.DeleteHub
+	if err := h.readBodyJSON(w, r, &deleteData); err != nil {
+		return
+	}
+
+	if deleteData.ID == "" {
+		h.logger.Warn().Str("email", email).Msg("hub id is empty")
+		http.Error(w, "Идентификатор хаба обязателен", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.db.DeleteHub(r.Context(), email, deleteData.ID); err != nil {
+		h.logger.Error().Err(err).Str("email", email).
+			Str("hub_id", deleteData.ID).Msg("error deleting hub")
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
+	}
+	h.logger.Debug().Str("email", email).Str("hub_id", deleteData.ID).Msg("hub deleted")
+
+	h.writeBodyJSON(w, "Хаб успешно удален", nil)
+}
+
 func (h *Handler) UpdateHub(w http.ResponseWriter, r *http.Request) {
 	email, err := h.getEmailFromContext(w, r)
 	if err != nil {
