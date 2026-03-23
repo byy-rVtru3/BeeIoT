@@ -18,6 +18,7 @@ import com.app.mobile.ui.theme.MobileTheme
 import com.app.mobile.ui.theme.ThemeManager
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import androidx.core.graphics.toColorInt
 
 class MainActivity : ComponentActivity() {
 
@@ -31,7 +32,7 @@ class MainActivity : ComponentActivity() {
 
 		val isDark = themeManager.themeState.value.isDarkTheme
 
-		val bgColor = if (isDark) Color.parseColor("#121212") else Color.WHITE
+		val bgColor = if (isDark) "#121212".toColorInt() else Color.WHITE
 		window.decorView.setBackgroundColor(bgColor)
 		WindowInsetsControllerCompat(window, window.decorView).apply {
 			isAppearanceLightStatusBars = !isDark
