@@ -5,12 +5,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -39,6 +43,7 @@ import com.app.mobile.ui.theme.Alpha
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountInfoScreen(
 	accountInfoViewModel: AccountInfoViewModel,
@@ -48,6 +53,7 @@ fun AccountInfoScreen(
 
 	val accountInfoUiState by accountInfoViewModel.uiState.collectAsStateWithLifecycle()
 	val snackbarHostState = remember { SnackbarHostState() }
+	val isRefreshing = (accountInfoUiState as? AccountInfoUiState.Content)?.isRefreshing ?: false
 
 	LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
 		accountInfoViewModel.getAccountInfo()
@@ -67,23 +73,28 @@ fun AccountInfoScreen(
 		}
 	}
 
-	when (val currentState = accountInfoUiState) {
-		is AccountInfoUiState.Loading -> FullScreenProgressIndicator()
-		is AccountInfoUiState.Error   -> ErrorMessage(currentState.message, onRetry = accountInfoViewModel::resetError)
+	PullToRefreshBox(
+		isRefreshing = isRefreshing,
+		onRefresh = accountInfoViewModel::refresh
+	) {
+		when (val currentState = accountInfoUiState) {
+			is AccountInfoUiState.Loading -> FullScreenProgressIndicator()
+			is AccountInfoUiState.Error   -> ErrorMessage(currentState.message, onRetry = accountInfoViewModel::resetError)
 
-		is AccountInfoUiState.Content -> {
-			val actions = AccountInfoActions(
-				onNameClick = accountInfoViewModel::onNameClick,
-				onEmailClick = accountInfoViewModel::onEmailClick,
-				onPasswordClick = accountInfoViewModel::onPasswordClick,
-				onDeleteClick = accountInfoViewModel::onDeleteAccountClick
-			)
-			AccountInfoContent(
-				userInfo = currentState.userInfo,
-				snackbarHostState = snackbarHostState,
-				actions = actions,
-				onBackClick = onBackClick
-			)
+			is AccountInfoUiState.Content -> {
+				val actions = AccountInfoActions(
+					onNameClick = accountInfoViewModel::onNameClick,
+					onEmailClick = accountInfoViewModel::onEmailClick,
+					onPasswordClick = accountInfoViewModel::onPasswordClick,
+					onDeleteClick = accountInfoViewModel::onDeleteAccountClick
+				)
+				AccountInfoContent(
+					userInfo = currentState.userInfo,
+					snackbarHostState = snackbarHostState,
+					actions = actions,
+					onBackClick = onBackClick
+				)
+			}
 		}
 	}
 
@@ -131,6 +142,7 @@ private fun AccountInfoContent(
 			modifier = Modifier
 				.fillMaxSize()
 				.padding(innerPadding) // Важно: учитываем высоту TopBar
+				.verticalScroll(rememberScrollState())
 				.padding(Dimens.ScreenContentPadding),
 			horizontalAlignment = Alignment.CenterHorizontally,
 			verticalArrangement = Arrangement.Top

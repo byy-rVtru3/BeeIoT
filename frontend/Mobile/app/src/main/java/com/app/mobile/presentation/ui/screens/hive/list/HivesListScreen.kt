@@ -18,6 +18,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -97,6 +98,8 @@ fun HivesListScreen(
 			)
 			HivesListContent(
 				state.hives,
+				isRefreshing = state.isRefreshing,
+				onRefresh = hivesListViewModel::refresh,
 				snackbarHostState,
 				actions,
 				selectedTab = selectedTab,
@@ -111,6 +114,8 @@ fun HivesListScreen(
 @Composable
 private fun HivesListContent(
 	hives: List<HivePreview>,
+	isRefreshing: Boolean,
+	onRefresh: () -> Unit,
 	snackbarHostState: SnackbarHostState,
 	actions: HivesListActions,
 	selectedTab: Int,
@@ -127,26 +132,32 @@ private fun HivesListContent(
         fabContentDescription = stringResource(R.string.add_hive),
         onFabClick = actions.onCreateHiveClick
     ) { innerPadding ->
-        when (selectedTab) {
-            0 -> {
-                if (hives.isNotEmpty()) {
-                    HivesList(
-                        hives = hives,
-                        actions = actions,
-                        modifier = innerPadding
-                    )
-                } else {
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            when (selectedTab) {
+                0 -> {
+                    if (hives.isNotEmpty()) {
+                        HivesList(
+                            hives = hives,
+                            actions = actions,
+                            modifier = innerPadding
+                        )
+                    } else {
+                        EmptyStub(
+                            text = stringResource(R.string.empty_hives_list_screen),
+                            modifier = innerPadding
+                        )
+                    }
+                }
+                1 -> {
                     EmptyStub(
-                        text = stringResource(R.string.empty_hives_list_screen),
+                        text = stringResource(R.string.empty_archive_list_screen),
                         modifier = innerPadding
                     )
                 }
-            }
-            1 -> {
-                EmptyStub(
-                    text = stringResource(R.string.empty_archive_list_screen),
-                    modifier = innerPadding
-                )
             }
         }
     }

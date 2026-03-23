@@ -11,11 +11,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -40,6 +42,7 @@ import com.app.mobile.presentation.ui.screens.hub.details.viewmodel.HubUiState
 import com.app.mobile.presentation.ui.screens.hub.details.viewmodel.HubViewModel
 import com.app.mobile.ui.theme.Dimens
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HubScreen(
 	hubViewModel: HubViewModel,
@@ -50,6 +53,7 @@ fun HubScreen(
 ) {
 	val hubUiState by hubViewModel.uiState.collectAsStateWithLifecycle()
 	val snackbarHostState = remember { SnackbarHostState() }
+	val isRefreshing = (hubUiState as? HubUiState.Content)?.isRefreshing ?: false
 
 	LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
 		hubViewModel.loadHub()
@@ -68,28 +72,33 @@ fun HubScreen(
 		}
 	}
 
-	when (val state = hubUiState) {
-		is HubUiState.Loading -> FullScreenProgressIndicator()
+	PullToRefreshBox(
+		isRefreshing = isRefreshing,
+		onRefresh = hubViewModel::refresh
+	) {
+		when (val state = hubUiState) {
+			is HubUiState.Loading -> FullScreenProgressIndicator()
 
-		is HubUiState.Error   -> ErrorMessage(
-			message = state.message,
-			onRetry = hubViewModel::resetError
-		)
+			is HubUiState.Error   -> ErrorMessage(
+				message = state.message,
+				onRetry = hubViewModel::resetError
+			)
 
-		is HubUiState.Content -> {
-			val actions = HubActions(
-				onEditClick = hubViewModel::onEditClick,
-				onDeleteClick = {}, // необходимо добавить удаление
-				onTemperatureClick = hubViewModel::onTemperatureClick,
-				onNoiseClick = hubViewModel::onNoiseClick,
-				onWeightClick = hubViewModel::onWeightClick
-			)
-			HubContent(
-				hub = state.hub,
-				snackbarHostState = snackbarHostState,
-				actions = actions,
-				onBackClick = onHubListClick
-			)
+			is HubUiState.Content -> {
+				val actions = HubActions(
+					onEditClick = hubViewModel::onEditClick,
+					onDeleteClick = {}, // необходимо добавить удаление
+					onTemperatureClick = hubViewModel::onTemperatureClick,
+					onNoiseClick = hubViewModel::onNoiseClick,
+					onWeightClick = hubViewModel::onWeightClick
+				)
+				HubContent(
+					hub = state.hub,
+					snackbarHostState = snackbarHostState,
+					actions = actions,
+					onBackClick = onHubListClick
+				)
+			}
 		}
 	}
 }

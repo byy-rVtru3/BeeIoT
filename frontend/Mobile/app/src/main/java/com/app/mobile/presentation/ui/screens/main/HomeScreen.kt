@@ -17,11 +17,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -52,6 +54,7 @@ import java.time.format.DateTimeFormatter
 private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 private const val WORK_ITEM_MAX_LINES = 1
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel,
@@ -61,6 +64,7 @@ fun HomeScreen(
     onWorkClick: (String, String) -> Unit
 ) {
     val state by homeViewModel.uiState.collectAsStateWithLifecycle()
+    val isRefreshing = (state as? HomeUiState.Content)?.isRefreshing ?: false
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         homeViewModel.loadData()
@@ -75,10 +79,15 @@ fun HomeScreen(
         }
     }
 
-    when (val s = state) {
-        is HomeUiState.Loading -> FullScreenProgressIndicator()
-        is HomeUiState.Error   -> ErrorMessage(message = s.message, onRetry = homeViewModel::onRetry)
-        is HomeUiState.Content -> HomeContent(content = s, homeViewModel = homeViewModel)
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = homeViewModel::refresh
+    ) {
+        when (val s = state) {
+            is HomeUiState.Loading -> FullScreenProgressIndicator()
+            is HomeUiState.Error   -> ErrorMessage(message = s.message, onRetry = homeViewModel::onRetry)
+            is HomeUiState.Content -> HomeContent(content = s, homeViewModel = homeViewModel)
+        }
     }
 }
 

@@ -11,9 +11,11 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -38,6 +40,7 @@ import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListUiSt
 import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListViewModel
 import com.app.mobile.ui.theme.Dimens
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorksListScreen(
 	worksListViewModel: WorksListViewModel,
@@ -67,16 +70,23 @@ fun WorksListScreen(
 		}
 	}
 
-	when (val state = worksUiState) {
-		is WorksListUiState.Loading -> FullScreenProgressIndicator()
-		is WorksListUiState.Error   -> ErrorMessage(state.message, worksListViewModel::resetError)
-		is WorksListUiState.Content -> WorksListContent(
-			state.works,
-			worksListViewModel::onWorkClick,
-			snackBarHostState = snackBarHostState,
-			worksListViewModel::onCreateClick,
-			onNavigateBack = onBackClick
-		)
+	val isRefreshing = (worksUiState as? WorksListUiState.Content)?.isRefreshing ?: false
+
+	PullToRefreshBox(
+		isRefreshing = isRefreshing,
+		onRefresh = worksListViewModel::refresh
+	) {
+		when (val state = worksUiState) {
+			is WorksListUiState.Loading -> FullScreenProgressIndicator()
+			is WorksListUiState.Error   -> ErrorMessage(state.message, worksListViewModel::resetError)
+			is WorksListUiState.Content -> WorksListContent(
+				state.works,
+				worksListViewModel::onWorkClick,
+				snackBarHostState = snackBarHostState,
+				worksListViewModel::onCreateClick,
+				onNavigateBack = onBackClick
+			)
+		}
 	}
 }
 
