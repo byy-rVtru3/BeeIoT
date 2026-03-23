@@ -35,9 +35,9 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import com.app.mobile.R
 import com.app.mobile.presentation.ui.modifiers.styleShadow
-import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppRoute
 import com.app.mobile.presentation.ui.screens.hub.list.HubsListRoute
 import com.app.mobile.presentation.ui.screens.hive.list.HivesListRoute
+import com.app.mobile.presentation.ui.screens.main.MainRoute
 import com.app.mobile.presentation.ui.screens.queen.list.QueenListRoute
 import com.app.mobile.presentation.ui.screens.settings.SettingsRoute
 import com.app.mobile.ui.theme.Dimens
@@ -58,7 +58,7 @@ fun AppBottomBar(
         BottomTabItem(
             stringResource(R.string.home),
             ImageVector.vectorResource(R.drawable.ic_home),
-            AboutAppRoute
+            MainRoute
         ),
 
         BottomTabItem(

@@ -18,6 +18,9 @@ import androidx.navigation.toRoute
 import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppRoute
 import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppScreen
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppViewModel
+import com.app.mobile.presentation.ui.screens.main.HomeScreen
+import com.app.mobile.presentation.ui.screens.main.MainRoute
+import com.app.mobile.presentation.ui.screens.main.viewmodel.HomeViewModel
 import com.app.mobile.presentation.ui.screens.accountinfo.AccountInfoRoute
 import com.app.mobile.presentation.ui.screens.accountinfo.AccountInfoScreen
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoViewModel
@@ -86,6 +89,17 @@ fun AppNavigation(
         startDestination = startDestination,
         modifier = modifier
     ) {
+        animatedComposable<MainRoute> {
+            val homeViewModel: HomeViewModel = koinViewModel()
+            HomeScreen(
+                homeViewModel = homeViewModel,
+                onHiveClick = { navController.navigate(HiveRoute(it)) },
+                onQueenClick = { navController.navigate(QueenRoute(it)) },
+                onHubClick = { navController.navigate(HubRoute(it)) },
+                onWorkClick = { workId, hiveId -> navController.navigate(WorkDetailRoute(workId, hiveId)) }
+            )
+        }
+
         animatedComposable<RegistrationRoute> {
             val registrationViewModel: RegistrationViewModel = koinViewModel()
             RegistrationScreen(

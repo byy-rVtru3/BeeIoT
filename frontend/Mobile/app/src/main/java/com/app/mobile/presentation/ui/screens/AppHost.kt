@@ -19,6 +19,7 @@ import com.app.mobile.presentation.navigation.AppNavigation
 import com.app.mobile.presentation.ui.components.AppBottomBar
 import com.app.mobile.presentation.ui.screens.hive.list.HivesListRoute
 import com.app.mobile.presentation.ui.screens.hub.list.HubsListRoute
+import com.app.mobile.presentation.ui.screens.main.MainRoute
 import com.app.mobile.presentation.ui.screens.queen.list.QueenListRoute
 import com.app.mobile.presentation.ui.screens.settings.SettingsRoute
 
@@ -31,6 +32,7 @@ fun AppHost(
 	val currentDestination = navBackStackEntry?.destination
 
 	val showBottomBar = currentDestination?.let { dest ->
+		dest.hasRoute<MainRoute>() ||
 		dest.hasRoute<HivesListRoute>() ||
 		dest.hasRoute<HubsListRoute>() ||
 		dest.hasRoute<SettingsRoute>() ||
