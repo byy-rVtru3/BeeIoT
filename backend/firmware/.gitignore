@@ -1,0 +1,5 @@
+/venv
+/.venv
+/test/venv
+/test/.venv
+../firebase-key.json
