@@ -1,5 +1,6 @@
 package com.app.mobile.presentation.ui.screens.hub.details
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,7 +45,8 @@ fun HubScreen(
 	hubViewModel: HubViewModel,
 	onHubListClick: () -> Unit,
 	onHubEditClick: (hubId: String) -> Unit,
-	onNotificationsClick: (hubId: String) -> Unit
+	onNotificationsClick: (hubId: String) -> Unit,
+	onSensorChartClick: (hubId: String, sensorType: String, hubName: String, currentValue: Double?) -> Unit
 ) {
 	val hubUiState by hubViewModel.uiState.collectAsStateWithLifecycle()
 	val snackbarHostState = remember { SnackbarHostState() }
@@ -58,6 +60,7 @@ fun HubScreen(
 			is HubEvent.NavigateToHubList           -> onHubListClick()
 			is HubEvent.NavigateToHubEdit           -> onHubEditClick(event.hubId)
 			is HubEvent.NavigateToNotificationByHub -> onNotificationsClick(event.hubId)
+			is HubEvent.NavigateToSensorChart       -> onSensorChartClick(event.hubId, event.sensorType, event.hubName, event.currentValue)
 			is HubEvent.ShowSnackBar                -> snackbarHostState.showSnackbar(
 				message = event.message,
 				duration = SnackbarDuration.Short
@@ -77,6 +80,9 @@ fun HubScreen(
 			val actions = HubActions(
 				onEditClick = hubViewModel::onEditClick,
 				onDeleteClick = {}, // необходимо добавить удаление
+				onTemperatureClick = hubViewModel::onTemperatureClick,
+				onNoiseClick = hubViewModel::onNoiseClick,
+				onWeightClick = hubViewModel::onWeightClick
 			)
 			HubContent(
 				hub = state.hub,
@@ -156,17 +162,23 @@ private fun HubContent(
 					InfoCard(
 						title = stringResource(R.string.label_temperature),
 						value = temp,
-						modifier = Modifier.weight(1.5f)
+						modifier = Modifier
+							.weight(1.5f)
+							.clickable(onClick = actions.onTemperatureClick)
 					)
 					InfoCard(
 						title = stringResource(R.string.label_noise),
 						value = noise,
-						modifier = Modifier.weight(1f)
+						modifier = Modifier
+							.weight(1f)
+							.clickable(onClick = actions.onNoiseClick)
 					)
 					InfoCard(
 						title = stringResource(R.string.label_weight),
 						value = weight,
-						modifier = Modifier.weight(1f)
+						modifier = Modifier
+							.weight(1f)
+							.clickable(onClick = actions.onWeightClick)
 					)
 				}
 			}

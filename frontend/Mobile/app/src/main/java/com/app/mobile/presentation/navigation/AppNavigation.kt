@@ -55,6 +55,9 @@ import com.app.mobile.presentation.ui.screens.queen.list.QueenListRoute
 import com.app.mobile.presentation.ui.screens.queen.list.QueenListScreen
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListViewModel
 import com.app.mobile.presentation.ui.screens.registration.RegistrationRoute
+import com.app.mobile.presentation.ui.screens.sensorchart.SensorChartRoute
+import com.app.mobile.presentation.ui.screens.sensorchart.SensorChartScreen
+import com.app.mobile.presentation.ui.screens.sensorchart.viewmodel.SensorChartViewModel
 import com.app.mobile.presentation.ui.screens.registration.RegistrationScreen
 import com.app.mobile.presentation.ui.screens.registration.viewmodel.RegistrationViewModel
 import com.app.mobile.presentation.ui.screens.settings.SettingsRoute
@@ -153,7 +156,10 @@ fun AppNavigation(
                 hubViewModel,
                 onHubListClick = { navController.popBackStack() },
                 onHubEditClick = { hubId -> navController.navigate(HubEditorRoute(hubId)) },
-                onNotificationsClick = { TODO("NotificationsRoute") }
+                onNotificationsClick = { TODO("NotificationsRoute") },
+                onSensorChartClick = { hubId, sensorType, hubName, currentValue ->
+                    navController.navigate(SensorChartRoute(hubId, sensorType, hubName, currentValue))
+                }
             )
         }
 
@@ -187,9 +193,15 @@ fun AppNavigation(
                     navController.navigate(WorkDetailRoute(workId, hiveName))
                 },
                 onNotificationsClick = { TODO("NotificationsRoute") },
-                onTemperatureClick = { TODO("TemperatureRoute") },
-                onNoiseClick = { TODO("NoiseRoute") },
-                onWeightClick = { TODO("WeightRoute") },
+                onTemperatureClick = { hubId, hubName, currentValue ->
+                    navController.navigate(SensorChartRoute(hubId, "temperature", hubName, currentValue))
+                },
+                onNoiseClick = { hubId, hubName, currentValue ->
+                    navController.navigate(SensorChartRoute(hubId, "noise", hubName, currentValue))
+                },
+                onWeightClick = { hubId, hubName, currentValue ->
+                    navController.navigate(SensorChartRoute(hubId, "weight", hubName, currentValue))
+                },
                 onHiveListClick = { navController.navigate(HivesListRoute) },
                 onHiveEditClick = { hiveName -> navController.navigate(HiveEditorRoute(hiveName)) }
             )
@@ -266,6 +278,14 @@ fun AppNavigation(
                 onEditClick = { workId, hiveId ->
                     navController.navigate(WorkEditorRoute(workId = workId, hiveId = hiveId))
                 },
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        animatedComposable<SensorChartRoute> {
+            val sensorChartViewModel: SensorChartViewModel = koinViewModel()
+            SensorChartScreen(
+                sensorChartViewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }

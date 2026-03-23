@@ -5,9 +5,9 @@ sealed interface HiveEvent {
     data class NavigateToQueenByHive(val queenName: String) : HiveEvent
     data class NavigateToWorkByHive(val hiveName: String) : HiveEvent
     data class NavigateToNotificationByHive(val hiveName: String) : HiveEvent
-    data class NavigateToTemperatureByHive(val hiveName: String) : HiveEvent
-    data class NavigateToNoiseByHive(val hiveName: String) : HiveEvent
-    data class NavigateToWeightByHive(val hiveName: String) : HiveEvent
+    data class NavigateToTemperatureByHive(val hubId: String, val hubName: String, val currentValue: Double?) : HiveEvent
+    data class NavigateToNoiseByHive(val hubId: String, val hubName: String, val currentValue: Double?) : HiveEvent
+    data class NavigateToWeightByHive(val hubId: String, val hubName: String, val currentValue: Double?) : HiveEvent
     data class NavigateToHiveEdit(val hiveName: String) : HiveEvent
     data class NavigateToWorkDetail(val workId: String, val hiveName: String) : HiveEvent
 

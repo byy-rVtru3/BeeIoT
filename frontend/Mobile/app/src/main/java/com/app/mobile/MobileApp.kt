@@ -13,6 +13,7 @@ import com.app.mobile.di.repository.hivesDataSourceModule
 import com.app.mobile.di.repository.hubRepositoryModule
 import com.app.mobile.di.repository.queenDataSourceModule
 import com.app.mobile.di.repository.repositoryApiModule
+import com.app.mobile.di.repository.telemetryRepositoryModule
 import com.app.mobile.di.repository.repositoryDatabaseModule
 import com.app.mobile.di.repository.userLocalRepositoryModule
 import com.app.mobile.di.repository.workLocalRepositoryModule
@@ -30,6 +31,7 @@ import com.app.mobile.di.screens.queenEditorModule
 import com.app.mobile.di.screens.queenListModule
 import com.app.mobile.di.screens.queenModule
 import com.app.mobile.di.screens.registrationModule
+import com.app.mobile.di.screens.sensorChartModule
 import com.app.mobile.di.screens.settingsModule
 import com.app.mobile.di.screens.workDetailModule
 import com.app.mobile.di.screens.workEditorModule
@@ -69,6 +71,7 @@ class MobileApp : Application() {
 				hivesDataSourceModule,
 				queenDataSourceModule,
 				hubRepositoryModule,
+				telemetryRepositoryModule,
 				hivesListModule,
 				hiveModule,
 				hiveEditorModule,
@@ -80,6 +83,7 @@ class MobileApp : Application() {
 				queenListModule,
 				workLocalRepositoryModule,
 				workDetailModule,
+				sensorChartModule,
 				workEditorModule,
 				workListModule,
 				notificationsModule,

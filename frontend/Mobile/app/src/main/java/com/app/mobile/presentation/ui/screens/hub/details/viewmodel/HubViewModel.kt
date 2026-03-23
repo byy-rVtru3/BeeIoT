@@ -49,4 +49,34 @@ class HubViewModel(
     fun onHubListClick() {
         sendEvent(HubEvent.NavigateToHubList)
     }
+
+    fun onTemperatureClick() {
+        val state = currentState as? HubUiState.Content ?: return
+        sendEvent(HubEvent.NavigateToSensorChart(
+            hubId = hubId,
+            sensorType = "temperature",
+            hubName = state.hub.name,
+            currentValue = state.hub.sensorReadings?.temperatureSensor?.temperature
+        ))
+    }
+
+    fun onNoiseClick() {
+        val state = currentState as? HubUiState.Content ?: return
+        sendEvent(HubEvent.NavigateToSensorChart(
+            hubId = hubId,
+            sensorType = "noise",
+            hubName = state.hub.name,
+            currentValue = state.hub.sensorReadings?.noiseSensor?.noise
+        ))
+    }
+
+    fun onWeightClick() {
+        val state = currentState as? HubUiState.Content ?: return
+        sendEvent(HubEvent.NavigateToSensorChart(
+            hubId = hubId,
+            sensorType = "weight",
+            hubName = state.hub.name,
+            currentValue = state.hub.sensorReadings?.weightSensor?.weight
+        ))
+    }
 }

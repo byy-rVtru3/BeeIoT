@@ -1,5 +1,6 @@
 package com.app.mobile.presentation.ui.screens.hive.details
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -51,9 +52,9 @@ fun HiveScreen(
 	onWorksClick: (hiveName: String) -> Unit,
 	onWorkDetailClick: (workId: String, hiveName: String) -> Unit,
 	onNotificationsClick: (hiveName: String) -> Unit,
-	onTemperatureClick: (hiveName: String) -> Unit,
-	onNoiseClick: (hiveName: String) -> Unit,
-	onWeightClick: (hiveName: String) -> Unit,
+	onTemperatureClick: (hubId: String, hubName: String, currentValue: Double?) -> Unit,
+	onNoiseClick: (hubId: String, hubName: String, currentValue: Double?) -> Unit,
+	onWeightClick: (hubId: String, hubName: String, currentValue: Double?) -> Unit,
 	onHiveListClick: () -> Unit,
 	onHiveEditClick: (hiveName: String) -> Unit
 ) {
@@ -71,9 +72,9 @@ fun HiveScreen(
 			is HiveEvent.NavigateToWorkByHive         -> onWorksClick(event.hiveName)
 			is HiveEvent.NavigateToWorkDetail         -> onWorkDetailClick(event.workId, event.hiveName)
 			is HiveEvent.NavigateToNotificationByHive -> onNotificationsClick(event.hiveName)
-			is HiveEvent.NavigateToTemperatureByHive  -> onTemperatureClick(event.hiveName)
-			is HiveEvent.NavigateToNoiseByHive        -> onNoiseClick(event.hiveName)
-			is HiveEvent.NavigateToWeightByHive       -> onWeightClick(event.hiveName)
+			is HiveEvent.NavigateToTemperatureByHive  -> onTemperatureClick(event.hubId, event.hubName, event.currentValue)
+			is HiveEvent.NavigateToNoiseByHive        -> onNoiseClick(event.hubId, event.hubName, event.currentValue)
+			is HiveEvent.NavigateToWeightByHive       -> onWeightClick(event.hubId, event.hubName, event.currentValue)
 			is HiveEvent.NavigateToHiveEdit           -> onHiveEditClick(event.hiveName)
 
 			is HiveEvent.ShowSnackBar                 -> {
@@ -193,21 +194,21 @@ private fun HiveContent(
 							value = temp,
 							modifier = Modifier
 								.weight(1.5f)
-//								.clickable { actions.onTemperatureClick() }
+								.clickable { actions.onTemperatureClick() }
 						)
 						InfoCard(
 							title = stringResource(R.string.label_noise),
 							value = noise,
 							modifier = Modifier
 								.weight(1f)
-//								.clickable { actions.onNoiseClick() }
+								.clickable { actions.onNoiseClick() }
 						)
 						InfoCard(
 							title = stringResource(R.string.label_weight),
 							value = weight,
 							modifier = Modifier
 								.weight(1f)
-//								.clickable { actions.onWeightClick() }
+								.clickable { actions.onWeightClick() }
 						)
 					}
 				}

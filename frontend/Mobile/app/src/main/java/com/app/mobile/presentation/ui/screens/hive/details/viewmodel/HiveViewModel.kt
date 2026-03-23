@@ -65,14 +65,41 @@ class HiveViewModel(
 
 	fun resetError() = loadHive()
 
-	fun onTemperatureClick() =
-		navigateWithName(HiveEvent::NavigateToTemperatureByHive)
+	fun onTemperatureClick() {
+		val state = currentState as? HiveUiState.Content ?: return
+		val hub = state.hive.hub ?: return
+		launch {
+			sendEvent(HiveEvent.NavigateToTemperatureByHive(
+				hubId = hub.id,
+				hubName = hub.name,
+				currentValue = hub.sensorReadings?.temperatureSensor?.temperature
+			))
+		}
+	}
 
-	fun onNoiseClick() =
-		navigateWithName(HiveEvent::NavigateToNoiseByHive)
+	fun onNoiseClick() {
+		val state = currentState as? HiveUiState.Content ?: return
+		val hub = state.hive.hub ?: return
+		launch {
+			sendEvent(HiveEvent.NavigateToNoiseByHive(
+				hubId = hub.id,
+				hubName = hub.name,
+				currentValue = hub.sensorReadings?.noiseSensor?.noise
+			))
+		}
+	}
 
-	fun onWeightClick() =
-		navigateWithName(HiveEvent::NavigateToWeightByHive)
+	fun onWeightClick() {
+		val state = currentState as? HiveUiState.Content ?: return
+		val hub = state.hive.hub ?: return
+		launch {
+			sendEvent(HiveEvent.NavigateToWeightByHive(
+				hubId = hub.id,
+				hubName = hub.name,
+				currentValue = hub.sensorReadings?.weightSensor?.weight
+			))
+		}
+	}
 
 	fun onNotificationsClick() =
 		navigateWithName(HiveEvent::NavigateToNotificationByHive)
