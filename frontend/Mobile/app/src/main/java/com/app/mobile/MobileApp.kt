@@ -18,6 +18,7 @@ import com.app.mobile.di.repository.repositoryDatabaseModule
 import com.app.mobile.di.repository.userLocalRepositoryModule
 import com.app.mobile.di.repository.workLocalRepositoryModule
 import com.app.mobile.di.screens.aboutAppModule
+import com.app.mobile.di.screens.homeModule
 import com.app.mobile.di.screens.accountInfoModule
 import com.app.mobile.di.screens.authorizationModule
 import com.app.mobile.di.screens.confirmationModule
@@ -86,6 +87,7 @@ class MobileApp : Application() {
 				sensorChartModule,
 				workEditorModule,
 				workListModule,
+				homeModule,
 				notificationsModule,
 				themeModule,
 				mainModule,

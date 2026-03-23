@@ -163,4 +163,10 @@
 	<string name="switch_to_dark_theme">Переключить на тёмную тему</string>
 	<string name="switch_to_light_theme">Переключить на дневную тему</string>
 
+	<!-- Home Screen -->
+	<string name="home_section_hives">Мои ульи:</string>
+	<string name="home_section_queens">Мои матки:</string>
+	<string name="home_section_hubs">Мои хабы:</string>
+	<string name="home_section_works">Мои работы:</string>
+
 </resources>
