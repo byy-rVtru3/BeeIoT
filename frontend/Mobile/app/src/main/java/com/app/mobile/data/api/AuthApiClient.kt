@@ -27,6 +27,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.HTTP
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Query
@@ -59,7 +60,7 @@ interface AuthApiClient {
     @PUT("hive/update")
     suspend fun updateHive(@Body request: UpdateHiveRequest): Response<ResponseApiModel>
 
-    @DELETE("hive/delete")
+    @HTTP(method = "DELETE", path = "hive/delete", hasBody = true)
     suspend fun deleteHive(@Body request: DeleteHiveRequest): Response<ResponseApiModel>
 
     @POST("hive/link/hub")
@@ -82,7 +83,7 @@ interface AuthApiClient {
     @PUT("hub/update")
     suspend fun updateHub(@Body request: UpdateHubRequest): Response<ResponseApiModel>
 
-    @DELETE("hub/delete")
+    @HTTP(method = "DELETE", path = "hub/delete", hasBody = true)
     suspend fun deleteHub(@Body request: DeleteHubRequest): Response<ResponseApiModel>
 
     // --- Telemetry ---
@@ -125,6 +126,6 @@ interface AuthApiClient {
     @PUT("queen/update")
     suspend fun updateQueen(@Body request: UpdateQueenRequest): Response<ResponseApiModel>
 
-    @DELETE("queen/delete")
+    @HTTP(method = "DELETE", path = "queen/delete", hasBody = true)
     suspend fun deleteQueen(@Body request: DeleteQueenRequest): Response<ResponseApiModel>
 }
