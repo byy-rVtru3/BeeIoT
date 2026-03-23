@@ -1,5 +1,9 @@
 package com.app.mobile.presentation.ui.screens.main
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,6 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.app.mobile.presentation.ui.screens.settings.NotificationBottomSheet
 import com.app.mobile.R
 import com.app.mobile.domain.models.hives.HiveDomainPreview
 import com.app.mobile.domain.models.hives.HubDomain
@@ -66,6 +71,16 @@ fun HomeScreen(
     val state by homeViewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing = (state as? HomeUiState.Content)?.isRefreshing ?: false
 
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            homeViewModel.onAcceptNotificationPrompt()
+        } else {
+            homeViewModel.onDeclineNotificationPrompt()
+        }
+    }
+
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         homeViewModel.loadData()
     }
@@ -77,6 +92,19 @@ fun HomeScreen(
             is HomeEvent.NavigateToHub   -> onHubClick(event.hubId)
             is HomeEvent.NavigateToWork  -> onWorkClick(event.workId, event.hiveId)
         }
+    }
+
+    if ((state as? HomeUiState.Content)?.showNotificationPrompt == true) {
+        NotificationBottomSheet(
+            onEnableClick = {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    homeViewModel.onAcceptNotificationPrompt()
+                }
+            },
+            onDeclineClick = homeViewModel::onDeclineNotificationPrompt
+        )
     }
 
     PullToRefreshBox(

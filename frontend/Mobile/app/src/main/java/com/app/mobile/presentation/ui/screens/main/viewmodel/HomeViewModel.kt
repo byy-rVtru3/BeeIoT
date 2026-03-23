@@ -7,6 +7,9 @@ import com.app.mobile.domain.usecase.hives.hive.GetHivesPreviewUseCase
 import com.app.mobile.domain.usecase.hives.hub.GetHubsUseCase
 import com.app.mobile.domain.usecase.hives.queen.GetQueensUseCase
 import com.app.mobile.domain.usecase.hives.works.GetWorksUseCase
+import com.app.mobile.domain.usecase.notifications.CheckIfNotificationPromptShownUseCase
+import com.app.mobile.domain.usecase.notifications.SendPushTokenUseCase
+import com.app.mobile.domain.usecase.notifications.SetNotificationPromptShownUseCase
 import com.app.mobile.presentation.ui.components.BaseViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -15,7 +18,10 @@ class HomeViewModel(
     private val getHivesPreviewUseCase: GetHivesPreviewUseCase,
     private val getQueensUseCase: GetQueensUseCase,
     private val getHubsUseCase: GetHubsUseCase,
-    private val getWorksUseCase: GetWorksUseCase
+    private val getWorksUseCase: GetWorksUseCase,
+    private val checkIfNotificationPromptShownUseCase: CheckIfNotificationPromptShownUseCase,
+    private val setNotificationPromptShownUseCase: SetNotificationPromptShownUseCase,
+    private val sendPushTokenUseCase: SendPushTokenUseCase
 ) : BaseViewModel<HomeUiState, HomeEvent>(HomeUiState.Loading) {
 
     override fun handleError(exception: Throwable) {
@@ -59,6 +65,11 @@ class HomeViewModel(
                     .sortedByDescending { it.dateTime }
 
                 updateState { HomeUiState.Content(hives, queens, hubs, allWorks) }
+                val shouldShowPrompt = !checkIfNotificationPromptShownUseCase()
+                val contentState = currentState as? HomeUiState.Content ?: return@launch
+                if (shouldShowPrompt) {
+                    updateState { contentState.copy(showNotificationPrompt = true) }
+                }
             } else {
                 val errorResult = listOf(hivesResult, queensResult, hubsResult)
                     .firstOrNull { it !is ApiResult.Success }
@@ -83,5 +94,22 @@ class HomeViewModel(
 
     fun onWorkClick(workId: String, hiveId: String) {
         sendEvent(HomeEvent.NavigateToWork(workId, hiveId))
+    }
+
+    fun onAcceptNotificationPrompt() {
+        val state = currentState as? HomeUiState.Content ?: return
+        updateState { state.copy(showNotificationPrompt = false) }
+        launch {
+            setNotificationPromptShownUseCase(true)
+            sendPushTokenUseCase()
+        }
+    }
+
+    fun onDeclineNotificationPrompt() {
+        val state = currentState as? HomeUiState.Content ?: return
+        updateState { state.copy(showNotificationPrompt = false) }
+        launch {
+            setNotificationPromptShownUseCase(false)
+        }
     }
 }

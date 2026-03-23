@@ -2,7 +2,6 @@ package com.app.mobile.presentation.ui.screens.settings.viewmodel
 
 sealed interface SettingsUiState {
 	data class Content(
-		val showNotificationPrompt: Boolean = false,
 		val isDarkTheme: Boolean = false
 	) : SettingsUiState
 	data object Loading : SettingsUiState
