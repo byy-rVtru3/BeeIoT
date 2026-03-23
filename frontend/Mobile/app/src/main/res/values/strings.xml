@@ -34,6 +34,7 @@
 
     <string name="hive_name">Название улья</string>
     <string name="add">Добавить</string>
+    <string name="ok">ОК</string>
     <string name="cancel">Отмена</string>
     <string name="empty_hives_list_screen">Пока нету ульев, чтобы добавить улей нажмите на кнопку "Добавить улей"</string>
     <string name="empty_queens_list_screen">Пока нету маток, чтобы добавить матку нажмите на кнопку "Добавить матку"</string>
@@ -85,6 +86,16 @@
     <string name="sensor_temperature_format">%1$s°C</string>
     <string name="sensor_noise_format">%1$s дБ</string>
     <string name="sensor_weight_format">%1$s кг</string>
+    <string name="chart_title_temperature">Температура улья</string>
+    <string name="chart_title_noise">Шум в улье</string>
+    <string name="chart_title_weight">Вес улья</string>
+    <string name="chart_no_data">Нет данных для отображения</string>
+    <string name="chart_current_temperature">Температура сейчас:</string>
+    <string name="chart_current_noise">Шум сейчас:</string>
+    <string name="chart_current_weight">Вес сейчас:</string>
+    <string name="chart_period_temperature">Температура за период с:</string>
+    <string name="chart_period_noise">Шум за период с:</string>
+    <string name="chart_period_weight">Вес за период с:</string>
     <string name="label_ip_address">IP адрес:</string>
     <string name="label_port">Порт:</string>
     <string name="edit">Редактировать</string>
@@ -107,13 +118,18 @@
     <string name="available_hubs">Доступные хабы:</string>
     <string name="available_queens">Доступные матки:</string>
     <string name="save">Сохранить</string>
+    <string name="add_weight_record">Внести показание</string>
+    <string name="add_weight_title">Внести показание веса</string>
+    <string name="weight_value_label">Значение веса</string>
+    <string name="weight_value_placeholder">Введите вес (кг)</string>
+    <string name="weight_date_time_label">Дата и время</string>
+    <string name="weight_added_success">Показание успешно добавлено</string>
 
     <!-- Strings for QueenEditorScreen -->
     <string name="queen_edit_title">Добавление матки</string>
     <string name="queen_name_label">Имя матки</string>
     <string name="queen_name_placeholder">Введите имя матки</string>
     <string name="birth_date_label">Дата рождения</string>
-    <string name="ok">ОК</string>
     <string name="available_hives">Доступные ульи</string>
 
     <!-- Works (Работы) -->
