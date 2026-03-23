@@ -5,5 +5,5 @@ import com.app.mobile.presentation.models.queen.QueenUiModel
 sealed interface QueenUiState {
     object Loading : QueenUiState
     data class Error(val message: String) : QueenUiState
-    data class Content(val queen: QueenUiModel, val fromHiveName: String? = null) : QueenUiState
+    data class Content(val queen: QueenUiModel, val fromHiveName: String? = null, val isRefreshing: Boolean = false) : QueenUiState
 }

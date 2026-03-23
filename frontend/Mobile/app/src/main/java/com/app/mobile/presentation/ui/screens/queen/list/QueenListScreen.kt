@@ -8,8 +8,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -83,6 +85,8 @@ fun QueenListScreen(
 
 			QueenListContent(
 				queens = contentList,
+				isRefreshing = state.isRefreshing,
+				onRefresh = queenListViewModel::refresh,
 				snackbarHostState = snackbarHostState,
 				actions = actions,
 				selectedTab = selectedTab,
@@ -92,9 +96,12 @@ fun QueenListScreen(
 	}
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QueenListContent(
 	queens: List<QueenPreviewModel>,
+	isRefreshing: Boolean,
+	onRefresh: () -> Unit,
 	snackbarHostState: SnackbarHostState,
 	actions: QueenListActions,
 	selectedTab: Int,
@@ -114,27 +121,33 @@ fun QueenListContent(
         fabContentDescription = stringResource(R.string.add_queen),
         onFabClick = actions.onAddClick
     ) { innerPadding ->
-        when (selectedTab) {
-            0 -> {
-                if (queens.isNotEmpty()) {
-                    QueensList(
-                        queens = queens,
-                        actions = actions,
-                        modifier = innerPadding
-                    )
-                } else {
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            when (selectedTab) {
+                0 -> {
+                    if (queens.isNotEmpty()) {
+                        QueensList(
+                            queens = queens,
+                            actions = actions,
+                            modifier = innerPadding
+                        )
+                    } else {
+                        EmptyStub(
+                            text = stringResource(R.string.empty_queens_list_screen),
+                            modifier = innerPadding
+                        )
+                    }
+                }
+                1 -> {
+                    // Заглушка для архива
                     EmptyStub(
-                        text = stringResource(R.string.empty_queens_list_screen),
+                        text = stringResource(R.string.empty_archive_list_screen),
                         modifier = innerPadding
                     )
                 }
-            }
-            1 -> {
-                // Заглушка для архива
-                EmptyStub(
-                    text = stringResource(R.string.empty_archive_list_screen),
-                    modifier = innerPadding
-                )
             }
         }
     }

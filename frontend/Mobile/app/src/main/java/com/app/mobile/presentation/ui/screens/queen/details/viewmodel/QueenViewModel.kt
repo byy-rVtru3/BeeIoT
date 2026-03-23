@@ -43,6 +43,22 @@ class QueenViewModel(
         }
     }
 
+    fun refresh() {
+        val current = currentState as? QueenUiState.Content ?: return
+        updateState { current.copy(isRefreshing = true) }
+        launch {
+            when (val result = getQueenUseCase(queenName)) {
+                is ApiResult.Success -> {
+                    updateState { QueenUiState.Content(result.data.toUiModel(), fromHiveName) }
+                }
+                else -> {
+                    updateState { current.copy(isRefreshing = false) }
+                    sendEvent(QueenEvent.ShowSnackBar(result.toErrorMessage()))
+                }
+            }
+        }
+    }
+
     fun resetError() = getQueen()
 
     fun onEditQueenClick() {

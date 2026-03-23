@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +36,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -65,6 +67,7 @@ import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenViewM
 import com.app.mobile.ui.theme.Alpha
 import com.app.mobile.ui.theme.Dimens
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QueenScreen(
 	queenViewModel: QueenViewModel,
@@ -74,6 +77,7 @@ fun QueenScreen(
 ) {
 	val queenUiState by queenViewModel.uiState.collectAsStateWithLifecycle()
 	val snackbarHostState = remember { SnackbarHostState() }
+	val isRefreshing = (queenUiState as? QueenUiState.Content)?.isRefreshing ?: false
 
 	LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
 		queenViewModel.getQueen()
@@ -94,20 +98,25 @@ fun QueenScreen(
 		}
 	}
 
-	when (val state = queenUiState) {
-		is QueenUiState.Loading -> FullScreenProgressIndicator()
-		is QueenUiState.Error   -> ErrorMessage(state.message, onRetry = queenViewModel::resetError)
+	PullToRefreshBox(
+		isRefreshing = isRefreshing,
+		onRefresh = queenViewModel::refresh
+	) {
+		when (val state = queenUiState) {
+			is QueenUiState.Loading -> FullScreenProgressIndicator()
+			is QueenUiState.Error   -> ErrorMessage(state.message, onRetry = queenViewModel::resetError)
 
-		is QueenUiState.Content -> {
-			QueenContent(
-				queen = state.queen,
-				fromHiveName = state.fromHiveName,
-				snackbarHostState,
-				onEditClick = { queenViewModel.onEditQueenClick() },
-				onHiveClick = { queenViewModel.onHiveClick() },
-				onDeleteClick = queenViewModel::onDeleteClick,
-				onBackClick = onBackClick
-			)
+			is QueenUiState.Content -> {
+				QueenContent(
+					queen = state.queen,
+					fromHiveName = state.fromHiveName,
+					snackbarHostState,
+					onEditClick = { queenViewModel.onEditQueenClick() },
+					onHiveClick = { queenViewModel.onHiveClick() },
+					onDeleteClick = queenViewModel::onDeleteClick,
+					onBackClick = onBackClick
+				)
+			}
 		}
 	}
 }

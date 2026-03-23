@@ -31,6 +31,15 @@ class WorksListViewModel(
 		}
 	}
 
+	fun refresh() {
+		val current = currentState as? WorksListUiState.Content ?: return
+		updateState { current.copy(isRefreshing = true) }
+		launch {
+			val works = getWorksUseCase(hiveId).map { it.toUiModel() }
+			updateState { WorksListUiState.Content(works) }
+		}
+	}
+
 	fun resetError() = loadWorks()
 
 	fun onCreateClick() {

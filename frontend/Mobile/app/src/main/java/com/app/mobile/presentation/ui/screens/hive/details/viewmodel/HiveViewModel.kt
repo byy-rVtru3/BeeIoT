@@ -65,6 +65,38 @@ class HiveViewModel(
 		}
 	}
 
+	fun refresh() {
+		val current = currentState as? HiveUiState.Content ?: return
+		updateState { current.copy(isRefreshing = true) }
+		launch {
+			val hiveDeferred = async { getHiveScenario(hiveName) }
+			val worksDeferred = async { getWorksUseCase(hiveName) }
+			when (val result = hiveDeferred.await()) {
+				is ApiResult.Success -> {
+					val hive = result.data
+					val recentWorks = worksDeferred.await()
+						.sortedByDescending { it.dateTime }
+						.take(2)
+						.map { it.toUiModel() }
+					updateState {
+						HiveUiState.Content(
+							HiveUi(
+								name = hive.name,
+								hub = hive.hub?.toUiModel(),
+								queen = hive.queen?.toPreviewModel(),
+								recentWorks = recentWorks,
+							)
+						)
+					}
+				}
+				else -> {
+					updateState { current.copy(isRefreshing = false) }
+					sendEvent(HiveEvent.ShowSnackBar(result.toErrorMessage()))
+				}
+			}
+		}
+	}
+
 	fun resetError() = loadHive()
 
 	fun onTemperatureClick() {

@@ -11,11 +11,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -45,6 +47,7 @@ import com.app.mobile.presentation.ui.screens.hive.details.viewmodel.HiveUiState
 import com.app.mobile.presentation.ui.screens.hive.details.viewmodel.HiveViewModel
 import com.app.mobile.ui.theme.Dimens
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HiveScreen(
 	hiveViewModel: HiveViewModel,
@@ -60,6 +63,7 @@ fun HiveScreen(
 ) {
 	val hiveUiState by hiveViewModel.uiState.collectAsStateWithLifecycle()
 	val snackbarHostState = remember { SnackbarHostState() }
+	val isRefreshing = (hiveUiState as? HiveUiState.Content)?.isRefreshing ?: false
 
 	LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
 		hiveViewModel.loadHive()
@@ -86,33 +90,38 @@ fun HiveScreen(
 		}
 	}
 
-	when (val state = hiveUiState) {
-		is HiveUiState.Loading -> FullScreenProgressIndicator()
+	PullToRefreshBox(
+		isRefreshing = isRefreshing,
+		onRefresh = hiveViewModel::refresh
+	) {
+		when (val state = hiveUiState) {
+			is HiveUiState.Loading -> FullScreenProgressIndicator()
 
-		is HiveUiState.Error   -> ErrorMessage(
-			message = state.message,
-			onRetry = hiveViewModel::resetError
-		)
+			is HiveUiState.Error   -> ErrorMessage(
+				message = state.message,
+				onRetry = hiveViewModel::resetError
+			)
 
-		is HiveUiState.Content -> {
-			val actions = HiveActions(
-				onQueenClick = hiveViewModel::onQueenClick,
-				onWorkClick = hiveViewModel::onWorksClick,
-				onNotificationClick = hiveViewModel::onNotificationsClick,
-				onTemperatureClick = hiveViewModel::onTemperatureClick,
-				onNoiseClick = hiveViewModel::onNoiseClick,
-				onWeightClick = hiveViewModel::onWeightClick,
-				onHiveListClick = hiveViewModel::onHiveListClick,
-				onHiveEditClick = hiveViewModel::onHiveEditClick,
-				onDeleteClick = hiveViewModel::onDeleteClick
-			)
-			HiveContent(
-				hive = state.hive,
-				snackbarHostState = snackbarHostState,
-				actions = actions,
-				onWorkClick = hiveViewModel::onWorkClick,
-				onBackClick = onHiveListClick
-			)
+			is HiveUiState.Content -> {
+				val actions = HiveActions(
+					onQueenClick = hiveViewModel::onQueenClick,
+					onWorkClick = hiveViewModel::onWorksClick,
+					onNotificationClick = hiveViewModel::onNotificationsClick,
+					onTemperatureClick = hiveViewModel::onTemperatureClick,
+					onNoiseClick = hiveViewModel::onNoiseClick,
+					onWeightClick = hiveViewModel::onWeightClick,
+					onHiveListClick = hiveViewModel::onHiveListClick,
+					onHiveEditClick = hiveViewModel::onHiveEditClick,
+					onDeleteClick = hiveViewModel::onDeleteClick
+				)
+				HiveContent(
+					hive = state.hive,
+					snackbarHostState = snackbarHostState,
+					actions = actions,
+					onWorkClick = hiveViewModel::onWorkClick,
+					onBackClick = onHiveListClick
+				)
+			}
 		}
 	}
 }

@@ -45,5 +45,19 @@ class QueenListViewModel(
         }
     }
 
+    fun refresh() {
+        val current = currentState as? QueenListUiState.Content ?: return
+        updateState { current.copy(isRefreshing = true) }
+        launch {
+            when (val result = getQueensUseCase()) {
+                is ApiResult.Success -> {
+                    val queens = result.data.map { it.toPreviewModel() }
+                    updateState { QueenListUiState.Content(queens) }
+                }
+                else -> updateState { QueenListUiState.Error(result.toErrorMessage()) }
+            }
+        }
+    }
+
     fun resetError() = loadQueens()
 }

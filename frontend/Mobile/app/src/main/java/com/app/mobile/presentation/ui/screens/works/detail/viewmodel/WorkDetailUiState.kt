@@ -5,5 +5,5 @@ import com.app.mobile.presentation.models.hive.WorkUi
 sealed interface WorkDetailUiState {
     data object Loading : WorkDetailUiState
     data class Error(val message: String) : WorkDetailUiState
-    data class Content(val work: WorkUi) : WorkDetailUiState
+    data class Content(val work: WorkUi, val isRefreshing: Boolean = false) : WorkDetailUiState
 }

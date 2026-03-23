@@ -36,6 +36,22 @@ class HubViewModel(
         }
     }
 
+    fun refresh() {
+        val current = currentState as? HubUiState.Content ?: return
+        updateState { current.copy(isRefreshing = true) }
+        launch {
+            when (val result = getHubWithSensorsUseCase(hubId)) {
+                is ApiResult.Success -> {
+                    updateState { HubUiState.Content(result.data.toUiModel()) }
+                }
+                else -> {
+                    updateState { current.copy(isRefreshing = false) }
+                    sendEvent(HubEvent.ShowSnackBar(result.toErrorMessage()))
+                }
+            }
+        }
+    }
+
     fun resetError() {
         loadHub()
     }

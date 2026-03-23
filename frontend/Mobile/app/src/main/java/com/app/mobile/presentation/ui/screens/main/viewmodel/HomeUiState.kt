@@ -12,6 +12,7 @@ sealed interface HomeUiState {
         val hives: List<HiveDomainPreview>,
         val queens: List<QueenDomainPreview>,
         val hubs: List<HubDomain>,
-        val works: List<WorkDomain>
+        val works: List<WorkDomain>,
+        val isRefreshing: Boolean = false
     ) : HomeUiState
 }

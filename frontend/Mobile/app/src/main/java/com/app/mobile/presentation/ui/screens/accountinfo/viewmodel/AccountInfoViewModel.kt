@@ -37,6 +37,20 @@ class AccountInfoViewModel(
 		}
 	}
 
+	fun refresh() {
+		val current = currentState as? AccountInfoUiState.Content ?: return
+		updateState { current.copy(isRefreshing = true) }
+		launch {
+			val user = getAccountInfoUseCase()?.toPresentation()
+			if (user != null) {
+				updateState { AccountInfoUiState.Content(user) }
+			} else {
+				updateState { current.copy(isRefreshing = false) }
+				sendEvent(AccountInfoEvent.ShowSnackBar("Ошибка загрузки данных"))
+			}
+		}
+	}
+
 	fun resetError() = getAccountInfo()
 
 	fun onNameClick() {
