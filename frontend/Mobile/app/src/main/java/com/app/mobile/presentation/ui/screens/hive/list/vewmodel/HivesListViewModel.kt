@@ -43,6 +43,24 @@ class HivesListViewModel(
         }
     }
 
+    fun refresh() {
+        val current = currentState as? HivesListUiState.Content ?: return
+        updateState { current.copy(isRefreshing = true) }
+        launch {
+            when (val result = getHivesPreviewUseCase()) {
+                is ApiResult.Success -> {
+                    val hives = result.data.map { it.toHivePreview() }
+                    if (hives.isEmpty()) {
+                        updateState { HivesListUiState.Empty }
+                    } else {
+                        updateState { HivesListUiState.Content(hives) }
+                    }
+                }
+                else -> updateState { HivesListUiState.Error(result.toErrorMessage()) }
+            }
+        }
+    }
+
     fun onRetry() {
         loadHives()
     }

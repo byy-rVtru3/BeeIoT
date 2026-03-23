@@ -36,6 +36,19 @@ class WorkDetailViewModel(
         }
     }
 
+    fun refresh() {
+        val current = currentState as? WorkDetailUiState.Content ?: return
+        updateState { current.copy(isRefreshing = true) }
+        launch {
+            val work = getWorkUseCase(workId)
+            if (work != null) {
+                updateState { WorkDetailUiState.Content(work.toUiModel()) }
+            } else {
+                updateState { current.copy(isRefreshing = false) }
+            }
+        }
+    }
+
     fun resetError() = loadWork()
 
     fun onEditClick() {

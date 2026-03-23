@@ -25,6 +25,16 @@ class HomeViewModel(
 
     fun loadData() {
         updateState { HomeUiState.Loading }
+        fetchData()
+    }
+
+    fun refresh() {
+        val current = currentState as? HomeUiState.Content ?: return
+        updateState { current.copy(isRefreshing = true) }
+        fetchData()
+    }
+
+    private fun fetchData() {
         launch {
             val hivesDeferred = async { getHivesPreviewUseCase() }
             val queensDeferred = async { getQueensUseCase() }
