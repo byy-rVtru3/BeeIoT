@@ -55,6 +55,9 @@ func (m *Client) handleDeviceData(_ mqtt.Client, msg mqtt.Message) {
 		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to get hive name")
 		return
 	}
+	if err := m.checkNoiseLevel(ctx, email, hiveName, data); err != nil {
+		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to check noise level")
+	}
 	hubSensor, err := m.db.GetHubSensorByHive(ctx, email, hiveName)
 	if err != nil {
 		m.logger.Warn().Err(err).Str("topic", topic).Str("hive", hiveName).Msg("Hive has no hub, skipping telemetry storage")
@@ -146,8 +149,10 @@ func (m *Client) publishJSON(client mqtt.Client, topic string, qos byte, retaine
 }
 
 const (
-	batteryLowThreshold = 20
-	signalLowThreshold  = 10
+	batteryLowThreshold   = 20
+	signalLowThreshold    = 10
+	noiseHighThreshold    = 50
+	defaultSamplingPeriod = 5 // seconds
 )
 
 func (m *Client) handlingStatusData(data mqttTypes.DeviceStatus, sensorId string) {
@@ -164,6 +169,22 @@ func (m *Client) handlingStatusData(data mqttTypes.DeviceStatus, sensorId string
 			m.logger.Error().Err(err).Str("sensor", sensorId).Msg("Failed to set sensor")
 			return
 		}
+		// Новый датчик — отправляем начальный конфиг с интервалом defaultSamplingPeriod сек
+		go func() {
+			cfg := mqttTypes.DeviceConfig{
+				SamplingNoise: defaultSamplingPeriod,
+				SamplingTemp:  defaultSamplingPeriod,
+				Restart:       false,
+				Health:        false,
+				Frequency:     defaultSamplingPeriod,
+				Delete:        false,
+			}
+			if sendErr := m.SendConfig(sensorId, cfg); sendErr != nil {
+				m.logger.Warn().Err(sendErr).Str("sensor", sensorId).Msg("Failed to send initial config to new sensor")
+			} else {
+				m.logger.Info().Str("sensor", sensorId).Int("sampling_period_s", defaultSamplingPeriod).Msg("Sent initial config to new sensor")
+			}
+		}()
 	}
 
 	if err = m.inMemDb.UpdateSensorTimestamp(ctx, sensorId, data.Timestamp); err != nil {
@@ -274,6 +295,36 @@ func (m *Client) checkErrors(ctx context.Context, sensorId string, data mqttType
 		return err
 	case err != nil:
 		return fmt.Errorf("failed to send notification: %w", err)
+	}
+	return nil
+}
+
+// checkNoiseLevel отправляет уведомление приложению, если уровень шума превышает noiseHighThreshold дБ.
+func (m *Client) checkNoiseLevel(ctx context.Context, email, hive string, data mqttTypes.DeviceData) error {
+	if data.Noise == -1 || data.Noise <= noiseHighThreshold {
+		return nil
+	}
+	tokens, err := m.db.GetFirebaseToken(ctx, email)
+	if err != nil {
+		return err
+	}
+	if m.notification == nil {
+		return nil
+	}
+	badToken, err := m.notification.SendNotification(ctx, notification.Data{
+		Title: fmt.Sprintf("Высокий уровень шума в улье %s", hive),
+		Body: fmt.Sprintf("Зафиксирован уровень шума %.1f дБ, превышающий допустимый порог (%d дБ). Пожалуйста, проверьте состояние улья.",
+			data.Noise, noiseHighThreshold),
+		Data:      map[string]string{"hive": hive},
+		Tokens:    tokens,
+		Important: true,
+	})
+	switch {
+	case errors.Is(err, notification.ErrInvalidTokens):
+		err = m.db.DeleteFirebaseToken(ctx, email, badToken)
+		return err
+	case err != nil:
+		return fmt.Errorf("failed to send noise notification: %w", err)
 	}
 	return nil
 }
