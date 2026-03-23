@@ -36,6 +36,7 @@ type DB interface {
 	GetHubs(ctx context.Context, email string) ([]dbTypes.Hub, error)
 	GetHubBySensor(ctx context.Context, email, sensor string) (dbTypes.Hub, error)
 	GetHubSensorByHive(ctx context.Context, email, hiveName string) (string, error)
+	GetEmailByHubSensor(ctx context.Context, hubSensor string) (string, error)
 	DeleteHub(ctx context.Context, email, nameHub string) error
 	UpdateHub(ctx context.Context, email string, data httpType.UpdateHub) error
 

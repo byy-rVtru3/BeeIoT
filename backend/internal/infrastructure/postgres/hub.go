@@ -70,6 +70,16 @@ func (d *Postgres) GetHubSensorByHive(ctx context.Context, email, hiveName strin
 	return sensor, nil
 }
 
+func (d *Postgres) GetEmailByHubSensor(ctx context.Context, hubSensor string) (string, error) {
+	q := `SELECT email FROM hubs WHERE sensor = $1`
+	var email string
+	err := d.pull.QueryRow(ctx, q, hubSensor).Scan(&email)
+	if err != nil {
+		return "", fmt.Errorf("failed to get email by hub sensor: %w", err)
+	}
+	return email, nil
+}
+
 func (d *Postgres) UpdateHub(ctx context.Context, email string, data httpType.UpdateHub) error {
 	if data.Name == nil {
 		return nil // Nothing to update

@@ -63,12 +63,24 @@ type MockDB struct {
 	GetEmailHiveBySensorIDResultEmail string
 	GetEmailHiveBySensorIDResultHive  string
 	GetEmailHiveBySensorIDError       error
+	GetHubSensorByHiveResult          string
+	GetHubSensorByHiveError           error
+	GetEmailByHubSensorResult         string
+	GetEmailByHubSensorError          error
 	NewNoiseError                     error
 	NewTemperatureError               error
 }
 
 func (m *MockDB) GetEmailHiveBySensorID(_ context.Context, _ string) (string, string, error) {
 	return m.GetEmailHiveBySensorIDResultEmail, m.GetEmailHiveBySensorIDResultHive, m.GetEmailHiveBySensorIDError
+}
+
+func (m *MockDB) GetHubSensorByHive(_ context.Context, _, _ string) (string, error) {
+	return m.GetHubSensorByHiveResult, m.GetHubSensorByHiveError
+}
+
+func (m *MockDB) GetEmailByHubSensor(_ context.Context, _ string) (string, error) {
+	return m.GetEmailByHubSensorResult, m.GetEmailByHubSensorError
 }
 
 func (m *MockDB) NewNoise(_ context.Context, _ httpType.NoiseLevel) error {
@@ -156,7 +168,7 @@ func (m *MockMqttClient) Publish(_ string, _ byte, _ bool, _ interface{}) mqtt.T
 func TestHandleDeviceData(t *testing.T) {
 	logger := zerolog.Nop()
 	inMem := &MockInMemoryDB{ExistSensorResult: true}
-	db := &MockDB{GetEmailHiveBySensorIDResultEmail: "test@test.com", GetEmailHiveBySensorIDResultHive: "Hive1"}
+	db := &MockDB{GetEmailHiveBySensorIDResultEmail: "test@test.com", GetEmailHiveBySensorIDResultHive: "Hive1", GetHubSensorByHiveResult: "sensor123"}
 
 	client := &Client{inMemDb: inMem, db: db, logger: logger}
 
@@ -425,7 +437,7 @@ func TestHandlingStatusData_SensorNotExist_SetSensorCalled(t *testing.T) {
 	logger := zerolog.Nop()
 	inMem := &MockInMemoryDB{ExistSensorResult: false}
 	db := &MockDB{GetEmailHiveBySensorIDResultEmail: "e@e", GetEmailHiveBySensorIDResultHive: "H"}
-	client := &Client{logger: logger, inMemDb: inMem, db: db}
+	client := &Client{logger: logger, inMemDb: inMem, db: db, client: &MockMqttClient{}}
 
 	client.handlingStatusData(mqttTypes.DeviceStatus{Timestamp: time.Now().Unix(), BatteryLevel: 100, SignalStrength: 100}, "s-new")
 

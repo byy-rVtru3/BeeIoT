@@ -52,7 +52,19 @@ func (m *Client) handleDeviceData(_ mqtt.Client, msg mqtt.Message) {
 	}
 	email, hiveName, err := m.db.GetEmailHiveBySensorID(ctx, sensorId)
 	if err != nil {
-		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to get hive name")
+		// Датчик не привязан к улью — пробуем найти email через hub напрямую
+		m.logger.Warn().Str("topic", topic).Str("sensor", sensorId).Msg("Sensor not linked to hive, trying hub lookup")
+		email, err = m.db.GetEmailByHubSensor(ctx, sensorId)
+		if err != nil {
+			m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to find hub by sensor ID")
+			return
+		}
+		if err := m.addNoise(ctx, email, sensorId, data); err != nil {
+			m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to add noise")
+		}
+		if err := m.addTemperature(ctx, email, sensorId, data); err != nil {
+			m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to add temperature")
+		}
 		return
 	}
 	if err := m.checkNoiseLevel(ctx, email, hiveName, data); err != nil {
