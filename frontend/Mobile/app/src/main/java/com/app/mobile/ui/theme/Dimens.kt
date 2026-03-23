@@ -159,4 +159,10 @@ object Dimens {
     // --- Selection Grid ---
     val SelectionGridItemHeight = Size80
     val SelectionGridItemMinWidth = Size100
+
+    // --- Home Screen Cards ---
+    val HiveCardWidth = 180.dp
+    val HiveCardHeight = 80.dp
+    val HubCardWidth = 150.dp
+    val HubCardHeight = Size60
 }
