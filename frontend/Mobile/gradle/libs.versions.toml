@@ -25,6 +25,7 @@ dataStore = "1.2.0"
 materialIconsExtendedAndroid = "1.7.8"
 googleGms = "4.4.4"
 workManager = "2.11.1"
+vico = "2.1.2"
 
 [libraries]
 #Worker
@@ -80,6 +81,9 @@ androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-co
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 
+
+# Charts - Vico
+vico-compose-m3 = { module = "com.patrykandpatrick.vico:compose-m3", version.ref = "vico" }
 
 # Debugging & Tooling
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
