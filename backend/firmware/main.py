@@ -14,6 +14,7 @@ import machine
 import utime
 import ujson
 import gc
+import urandom
 
 import config
 from sensors.temperature import TemperatureSensor
@@ -62,7 +63,9 @@ def _apply_config(cfg: dict) -> None:
 
         if cfg.get("sampling_rate_noise", -1) != -1:
             config.DEFAULT_SAMPLING_NOISE = cfg["sampling_rate_noise"]
-            _log("sampling_rate_noise → {}".format(config.DEFAULT_SAMPLING_NOISE))
+            config.DEEP_SLEEP_DURATION_MS = config.DEFAULT_SAMPLING_NOISE * 1_000
+            _log("sampling_rate_noise → {} (deep_sleep → {} ms)".format(
+                config.DEFAULT_SAMPLING_NOISE, config.DEEP_SLEEP_DURATION_MS))
 
         if cfg.get("sampling_rate_temperature", -1) != -1:
             config.DEFAULT_SAMPLING_TEMP = cfg["sampling_rate_temperature"]
@@ -151,9 +154,11 @@ def run() -> None:
         }
 
         # Статус — строго по формату docs/sensor_communication.md
+        # battery_level: замоканное значение 80% (ADC батареи не подключён)
+        # signal_strength: замоканное случайное значение 70–95% (обновится ниже)
         status_payload = {
-            "battery_level":   -1,    # ADC батареи не подключён
-            "signal_strength": -1,    # Обновится после power_on
+            "battery_level":   80,
+            "signal_strength": 70 + (urandom.getrandbits(6) % 26),
             "timestamp":       now,
             "errors":          errors,
         }
@@ -171,10 +176,6 @@ def run() -> None:
             _log("Сеть недоступна — сохраняем в буфер")
             buf.push(data_payload)
             return   # → finally: power_off + deepsleep
-
-        # Обновляем уровень сигнала после подключения к сети
-        signal = _get_signal_strength(sim)
-        status_payload["signal_strength"] = signal
 
         if not sim.connect_gprs():
             _log("GPRS недоступен — сохраняем в буфер")
