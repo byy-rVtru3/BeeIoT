@@ -83,9 +83,9 @@
     <string name="label_temperature">Температура:</string>
     <string name="label_noise">Шум:</string>
     <string name="label_weight">Вес:</string>
-    <string name="sensor_temperature_format">%1$s°C</string>
-    <string name="sensor_noise_format">%1$s дБ</string>
-    <string name="sensor_weight_format">%1$s кг</string>
+    <string name="sensor_temperature_format">%1$.2f°C</string>
+    <string name="sensor_noise_format">%1$.2f дБ</string>
+    <string name="sensor_weight_format">%1$.2f кг</string>
     <string name="chart_title_temperature">Температура улья</string>
     <string name="chart_title_noise">Шум в улье</string>
     <string name="chart_title_weight">Вес улья</string>

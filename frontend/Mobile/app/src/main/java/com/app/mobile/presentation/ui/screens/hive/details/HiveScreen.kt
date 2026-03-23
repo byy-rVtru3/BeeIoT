@@ -187,15 +187,15 @@ private fun HiveContent(
 						modifier = Modifier.fillMaxWidth()
 					) {
 						val temp = hive.hub.sensorReadings?.temperatureSensor
-							?.let { stringResource(R.string.sensor_temperature_format, it.temperature) }
+							?.let { stringResource(R.string.sensor_temperature_format, it.temperature.toFloat()) }
 							?: stringResource(R.string.no)
 
 						val noise = hive.hub.sensorReadings?.noiseSensor
-							?.let { stringResource(R.string.sensor_noise_format, it.noise) }
+							?.let { stringResource(R.string.sensor_noise_format, it.noise.toFloat()) }
 							?: stringResource(R.string.no)
 
 						val weight = hive.hub.sensorReadings?.weightSensor
-							?.let { stringResource(R.string.sensor_weight_format, it.weight) }
+							?.let { stringResource(R.string.sensor_weight_format, it.weight.toFloat()) }
 							?: stringResource(R.string.no)
 
 						InfoCard(
