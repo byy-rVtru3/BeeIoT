@@ -6,13 +6,15 @@ import androidx.navigation.toRoute
 import com.app.mobile.data.api.mappers.toErrorMessage
 import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.domain.mappers.toUiModel
+import com.app.mobile.domain.usecase.hives.hub.DeleteHubUseCase
 import com.app.mobile.domain.usecase.hives.hub.GetHubWithSensorsUseCase
 import com.app.mobile.presentation.ui.components.BaseViewModel
 import com.app.mobile.presentation.ui.screens.hub.details.HubRoute
 
 class HubViewModel(
     savedStateHandle: SavedStateHandle,
-    private val getHubWithSensorsUseCase: GetHubWithSensorsUseCase
+    private val getHubWithSensorsUseCase: GetHubWithSensorsUseCase,
+    private val deleteHubUseCase: DeleteHubUseCase,
 ) : BaseViewModel<HubUiState, HubEvent>(HubUiState.Loading) {
 
     private val hubId = savedStateHandle.toRoute<HubRoute>().hubId
@@ -59,6 +61,15 @@ class HubViewModel(
     fun onEditClick() {
         if (currentState is HubUiState.Content) {
             sendEvent(HubEvent.NavigateToHubEdit(hubId))
+        }
+    }
+
+    fun onDeleteClick() {
+        launch {
+            when (val result = deleteHubUseCase(hubId)) {
+                is ApiResult.Success -> sendEvent(HubEvent.NavigateToHubList)
+                else -> sendEvent(HubEvent.ShowSnackBar(result.toErrorMessage()))
+            }
         }
     }
 

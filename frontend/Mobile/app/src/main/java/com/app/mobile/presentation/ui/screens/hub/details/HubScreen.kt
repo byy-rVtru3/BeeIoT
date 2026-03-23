@@ -87,7 +87,7 @@ fun HubScreen(
 			is HubUiState.Content -> {
 				val actions = HubActions(
 					onEditClick = hubViewModel::onEditClick,
-					onDeleteClick = {}, // необходимо добавить удаление
+					onDeleteClick = hubViewModel::onDeleteClick,
 					onTemperatureClick = hubViewModel::onTemperatureClick,
 					onNoiseClick = hubViewModel::onNoiseClick,
 					onWeightClick = hubViewModel::onWeightClick
