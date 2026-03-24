@@ -46,15 +46,30 @@ func (d *Postgres) GetHubBySensor(ctx context.Context, email, sensor string) (db
 }
 
 func (d *Postgres) DeleteHub(ctx context.Context, email, hubID string) error {
-	q := `DELETE FROM hubs WHERE email = $1 AND sensor = $2`
-	res, err := d.pull.Exec(ctx, q, email, hubID)
+	tx, err := d.pull.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Отвязываем ульи от хаба
+	_, err = tx.Exec(ctx,
+		`UPDATE hives SET hub_id = NULL WHERE hub_id = (SELECT id FROM hubs WHERE email = $1 AND sensor = $2)`,
+		email, hubID)
+	if err != nil {
+		return fmt.Errorf("failed to unlink hives: %w", err)
+	}
+
+	// Удаляем хаб (телеметрия удалится по CASCADE)
+	res, err := tx.Exec(ctx, `DELETE FROM hubs WHERE email = $1 AND sensor = $2`, email, hubID)
 	if err != nil {
 		return fmt.Errorf("failed to delete hub: %w", err)
 	}
 	if res.RowsAffected() == 0 {
 		return fmt.Errorf("hub not found or already deleted")
 	}
-	return nil
+
+	return tx.Commit(ctx)
 }
 
 func (d *Postgres) GetHubSensorByHive(ctx context.Context, email, hiveName string) (string, error) {

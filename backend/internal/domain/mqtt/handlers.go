@@ -53,8 +53,20 @@ func (m *Client) handleDeviceData(_ mqtt.Client, msg mqtt.Message) {
 		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to update timestamp")
 		return
 	}
-	// Cache last sensor data for quick retrieval
-	if err := m.inMemDb.SetLastSensorData(ctx, sensorId, string(msg.Payload())); err != nil {
+	// Cache last sensor data for quick retrieval, preserving weight from existing cache
+	cachePayload := msg.Payload()
+	if existing, err := m.inMemDb.GetLastSensorData(ctx, sensorId); err == nil {
+		var cached mqttTypes.DeviceData
+		if json.Unmarshal([]byte(existing), &cached) == nil && cached.WeightTime != 0 {
+			// Прошивка не шлёт вес — сохраняем его из кеша
+			data.Weight = cached.Weight
+			data.WeightTime = cached.WeightTime
+			if b, err := json.Marshal(data); err == nil {
+				cachePayload = b
+			}
+		}
+	}
+	if err := m.inMemDb.SetLastSensorData(ctx, sensorId, string(cachePayload)); err != nil {
 		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to cache last sensor data")
 	}
 	email, hiveName, err := m.db.GetEmailHiveBySensorID(ctx, sensorId)
@@ -121,7 +133,7 @@ func (m *Client) addTemperature(ctx context.Context, email, hubSensor string, da
 }
 
 func (m *Client) addWeight(ctx context.Context, email, hubSensor string, data mqttTypes.DeviceData) error {
-	if data.Weight == -1 {
+	if data.Weight == -1 || data.WeightTime == 0 {
 		return nil
 	}
 	return m.db.NewHiveWeight(ctx, httpType.HubWeight{

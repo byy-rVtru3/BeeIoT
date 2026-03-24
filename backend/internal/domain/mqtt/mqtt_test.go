@@ -50,6 +50,10 @@ func (m *MockInMemoryDB) SetLastSensorData(_ context.Context, _ string, _ string
 	return nil
 }
 
+func (m *MockInMemoryDB) GetLastSensorData(_ context.Context, _ string) (string, error) {
+	return "", fmt.Errorf("redis: nil")
+}
+
 func (m *MockInMemoryDB) SetLastDeviceStatus(_ context.Context, _ string, _ string) error {
 	return nil
 }
