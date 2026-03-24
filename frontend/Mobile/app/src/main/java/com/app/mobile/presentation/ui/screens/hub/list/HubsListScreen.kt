@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -43,6 +44,7 @@ fun HubsListScreen(
     val hubsListUiState by hubsListViewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val selectedTab by hubsListViewModel.selectedTab.collectAsStateWithLifecycle()
+    val isRefreshing by hubsListViewModel.isRefreshing.collectAsStateWithLifecycle()
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         hubsListViewModel.loadHubs()
@@ -70,7 +72,9 @@ fun HubsListScreen(
         is HubsListUiState.Empty -> EmptyHubsListScreen(
             selectedTab = selectedTab,
             onTabSelected = hubsListViewModel::onTabSelected,
-            onCreateHubClick = hubsListViewModel::onCreateHubClick
+            onCreateHubClick = hubsListViewModel::onCreateHubClick,
+            isRefreshing = isRefreshing,
+            onRefresh = hubsListViewModel::refreshHubs
         )
 
         is HubsListUiState.Content -> {
@@ -83,7 +87,9 @@ fun HubsListScreen(
                 snackbarHostState = snackbarHostState,
                 actions = actions,
                 selectedTab = selectedTab,
-                onTabSelected = hubsListViewModel::onTabSelected
+                onTabSelected = hubsListViewModel::onTabSelected,
+                isRefreshing = isRefreshing,
+                onRefresh = hubsListViewModel::refreshHubs
             )
         }
     }
@@ -96,7 +102,9 @@ private fun HubsListContent(
     snackbarHostState: SnackbarHostState,
     actions: HubsListActions,
     selectedTab: Int,
-    onTabSelected: (Int) -> Unit
+    onTabSelected: (Int) -> Unit,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit
 ) {
     val tabs = listOf(stringResource(R.string.my_hubs), stringResource(R.string.archive))
 
@@ -109,25 +117,28 @@ private fun HubsListContent(
         fabContentDescription = stringResource(R.string.add_hub),
         onFabClick = actions.onCreateHubClick
     ) { innerPadding ->
-        when (selectedTab) {
-            0 -> {
-                if (hubs.isNotEmpty()) {
-                    HubsGrid(
-                        hubs = hubs,
-                        actions = actions,
-                        modifier = innerPadding
-                    )
-                } else {
-                    EmptyStub(
-                        text = stringResource(R.string.empty_hubs_list_screen),
-                        modifier = innerPadding
-                    )
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+            modifier = innerPadding
+        ) {
+            when (selectedTab) {
+                0 -> {
+                    if (hubs.isNotEmpty()) {
+                        HubsGrid(
+                            hubs = hubs,
+                            actions = actions
+                        )
+                    } else {
+                        EmptyStub(
+                            text = stringResource(R.string.empty_hubs_list_screen)
+                        )
+                    }
                 }
+                1 -> EmptyStub(
+                    text = stringResource(R.string.empty_archive_list_screen)
+                )
             }
-            1 -> EmptyStub(
-                text = stringResource(R.string.empty_archive_list_screen),
-                modifier = innerPadding
-            )
         }
     }
 }
@@ -161,11 +172,14 @@ private fun HubsGrid(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EmptyHubsListScreen(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
-    onCreateHubClick: () -> Unit
+    onCreateHubClick: () -> Unit,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit
 ) {
     val tabs = listOf(stringResource(R.string.my_hubs), stringResource(R.string.archive))
 
@@ -184,9 +198,12 @@ private fun EmptyHubsListScreen(
         fabContentDescription = stringResource(R.string.add_hub),
         onFabClick = onCreateHubClick
     ) { padding ->
-        EmptyStub(
-            text = emptyText,
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
             modifier = padding
-        )
+        ) {
+            EmptyStub(text = emptyText)
+        }
     }
 }

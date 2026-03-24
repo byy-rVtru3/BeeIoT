@@ -16,6 +16,9 @@ class HubsListViewModel(
     private val _selectedTab = MutableStateFlow(0)
     val selectedTab = _selectedTab.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing = _isRefreshing.asStateFlow()
+
     override fun handleError(exception: Throwable) {
         updateState { HubsListUiState.Error(exception.message ?: "Unknown error") }
         Log.e("HubsListViewModel", exception.message.toString())
@@ -41,6 +44,26 @@ class HubsListViewModel(
                     updateState { HubsListUiState.Error(result.toErrorMessage()) }
                 }
             }
+        }
+    }
+
+    fun refreshHubs() {
+        _isRefreshing.value = true
+        launch {
+            when (val result = getHubsUseCase()) {
+                is ApiResult.Success -> {
+                    val hubs = result.data.map { it.toPreviewModel() }
+                    if (hubs.isEmpty()) {
+                        updateState { HubsListUiState.Empty }
+                    } else {
+                        updateState { HubsListUiState.Content(hubs) }
+                    }
+                }
+                else -> {
+                    sendEvent(HubsListEvent.ShowSnackBar(result.toErrorMessage()))
+                }
+            }
+            _isRefreshing.value = false
         }
     }
 
