@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.mobile.R
 import com.app.mobile.domain.models.telemetry.SensorType
@@ -276,13 +277,17 @@ private fun SensorChartContent(
 		// График
 		if (state.dataPoints.isEmpty()) {
 			Column(
-				modifier = Modifier.weight(1f),
-				verticalArrangement = Arrangement.Center
+				modifier = Modifier
+					.weight(1f)
+					.fillMaxWidth(),
+				verticalArrangement = Arrangement.Center,
+				horizontalAlignment = Alignment.CenterHorizontally
 			) {
 				Text(
 					text = stringResource(R.string.chart_no_data),
 					style = MaterialTheme.typography.bodyLarge,
-					color = MaterialTheme.colorScheme.onSurfaceVariant
+					color = MaterialTheme.colorScheme.onSurfaceVariant,
+					textAlign = TextAlign.Center
 				)
 			}
 		} else {
