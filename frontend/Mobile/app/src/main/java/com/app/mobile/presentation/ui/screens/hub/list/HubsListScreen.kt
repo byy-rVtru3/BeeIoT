@@ -167,6 +167,7 @@ private fun HubsGrid(
             val isLeftColumn = index % 2 == 0
             SwipeToDeleteContainer(
                 onDelete = { actions.onDeleteHub(hub.id) },
+                modifier = Modifier.animateItem(),
                 enableSwipeToStart = isLeftColumn,
                 enableSwipeToEnd = !isLeftColumn
             ) {

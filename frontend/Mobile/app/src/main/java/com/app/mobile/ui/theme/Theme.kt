@@ -9,6 +9,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.app.mobile.presentation.ui.animations.animated
 
 private val DarkColorScheme = darkColorScheme(
     primary = DarkPrimary,
@@ -77,7 +78,7 @@ fun MobileTheme(
     }
 
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = colorScheme.animated(),
         typography = Typography,
         content = content
     )

@@ -173,7 +173,10 @@ private fun HivesList(
 		)
 	) {
 		items(hives, key = { it.name }) { hive ->
-			SwipeToDeleteContainer(onDelete = { actions.onDeleteHive(hive.name) }) {
+			SwipeToDeleteContainer(
+				onDelete = { actions.onDeleteHive(hive.name) },
+				modifier = Modifier.animateItem()
+			) {
 				HiveItem(hive, actions.onHiveClick)
 			}
 		}
