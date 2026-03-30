@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,6 +28,7 @@ import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.HubTileCard
 import com.app.mobile.presentation.ui.components.ObserveAsEvents
+import com.app.mobile.presentation.ui.components.SwipeToDeleteContainer
 import com.app.mobile.presentation.ui.components.TabbedScreenScaffold
 import com.app.mobile.presentation.ui.screens.hub.list.models.HubsListActions
 import com.app.mobile.presentation.ui.screens.hub.list.viewmodel.HubsListEvent
@@ -80,7 +81,8 @@ fun HubsListScreen(
         is HubsListUiState.Content -> {
             val actions = HubsListActions(
                 onHubClick = hubsListViewModel::onHubClick,
-                onCreateHubClick = hubsListViewModel::onCreateHubClick
+                onCreateHubClick = hubsListViewModel::onCreateHubClick,
+                onDeleteHub = hubsListViewModel::onDeleteHub
             )
             HubsListContent(
                 hubs = state.hubs,
@@ -161,13 +163,20 @@ private fun HubsGrid(
             bottom = Dimens.ScreenContentPadding
         )
     ) {
-        items(hubs) { hub ->
-            HubTileCard(
-                name = hub.name,
-                // TODO: Добавить поле isConnected в HubPreviewModel
-                isSignalActive = true,
-                onClick = { actions.onHubClick(hub.id) }
-            )
+        itemsIndexed(hubs, key = { _, hub -> hub.id }) { index, hub ->
+            val isLeftColumn = index % 2 == 0
+            SwipeToDeleteContainer(
+                onDelete = { actions.onDeleteHub(hub.id) },
+                enableSwipeToStart = isLeftColumn,
+                enableSwipeToEnd = !isLeftColumn
+            ) {
+                HubTileCard(
+                    name = hub.name,
+                    // TODO: Добавить поле isConnected в HubPreviewModel
+                    isSignalActive = true,
+                    onClick = { actions.onHubClick(hub.id) }
+                )
+            }
         }
     }
 }

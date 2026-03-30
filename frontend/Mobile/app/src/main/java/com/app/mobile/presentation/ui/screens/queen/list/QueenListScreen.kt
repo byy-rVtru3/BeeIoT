@@ -23,7 +23,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.mobile.R
-import com.app.mobile.presentation.models.queen.QueenPreviewListModel
 import com.app.mobile.presentation.models.queen.QueenPreviewModel
 import com.app.mobile.presentation.ui.components.EmptyStub
 import com.app.mobile.presentation.ui.components.ErrorMessage
@@ -31,6 +30,7 @@ import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.components.QueenCard
 import com.app.mobile.presentation.ui.components.QueenCardDisplayMode
+import com.app.mobile.presentation.ui.components.SwipeToDeleteContainer
 import com.app.mobile.presentation.ui.components.TabbedScreenScaffold
 import com.app.mobile.presentation.ui.screens.queen.list.models.QueenListActions
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListEvent
@@ -76,7 +76,8 @@ fun QueenListScreen(
 		is QueenListUiState.Content -> {
 			val actions = QueenListActions(
 				onQueenClick = queenListViewModel::onQueenClick,
-				onAddClick = queenListViewModel::onAddClick
+				onAddClick = queenListViewModel::onAddClick,
+				onDeleteQueen = queenListViewModel::onDeleteQueen
 			)
 
 			// Фильтруем список, если бы логика была на UI (обычно это делается в VM)
@@ -169,8 +170,10 @@ private fun QueensList(
 			bottom = Dimens.ScreenContentPadding
 		)
 	) {
-		items(queens) { queen ->
-			QueenItem(queen, actions.onQueenClick)
+		items(queens, key = { it.name }) { queen ->
+			SwipeToDeleteContainer(onDelete = { actions.onDeleteQueen(queen.name) }) {
+				QueenItem(queen, actions.onQueenClick)
+			}
 		}
 	}
 }
