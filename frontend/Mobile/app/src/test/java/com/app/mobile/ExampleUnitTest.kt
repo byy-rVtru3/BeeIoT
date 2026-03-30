@@ -1,6 +1,8 @@
 package com.app.mobile
 
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 import org.junit.Assert.*
 
@@ -9,6 +11,7 @@ import org.junit.Assert.*
  *
  * See [testing documentation](http://d.android.com/tools/testing).
  */
+@RunWith(RobolectricTestRunner::class)
 class ExampleUnitTest {
     @Test
     fun addition_isCorrect() {
