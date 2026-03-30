@@ -1,7 +1,7 @@
 package com.app.mobile.presentation.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -30,12 +30,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import com.app.mobile.R
 import com.app.mobile.presentation.models.queen.QueenPreviewModel
+import com.app.mobile.presentation.ui.animations.MotionSpecs
 import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.Alpha
 
@@ -57,16 +59,22 @@ fun SelectableCardContainer(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
-
     val borderColor by animateColorAsState(
         targetValue = if (isPressed) MaterialTheme.colorScheme.outline else Color.Transparent,
-        animationSpec = tween(durationMillis = 150),
-        label = "border_color_anim"
+        animationSpec = MotionSpecs.CardPressColor,
+        label = "border_color"
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.97f else 1f,
+        animationSpec = MotionSpecs.CardPress,
+        label = "card_scale"
     )
 
     Surface(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer { scaleX = scale; scaleY = scale },
         shape = RoundedCornerShape(Dimens.ItemCardRadius),
         color = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,

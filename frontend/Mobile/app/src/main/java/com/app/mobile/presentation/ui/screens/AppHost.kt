@@ -1,8 +1,12 @@
 package com.app.mobile.presentation.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import com.app.mobile.presentation.ui.animations.MotionSpecs
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -14,7 +18,6 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.app.mobile.presentation.navigation.AppNavigation
 import com.app.mobile.presentation.ui.components.AppBottomBar
 import com.app.mobile.presentation.ui.screens.hive.list.HivesListRoute
@@ -44,8 +47,10 @@ fun AppHost(
 		bottomBar = {
 			AnimatedVisibility(
 				visible = showBottomBar,
-				enter = slideInVertically { it },
-				exit = slideOutVertically { it }
+				enter = slideInVertically(tween(MotionSpecs.NormalMs, easing = MotionSpecs.EaseOut)) { it } +
+						fadeIn(tween(MotionSpecs.NormalMs, easing = MotionSpecs.EaseOut)),
+				exit  = slideOutVertically(tween(MotionSpecs.NormalMs, easing = MotionSpecs.EaseIn)) { it } +
+						fadeOut(tween(MotionSpecs.NormalMs, easing = MotionSpecs.EaseIn))
 			) {
 				AppBottomBar(
 					currentDestination = currentDestination,

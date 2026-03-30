@@ -161,6 +161,7 @@ private fun WorksList(
 			val isLeftColumn = index % 2 == 0
 			SwipeToDeleteContainer(
 				onDelete = { onDeleteWork(work.id) },
+				modifier = Modifier.animateItem(),
 				enableSwipeToStart = isLeftColumn,
 				enableSwipeToEnd = !isLeftColumn
 			) {

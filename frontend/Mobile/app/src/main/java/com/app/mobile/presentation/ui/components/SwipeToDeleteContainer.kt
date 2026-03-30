@@ -1,9 +1,6 @@
 package com.app.mobile.presentation.ui.components
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
@@ -33,6 +30,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.zIndex
 import com.app.mobile.R
+import com.app.mobile.presentation.ui.animations.MotionSpecs
 import com.app.mobile.ui.theme.Dimens
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -104,24 +102,21 @@ fun SwipeToDeleteContainer(
                                     offsetX.value >= thresholdPx && enableSwipeToEnd -> {
                                         offsetX.animateTo(
                                             targetValue = itemWidth.toFloat() + 64f,
-                                            animationSpec = tween(durationMillis = 250)
+                                            animationSpec = MotionSpecs.SwipeDismiss
                                         )
                                         isDismissed = true
                                     }
                                     offsetX.value <= -thresholdPx && enableSwipeToStart -> {
                                         offsetX.animateTo(
                                             targetValue = -(itemWidth.toFloat() + 64f),
-                                            animationSpec = tween(durationMillis = 250)
+                                            animationSpec = MotionSpecs.SwipeDismiss
                                         )
                                         isDismissed = true
                                     }
                                     else -> {
                                         offsetX.animateTo(
                                             targetValue = 0f,
-                                            animationSpec = spring(
-                                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                stiffness = Spring.StiffnessMediumLow
-                                            )
+                                            animationSpec = MotionSpecs.SwipeReturn
                                         )
                                     }
                                 }
@@ -131,10 +126,7 @@ fun SwipeToDeleteContainer(
                             scope.launch {
                                 offsetX.animateTo(
                                     targetValue = 0f,
-                                    animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                        stiffness = Spring.StiffnessMediumLow
-                                    )
+                                    animationSpec = MotionSpecs.SwipeReturn
                                 )
                             }
                         },
