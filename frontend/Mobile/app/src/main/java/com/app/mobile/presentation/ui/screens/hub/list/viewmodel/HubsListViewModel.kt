@@ -4,13 +4,15 @@ import android.util.Log
 import com.app.mobile.data.api.mappers.toErrorMessage
 import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.domain.mappers.toPreviewModel
+import com.app.mobile.domain.usecase.hives.hub.DeleteHubUseCase
 import com.app.mobile.domain.usecase.hives.hub.GetHubsUseCase
 import com.app.mobile.presentation.ui.components.BaseViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class HubsListViewModel(
-    private val getHubsUseCase: GetHubsUseCase
+    private val getHubsUseCase: GetHubsUseCase,
+    private val deleteHubUseCase: DeleteHubUseCase
 ) : BaseViewModel<HubsListUiState, HubsListEvent>(HubsListUiState.Loading) {
 
     private val _selectedTab = MutableStateFlow(0)
@@ -82,6 +84,21 @@ class HubsListViewModel(
         if (currentState is HubsListUiState.Content || currentState is HubsListUiState.Empty) {
             updateState { HubsListUiState.Loading }
             sendEvent(HubsListEvent.NavigateToCreateHub)
+        }
+    }
+
+    fun onDeleteHub(id: String) {
+        val current = currentState as? HubsListUiState.Content ?: return
+        val updated = current.hubs.filter { it.id != id }
+        updateState { if (updated.isEmpty()) HubsListUiState.Empty else current.copy(hubs = updated) }
+        launch {
+            when (val result = deleteHubUseCase(id)) {
+                is ApiResult.Success -> Unit
+                else -> {
+                    sendEvent(HubsListEvent.ShowSnackBar(result.toErrorMessage()))
+                    loadHubs()
+                }
+            }
         }
     }
 }

@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,6 +29,7 @@ import com.app.mobile.presentation.models.hive.WorkUi
 import com.app.mobile.presentation.ui.components.AppTopBar
 import com.app.mobile.presentation.ui.components.CustomFloatingActionButton
 import com.app.mobile.presentation.ui.components.EmptyStub
+import com.app.mobile.presentation.ui.components.SwipeToDeleteContainer
 import com.app.mobile.presentation.ui.components.WorkTileCard
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
@@ -82,6 +83,7 @@ fun WorksListScreen(
 			is WorksListUiState.Content -> WorksListContent(
 				state.works,
 				worksListViewModel::onWorkClick,
+				worksListViewModel::onDeleteWork,
 				snackBarHostState = snackBarHostState,
 				worksListViewModel::onCreateClick,
 				onNavigateBack = onBackClick
@@ -94,6 +96,7 @@ fun WorksListScreen(
 fun WorksListContent(
 	works: List<WorkUi>,
 	onWorkClick: (String) -> Unit,
+	onDeleteWork: (String) -> Unit,
 	snackBarHostState: SnackbarHostState,
 	onCreateClick: () -> Unit,
 	onNavigateBack: () -> Unit
@@ -120,6 +123,7 @@ fun WorksListContent(
 			WorksList(
 				works = works,
 				onWorkClick = onWorkClick,
+				onDeleteWork = onDeleteWork,
 				modifier = Modifier.padding(innerPadding)
 			)
 		} else {
@@ -135,6 +139,7 @@ fun WorksListContent(
 private fun WorksList(
 	works: List<WorkUi>,
 	onWorkClick: (String) -> Unit,
+	onDeleteWork: (String) -> Unit,
 	modifier: Modifier = Modifier
 ) {
 	LazyVerticalGrid(
@@ -149,15 +154,22 @@ private fun WorksList(
 			bottom = Dimens.ScreenContentPadding
 		)
 	) {
-		items(
+		itemsIndexed(
 			items = works,
-			key = { it.id }
-		) { work ->
-			WorkTileCard(
-				title = work.title,
-				dateTime = work.dateTime,
-				onClick = { onWorkClick(work.id) }
-			)
+			key = { _, work -> work.id }
+		) { index, work ->
+			val isLeftColumn = index % 2 == 0
+			SwipeToDeleteContainer(
+				onDelete = { onDeleteWork(work.id) },
+				enableSwipeToStart = isLeftColumn,
+				enableSwipeToEnd = !isLeftColumn
+			) {
+				WorkTileCard(
+					title = work.title,
+					dateTime = work.dateTime,
+					onClick = { onWorkClick(work.id) }
+				)
+			}
 		}
 	}
 }

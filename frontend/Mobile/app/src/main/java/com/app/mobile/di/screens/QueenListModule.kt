@@ -1,5 +1,6 @@
 package com.app.mobile.di.screens
 
+import com.app.mobile.domain.usecase.hives.queen.DeleteQueenUseCase
 import com.app.mobile.domain.usecase.hives.queen.GetQueensUseCase
 import com.app.mobile.domain.usecase.hives.queen.GetQueensWithCalendarsUseCase
 import com.app.mobile.presentation.ui.screens.queen.list.viewmodel.QueenListViewModel
@@ -11,6 +12,7 @@ val queenListModule = module {
 
     factoryOf(::GetQueensUseCase)
     factoryOf(::GetQueensWithCalendarsUseCase)
+    factoryOf(::DeleteQueenUseCase)
 
     viewModelOf(::QueenListViewModel)
 }

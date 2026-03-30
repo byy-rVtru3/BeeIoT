@@ -4,12 +4,13 @@ import android.util.Log
 import com.app.mobile.data.api.mappers.toErrorMessage
 import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.domain.mappers.toPreviewModel
-import com.app.mobile.domain.usecase.hives.queen.GetQueensUseCase
+import com.app.mobile.domain.usecase.hives.queen.DeleteQueenUseCase
 import com.app.mobile.domain.usecase.hives.queen.GetQueensWithCalendarsUseCase
 import com.app.mobile.presentation.ui.components.BaseViewModel
 
 class QueenListViewModel(
-    private val getQueensUseCase: GetQueensWithCalendarsUseCase
+    private val getQueensUseCase: GetQueensWithCalendarsUseCase,
+    private val deleteQueenUseCase: DeleteQueenUseCase
 ) : BaseViewModel<QueenListUiState, QueenListEvent>(QueenListUiState.Loading) {
 
     override fun handleError(exception: Throwable) {
@@ -60,4 +61,19 @@ class QueenListViewModel(
     }
 
     fun resetError() = loadQueens()
+
+    fun onDeleteQueen(name: String) {
+        val current = currentState as? QueenListUiState.Content ?: return
+        val updated = current.queens.filter { it.name != name }
+        updateState { current.copy(queens = updated) }
+        launch {
+            when (val result = deleteQueenUseCase(name)) {
+                is ApiResult.Success -> Unit
+                else -> {
+                    sendEvent(QueenListEvent.ShowSnackBar(result.toErrorMessage()))
+                    loadQueens()
+                }
+            }
+        }
+    }
 }
