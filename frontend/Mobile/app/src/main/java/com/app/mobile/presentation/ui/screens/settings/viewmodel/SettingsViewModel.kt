@@ -61,6 +61,12 @@ class SettingsViewModel(
 		}
 	}
 
+	fun onNotificationsClick() {
+		if (currentState is SettingsUiState.Content) {
+			sendEvent(SettingsEvent.NavigateToNotificationSettings)
+		}
+	}
+
 	private fun observeTheme() {
 		launch {
 			themeManager.themeState.collect { themeState ->

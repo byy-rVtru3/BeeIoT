@@ -1,5 +1,7 @@
 package com.app.mobile.presentation.ui.screens.settings
 
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -40,6 +43,7 @@ fun SettingsScreen(
 ) {
 	val settingsUiState by settingsViewModel.uiState.collectAsStateWithLifecycle()
 	val snackBarHostState = remember { SnackbarHostState() }
+	val context = LocalContext.current
 
 	ObserveAsEvents(settingsViewModel.event) { event ->
 		when (event) {
@@ -48,6 +52,13 @@ fun SettingsScreen(
 			is SettingsEvent.NavigateToAboutApp -> onAboutAppClick()
 
 			is SettingsEvent.NavigateToAuthorization -> onLogoutClick()
+
+			is SettingsEvent.NavigateToNotificationSettings -> {
+				val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+					putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+				}
+				context.startActivity(intent)
+			}
 
 			is SettingsEvent.ShowSnackBar -> {
 				snackBarHostState.showSnackbar(
@@ -64,7 +75,8 @@ fun SettingsScreen(
 				onAccountInfoClick = settingsViewModel::onAccountInfoClick,
 				onAboutAppClick = settingsViewModel::onAboutAppClick,
 				onLogoutClick = settingsViewModel::onLogoutClick,
-				onToggleTheme = settingsViewModel::onToggleTheme
+				onToggleTheme = settingsViewModel::onToggleTheme,
+				onNotificationsClick = settingsViewModel::onNotificationsClick
 			)
 
 			SettingsContent(
@@ -126,6 +138,8 @@ private fun SettingsContent(
 					onToggleTheme = actions.onToggleTheme
 				)
 
+				NotificationsButton(actions.onNotificationsClick)
+
 				AboutAppButton(actions.onAboutAppClick)
 
 				LogoutButton(actions.onLogoutClick)
@@ -157,6 +171,14 @@ private fun AccountInfoButton(onAccountInfoClick: () -> Unit) {
 }
 
 @Composable
+private fun NotificationsButton(onNotificationsClick: () -> Unit) {
+	SettingsButton(
+		onClick = onNotificationsClick,
+		text = stringResource(R.string.notifications),
+	)
+}
+
+@Composable
 private fun AboutAppButton(onAboutAppClick: () -> Unit) {
 	SettingsButton(
 		onClick = onAboutAppClick,
@@ -182,7 +204,8 @@ fun SettingsContentPreview() {
 			onAccountInfoClick = {},
 			onAboutAppClick = {},
 			onLogoutClick = {},
-			onToggleTheme = {}
+			onToggleTheme = {},
+			onNotificationsClick = {}
 		)
 		SettingsContent(
 			actions = actions,

@@ -5,4 +5,5 @@ data class SettingsActions(
     val onAccountInfoClick: () -> Unit,
     val onAboutAppClick: () -> Unit,
     val onToggleTheme: () -> Unit,
+    val onNotificationsClick: () -> Unit,
 )
