@@ -110,6 +110,7 @@ class HomeViewModel(
         updateState { state.copy(showNotificationPrompt = false) }
         launch {
             setNotificationPromptShownUseCase(false)
+            sendPushTokenUseCase()
         }
     }
 }
