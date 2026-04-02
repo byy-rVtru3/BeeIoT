@@ -40,10 +40,14 @@ class HiveViewModel(
 			when (val result = hiveDeferred.await()) {
 				is ApiResult.Success -> {
 					val hive = result.data
-					val recentWorks = worksDeferred.await()
-						.sortedByDescending { it.dateTime }
-						.take(2)
-						.map { it.toUiModel() }
+					val recentWorks =
+						when (val workResult = worksDeferred.await()) {
+							is ApiResult.Success -> workResult.data
+							else                 -> emptyList()
+						}
+							.sortedByDescending { it.dateTime }
+							.take(2)
+							.map { it.toUiModel() }
 
 					updateState {
 						HiveUiState.Content(
@@ -57,7 +61,7 @@ class HiveViewModel(
 					}
 				}
 
-				else -> {
+				else                 -> {
 					sendEvent(HiveEvent.ShowSnackBar(result.toErrorMessage()))
 					sendEvent(HiveEvent.NavigateToHiveList)
 				}
@@ -74,10 +78,14 @@ class HiveViewModel(
 			when (val result = hiveDeferred.await()) {
 				is ApiResult.Success -> {
 					val hive = result.data
-					val recentWorks = worksDeferred.await()
-						.sortedByDescending { it.dateTime }
-						.take(2)
-						.map { it.toUiModel() }
+					val recentWorks =
+						when (val workResult = worksDeferred.await()) {
+							is ApiResult.Success -> workResult.data
+							else                 -> emptyList()
+						}
+							.sortedByDescending { it.dateTime }
+							.take(2)
+							.map { it.toUiModel() }
 					updateState {
 						HiveUiState.Content(
 							HiveUi(
@@ -89,7 +97,8 @@ class HiveViewModel(
 						)
 					}
 				}
-				else -> {
+
+				else                 -> {
 					updateState { current.copy(isRefreshing = false) }
 					sendEvent(HiveEvent.ShowSnackBar(result.toErrorMessage()))
 				}
@@ -103,11 +112,13 @@ class HiveViewModel(
 		val state = currentState as? HiveUiState.Content ?: return
 		val hub = state.hive.hub ?: return
 		launch {
-			sendEvent(HiveEvent.NavigateToTemperatureByHive(
-				hubId = hub.id,
-				hubName = hub.name,
-				currentValue = hub.sensorReadings?.temperatureSensor?.temperature
-			))
+			sendEvent(
+				HiveEvent.NavigateToTemperatureByHive(
+					hubId = hub.id,
+					hubName = hub.name,
+					currentValue = hub.sensorReadings?.temperatureSensor?.temperature
+				)
+			)
 		}
 	}
 
@@ -115,11 +126,13 @@ class HiveViewModel(
 		val state = currentState as? HiveUiState.Content ?: return
 		val hub = state.hive.hub ?: return
 		launch {
-			sendEvent(HiveEvent.NavigateToNoiseByHive(
-				hubId = hub.id,
-				hubName = hub.name,
-				currentValue = hub.sensorReadings?.noiseSensor?.noise
-			))
+			sendEvent(
+				HiveEvent.NavigateToNoiseByHive(
+					hubId = hub.id,
+					hubName = hub.name,
+					currentValue = hub.sensorReadings?.noiseSensor?.noise
+				)
+			)
 		}
 	}
 
@@ -127,11 +140,13 @@ class HiveViewModel(
 		val state = currentState as? HiveUiState.Content ?: return
 		val hub = state.hive.hub ?: return
 		launch {
-			sendEvent(HiveEvent.NavigateToWeightByHive(
-				hubId = hub.id,
-				hubName = hub.name,
-				currentValue = hub.sensorReadings?.weightSensor?.weight
-			))
+			sendEvent(
+				HiveEvent.NavigateToWeightByHive(
+					hubId = hub.id,
+					hubName = hub.name,
+					currentValue = hub.sensorReadings?.weightSensor?.weight
+				)
+			)
 		}
 	}
 
@@ -169,7 +184,7 @@ class HiveViewModel(
 		launch {
 			when (val result = deleteHiveUseCase(hiveName)) {
 				is ApiResult.Success -> sendEvent(HiveEvent.NavigateToHiveList)
-				else -> sendEvent(HiveEvent.ShowSnackBar(result.toErrorMessage()))
+				else                 -> sendEvent(HiveEvent.ShowSnackBar(result.toErrorMessage()))
 			}
 		}
 	}
