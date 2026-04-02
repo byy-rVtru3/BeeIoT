@@ -3,6 +3,8 @@ package com.app.mobile.presentation.ui.screens.works.list.viewmodel
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.toRoute
+import com.app.mobile.data.api.mappers.toErrorMessage
+import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.hives.works.DeleteWorkUseCase
 import com.app.mobile.domain.usecase.hives.works.GetWorksUseCase
@@ -28,8 +30,10 @@ class WorksListViewModel(
 			updateState { WorksListUiState.Loading }
 		}
 		launch {
-			val works = getWorksUseCase(hiveId).map { it.toUiModel() }
-			updateState { WorksListUiState.Content(works) }
+			when (val result = getWorksUseCase(hiveId)) {
+				is ApiResult.Success -> updateState { WorksListUiState.Content(result.data.map { it.toUiModel() }) }
+				else -> updateState { WorksListUiState.Error(result.toErrorMessage()) }
+			}
 		}
 	}
 
@@ -37,8 +41,10 @@ class WorksListViewModel(
 		val current = currentState as? WorksListUiState.Content ?: return
 		updateState { current.copy(isRefreshing = true) }
 		launch {
-			val works = getWorksUseCase(hiveId).map { it.toUiModel() }
-			updateState { WorksListUiState.Content(works) }
+			when (val result = getWorksUseCase(hiveId)) {
+				is ApiResult.Success -> updateState { WorksListUiState.Content(result.data.map { it.toUiModel() }) }
+				else -> updateState { WorksListUiState.Error(result.toErrorMessage()) }
+			}
 		}
 	}
 
@@ -61,7 +67,13 @@ class WorksListViewModel(
 		val updated = current.works.filter { it.id != workId }
 		updateState { current.copy(works = updated) }
 		launch {
-			deleteWorkUseCase(workId)
+			when (val result = deleteWorkUseCase(workId)) {
+				is ApiResult.Success -> Unit
+				else -> {
+					sendEvent(WorksListEvent.ShowSnackBar(result.toErrorMessage()))
+					loadWorks()
+				}
+			}
 		}
 	}
 }

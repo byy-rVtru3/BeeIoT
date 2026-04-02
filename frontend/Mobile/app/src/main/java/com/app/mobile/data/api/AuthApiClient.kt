@@ -25,6 +25,11 @@ import com.app.mobile.data.api.models.queen.QueenCalendarResponse
 import com.app.mobile.data.api.models.queen.QueenDetailsResponse
 import com.app.mobile.data.api.models.queen.QueenListResponse
 import com.app.mobile.data.api.models.queen.UpdateQueenRequest
+import com.app.mobile.data.api.models.task.CreateTaskRequest
+import com.app.mobile.data.api.models.task.DeleteTaskRequest
+import com.app.mobile.data.api.models.task.TaskCreateResponse
+import com.app.mobile.data.api.models.task.TaskListResponse
+import com.app.mobile.data.api.models.task.UpdateTaskRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -136,4 +141,18 @@ interface AuthApiClient {
 
     @HTTP(method = "DELETE", path = "queen/delete", hasBody = true)
     suspend fun deleteQueen(@Body request: DeleteQueenRequest): Response<ResponseApiModel>
+
+    // --- Tasks (Beehive Works) ---
+
+    @POST("task/create")
+    suspend fun createTask(@Body request: CreateTaskRequest): Response<TaskCreateResponse>
+
+    @GET("task/list")
+    suspend fun getTasks(@Query("hive_name") hiveName: String? = null): Response<TaskListResponse>
+
+    @PUT("task/update")
+    suspend fun updateTask(@Body request: UpdateTaskRequest): Response<ResponseApiModel>
+
+    @HTTP(method = "DELETE", path = "task/delete", hasBody = true)
+    suspend fun deleteTask(@Body request: DeleteTaskRequest): Response<ResponseApiModel>
 }
