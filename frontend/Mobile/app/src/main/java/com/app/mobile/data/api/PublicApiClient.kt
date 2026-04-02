@@ -23,4 +23,8 @@ interface PublicApiClient {
     @POST("auth/login")
     suspend fun authorizationAccount(@Body request: AuthRequestApiModel):
         Response<ResponseApiModel>
+
+    @POST("auth/change")
+    suspend fun changePassword(@Body request: AuthRequestApiModel):
+        Response<ResponseApiModel>
 }

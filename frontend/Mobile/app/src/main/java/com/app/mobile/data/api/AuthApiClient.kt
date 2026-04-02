@@ -2,6 +2,8 @@ package com.app.mobile.data.api
 
 import com.app.mobile.data.api.models.PushTokenCreationModel
 import com.app.mobile.data.api.models.ResponseApiModel
+import com.app.mobile.data.api.models.account.ChangeNameRequest
+import com.app.mobile.data.api.models.account.UserMeApiResponse
 import com.app.mobile.data.api.models.hive.CreateHiveRequest
 import com.app.mobile.data.api.models.hive.DeleteHiveRequest
 import com.app.mobile.data.api.models.hive.HiveDetailsResponse
@@ -33,6 +35,12 @@ import retrofit2.http.PUT
 import retrofit2.http.Query
 
 interface AuthApiClient {
+
+    @GET("auth/me")
+    suspend fun getMe(): Response<UserMeApiResponse>
+
+    @POST("auth/change/name")
+    suspend fun updateName(@Body request: ChangeNameRequest): Response<ResponseApiModel>
 
     @DELETE("auth/logout")
     suspend fun logoutAccount(): Response<ResponseApiModel>
