@@ -3,6 +3,8 @@ package com.app.mobile.presentation.ui.screens.works.detail.viewmodel
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.toRoute
+import com.app.mobile.data.api.mappers.toErrorMessage
+import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.domain.mappers.toUiModel
 import com.app.mobile.domain.usecase.hives.works.DeleteWorkUseCase
 import com.app.mobile.domain.usecase.hives.works.GetWorkUseCase
@@ -27,11 +29,16 @@ class WorkDetailViewModel(
     fun loadWork() {
         updateState { WorkDetailUiState.Loading }
         launch {
-            val work = getWorkUseCase(workId)
-            if (work != null) {
-                updateState { WorkDetailUiState.Content(work.toUiModel()) }
-            } else {
-                updateState { WorkDetailUiState.Error("Работа не найдена") }
+            when (val result = getWorkUseCase(workId)) {
+                is ApiResult.Success -> {
+                    val work = result.data
+                    if (work != null) {
+                        updateState { WorkDetailUiState.Content(work.toUiModel()) }
+                    } else {
+                        updateState { WorkDetailUiState.Error("Работа не найдена") }
+                    }
+                }
+                else -> updateState { WorkDetailUiState.Error(result.toErrorMessage()) }
             }
         }
     }
@@ -40,11 +47,16 @@ class WorkDetailViewModel(
         val current = currentState as? WorkDetailUiState.Content ?: return
         updateState { current.copy(isRefreshing = true) }
         launch {
-            val work = getWorkUseCase(workId)
-            if (work != null) {
-                updateState { WorkDetailUiState.Content(work.toUiModel()) }
-            } else {
-                updateState { current.copy(isRefreshing = false) }
+            when (val result = getWorkUseCase(workId)) {
+                is ApiResult.Success -> {
+                    val work = result.data
+                    if (work != null) {
+                        updateState { WorkDetailUiState.Content(work.toUiModel()) }
+                    } else {
+                        updateState { current.copy(isRefreshing = false) }
+                    }
+                }
+                else -> updateState { WorkDetailUiState.Error(result.toErrorMessage()) }
             }
         }
     }
@@ -57,8 +69,10 @@ class WorkDetailViewModel(
 
     fun onDeleteClick() {
         launch {
-            deleteWorkUseCase(workId)
-            sendEvent(WorkDetailEvent.NavigateBack(hiveId))
+            when (val result = deleteWorkUseCase(workId)) {
+                is ApiResult.Success -> sendEvent(WorkDetailEvent.NavigateBack(hiveId))
+                else -> sendEvent(WorkDetailEvent.ShowSnackBar(result.toErrorMessage()))
+            }
         }
     }
 }

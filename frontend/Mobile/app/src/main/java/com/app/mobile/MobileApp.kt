@@ -1,7 +1,6 @@
 package com.app.mobile
 
 import android.app.Application
-import com.app.mobile.di.databaseModule
 import com.app.mobile.di.jsonModule
 import com.app.mobile.di.mainModule
 import com.app.mobile.di.networkModules
@@ -14,7 +13,7 @@ import com.app.mobile.di.repository.hubRepositoryModule
 import com.app.mobile.di.repository.queenDataSourceModule
 import com.app.mobile.di.repository.repositoryApiModule
 import com.app.mobile.di.repository.telemetryRepositoryModule
-import com.app.mobile.di.repository.workLocalRepositoryModule
+import com.app.mobile.di.repository.workRepositoryModule
 import com.app.mobile.di.screens.aboutAppModule
 import com.app.mobile.di.screens.homeModule
 import com.app.mobile.di.screens.accountInfoModule
@@ -59,7 +58,6 @@ class MobileApp : Application() {
 				*networkModules.toTypedArray(),
 				confirmationModule,
 				authorizationModule,
-				databaseModule,
 				sessionModule,
 				authRepository,
 				settingsModule,
@@ -78,7 +76,7 @@ class MobileApp : Application() {
 				queenModule,
 				queenEditorModule,
 				queenListModule,
-				workLocalRepositoryModule,
+				workRepositoryModule,
 				workDetailModule,
 				sensorChartModule,
 				workEditorModule,
