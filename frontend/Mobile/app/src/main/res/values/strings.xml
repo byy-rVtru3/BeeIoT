@@ -159,6 +159,16 @@
 	<string name="notifications_description">Разрешите уведомления, чтобы вовремя узнавать о важных событиях на пасеке: изменениях веса улья, падении температуры или необходимости осмотра маток.</string>
 	<string name="turn_off_notifications">Позже</string>
 
+	<!-- Account edit dialogs -->
+	<string name="dialog_change_name_title">Изменить имя</string>
+	<string name="dialog_change_email_title">Изменить email</string>
+	<string name="dialog_change_password_title">Изменить пароль</string>
+	<string name="dialog_new_name_placeholder">Введите новое имя</string>
+	<string name="dialog_new_email_placeholder">Введите новый email</string>
+	<string name="dialog_new_password_placeholder">Введите новый пароль</string>
+	<string name="dialog_change_button">Изменить</string>
+	<string name="password_masked">••••••••</string>
+
 	<!-- Theme -->
 	<string name="switch_to_dark_theme">Переключить на тёмную тему</string>
 	<string name="switch_to_light_theme">Переключить на дневную тему</string>

@@ -5,7 +5,11 @@ import com.app.mobile.data.api.PublicApiClient
 import com.app.mobile.data.api.mappers.toApiModel
 import com.app.mobile.data.api.mappers.toDomain
 import com.app.mobile.data.api.models.ApiResult
+import com.app.mobile.data.api.models.AuthRequestApiModel
+import com.app.mobile.data.api.models.account.ChangeNameRequest
 import com.app.mobile.data.api.safeApiCall
+import com.app.mobile.domain.mappers.toDomain
+import com.app.mobile.domain.models.UserDomain
 import com.app.mobile.domain.models.authorization.AuthorizationModel
 import com.app.mobile.domain.models.confirmation.ConfirmationModel
 import com.app.mobile.domain.models.hives.queen.QueenLifecycle
@@ -48,4 +52,16 @@ class RepositoryApiImpl(
 
     override suspend fun registerPushToken(pushTokenCreation: PushTokenCreation): ApiResult<Unit> =
         safeApiCall { authApiClient.registerPushToken(pushTokenCreation.toApiModel()) }
+
+    override suspend fun getAccountInfo(): ApiResult<UserDomain> =
+        safeApiCall(
+            apiCall = { authApiClient.getMe() },
+            onSuccess = { it.data.toDomain() }
+        )
+
+    override suspend fun updateName(name: String): ApiResult<Unit> =
+        safeApiCall { authApiClient.updateName(ChangeNameRequest(name)) }
+
+    override suspend fun initiatePasswordChange(email: String, newPassword: String): ApiResult<Unit> =
+        safeApiCall { publicApiClient.changePassword(AuthRequestApiModel(email, newPassword)) }
 }

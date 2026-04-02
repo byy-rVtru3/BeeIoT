@@ -2,5 +2,6 @@ package com.app.mobile.presentation.models.account
 
 enum class TypeConfirmationUi {
     REGISTRATION,
-    RESET_PASSWORD
+    RESET_PASSWORD,
+    CHANGE_PASSWORD
 }

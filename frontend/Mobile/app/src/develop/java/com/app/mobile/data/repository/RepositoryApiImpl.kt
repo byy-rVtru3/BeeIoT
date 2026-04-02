@@ -3,6 +3,7 @@ package com.app.mobile.data.repository
 import android.content.Context
 import com.app.mobile.data.mock.MockDataProvider
 import com.app.mobile.data.api.models.ApiResult
+import com.app.mobile.domain.models.UserDomain
 import com.app.mobile.domain.models.authorization.AuthorizationModel
 import com.app.mobile.domain.models.confirmation.ConfirmationModel
 import com.app.mobile.domain.models.hives.queen.QueenLifecycle
@@ -60,6 +61,21 @@ class RepositoryApiImpl(private val context: Context) : RepositoryApi {
     }
 
     override suspend fun registerPushToken(pushTokenCreation: PushTokenCreation): ApiResult<Unit> {
+        delay(100)
+        return ApiResult.Success(Unit)
+    }
+
+    override suspend fun getAccountInfo(): ApiResult<UserDomain> {
+        delay(100)
+        return ApiResult.Success(MockDataProvider.getUserDomain(context))
+    }
+
+    override suspend fun updateName(name: String): ApiResult<Unit> {
+        delay(100)
+        return ApiResult.Success(Unit)
+    }
+
+    override suspend fun initiatePasswordChange(email: String, newPassword: String): ApiResult<Unit> {
         delay(100)
         return ApiResult.Success(Unit)
     }

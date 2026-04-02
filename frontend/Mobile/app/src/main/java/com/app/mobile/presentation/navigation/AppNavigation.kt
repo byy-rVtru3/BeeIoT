@@ -28,6 +28,7 @@ import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoV
 import com.app.mobile.presentation.ui.screens.authorization.AuthorizationRoute
 import com.app.mobile.presentation.ui.screens.authorization.AuthorizationScreen
 import com.app.mobile.presentation.ui.screens.authorization.viewmodel.AuthorizationViewModel
+import com.app.mobile.presentation.models.account.TypeConfirmationUi
 import com.app.mobile.presentation.ui.screens.confirmation.ConfirmationRoute
 import com.app.mobile.presentation.ui.screens.confirmation.ConfirmationScreen
 import com.app.mobile.presentation.ui.screens.confirmation.viewmodel.ConfirmationViewModel
@@ -115,8 +116,11 @@ fun AppNavigation(
             val confirmationViewModel: ConfirmationViewModel = koinViewModel()
             ConfirmationScreen(
                 confirmationViewModel,
-                onConfirmClick = {
+                onNavigateToAuthorization = {
                     navController.navigate(AuthorizationRoute)
+                },
+                onNavigateToAccountInfo = {
+                    navController.popBackStack()
                 }
             )
         }
@@ -144,7 +148,10 @@ fun AppNavigation(
             AccountInfoScreen(
                 accountInfoViewModel,
                 onDeleteClick = { navController.navigate(AuthorizationRoute) },
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onPasswordChangeClick = { email, type ->
+                    navController.navigate(ConfirmationRoute(email, type))
+                }
             )
         }
 

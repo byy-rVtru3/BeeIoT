@@ -40,7 +40,8 @@ import com.app.mobile.ui.theme.MobileTheme
 @Composable
 fun ConfirmationScreen(
 	confirmationViewModel: ConfirmationViewModel,
-	onConfirmClick: () -> Unit
+	onNavigateToAuthorization: () -> Unit,
+	onNavigateToAccountInfo: () -> Unit = {}
 ) {
 	val confirmationUiState =
 		confirmationViewModel.uiState.collectAsStateWithLifecycle()
@@ -53,7 +54,9 @@ fun ConfirmationScreen(
 
 	ObserveAsEvents(confirmationViewModel.event) { event ->
 		when (event) {
-			is ConfirmationEvent.NavigateToAuthorization -> onConfirmClick()
+			is ConfirmationEvent.NavigateToAuthorization -> onNavigateToAuthorization()
+
+			is ConfirmationEvent.NavigateToAccountInfo   -> onNavigateToAccountInfo()
 
 			is ConfirmationEvent.ShowSnackBar            -> {
 				snackbarHostState.showSnackbar(

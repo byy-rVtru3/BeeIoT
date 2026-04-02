@@ -1,6 +1,7 @@
 package com.app.mobile.domain.repository
 
 import com.app.mobile.data.api.models.ApiResult
+import com.app.mobile.domain.models.UserDomain
 import com.app.mobile.domain.models.authorization.AuthorizationModel
 import com.app.mobile.domain.models.confirmation.ConfirmationModel
 import com.app.mobile.domain.models.hives.queen.QueenLifecycle
@@ -24,4 +25,10 @@ interface RepositoryApi {
     suspend fun calcQueenCalendar(queenRequestModel: QueenRequestModel): ApiResult<QueenLifecycle>
 
     suspend fun registerPushToken(pushTokenCreation: PushTokenCreation): ApiResult<Unit>
+
+    suspend fun getAccountInfo(): ApiResult<UserDomain>
+
+    suspend fun updateName(name: String): ApiResult<Unit>
+
+    suspend fun initiatePasswordChange(email: String, newPassword: String): ApiResult<Unit>
 }

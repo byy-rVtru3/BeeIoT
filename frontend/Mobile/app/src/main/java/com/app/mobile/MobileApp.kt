@@ -14,8 +14,6 @@ import com.app.mobile.di.repository.hubRepositoryModule
 import com.app.mobile.di.repository.queenDataSourceModule
 import com.app.mobile.di.repository.repositoryApiModule
 import com.app.mobile.di.repository.telemetryRepositoryModule
-import com.app.mobile.di.repository.repositoryDatabaseModule
-import com.app.mobile.di.repository.userLocalRepositoryModule
 import com.app.mobile.di.repository.workLocalRepositoryModule
 import com.app.mobile.di.screens.aboutAppModule
 import com.app.mobile.di.screens.homeModule
@@ -58,12 +56,10 @@ class MobileApp : Application() {
 				jsonModule,
 				registrationModule,
 				repositoryApiModule,
-				repositoryDatabaseModule,
 				*networkModules.toTypedArray(),
 				confirmationModule,
 				authorizationModule,
 				databaseModule,
-				userLocalRepositoryModule,
 				sessionModule,
 				authRepository,
 				settingsModule,

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -14,10 +15,14 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -27,12 +32,15 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.mobile.R
+import com.app.mobile.presentation.models.account.TypeConfirmationUi
 import com.app.mobile.presentation.models.account.UserInfoModel
 import com.app.mobile.presentation.ui.components.AppTopBar
 import com.app.mobile.presentation.ui.components.ClickableProfileField
+import com.app.mobile.presentation.ui.components.CustomTextField
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.ObserveAsEvents
+import com.app.mobile.presentation.ui.components.PasswordTextField
 import com.app.mobile.presentation.ui.components.TopBarAction
 import com.app.mobile.presentation.ui.screens.accountinfo.models.AccountInfoActions
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoDialogState
@@ -48,7 +56,8 @@ import com.app.mobile.ui.theme.MobileTheme
 fun AccountInfoScreen(
 	accountInfoViewModel: AccountInfoViewModel,
 	onDeleteClick: () -> Unit,
-	onBackClick: () -> Unit
+	onBackClick: () -> Unit,
+	onPasswordChangeClick: (email: String, type: TypeConfirmationUi) -> Unit
 ) {
 
 	val accountInfoUiState by accountInfoViewModel.uiState.collectAsStateWithLifecycle()
@@ -63,6 +72,10 @@ fun AccountInfoScreen(
 		when (event) {
 			is AccountInfoEvent.NavigateToRegistration -> onDeleteClick()
 			is AccountInfoEvent.NavigateBack           -> onBackClick()
+
+			is AccountInfoEvent.NavigateToConfirmation -> onPasswordChangeClick(
+				event.email, event.type
+			)
 
 			is AccountInfoEvent.ShowSnackBar           -> {
 				snackbarHostState.showSnackbar(
@@ -101,22 +114,126 @@ fun AccountInfoScreen(
 	val accountInfoDialogState by accountInfoViewModel.accountInfoDialogState.collectAsStateWithLifecycle()
 
 	when (val state = accountInfoDialogState) {
-		is AccountInfoDialogState.SetName     -> {
-			//Name dialog
-		}
+		is AccountInfoDialogState.SetName     -> EditNameDialog(
+			currentName = state.name,
+			onDismiss = accountInfoViewModel::dismissDialog,
+			onConfirm = accountInfoViewModel::submitName
+		)
 
-		is AccountInfoDialogState.SetEmail    -> {
-			//Email dialog
-		}
+		is AccountInfoDialogState.SetEmail    -> EditEmailDialog(
+			currentEmail = state.email,
+			onDismiss = accountInfoViewModel::dismissDialog,
+			onConfirm = accountInfoViewModel::submitEmail
+		)
 
-		is AccountInfoDialogState.SetPassword -> {
-			//Password dialog
-		}
+		is AccountInfoDialogState.SetPassword -> EditPasswordDialog(
+			onDismiss = accountInfoViewModel::dismissDialog,
+			onConfirm = accountInfoViewModel::submitPassword
+		)
 
-		is AccountInfoDialogState.Hidden      -> {
-			//Hidden dialog
-		}
+		is AccountInfoDialogState.Hidden      -> Unit
 	}
+}
+
+@Composable
+private fun EditNameDialog(
+	currentName: String,
+	onDismiss: () -> Unit,
+	onConfirm: (String) -> Unit
+) {
+	var name by rememberSaveable { mutableStateOf(currentName) }
+
+	AlertDialog(
+		onDismissRequest = onDismiss,
+		title = { Text(stringResource(R.string.dialog_change_name_title)) },
+		text = {
+			CustomTextField(
+				value = name,
+				onValueChange = { name = it },
+				placeholder = stringResource(R.string.dialog_new_name_placeholder)
+			)
+		},
+		confirmButton = {
+			TextButton(
+				onClick = { if (name.isNotBlank()) onConfirm(name.trim()) },
+				enabled = name.isNotBlank()
+			) {
+				Text(stringResource(R.string.dialog_change_button))
+			}
+		},
+		dismissButton = {
+			TextButton(onClick = onDismiss) {
+				Text(stringResource(R.string.cancel))
+			}
+		}
+	)
+}
+
+@Composable
+private fun EditEmailDialog(
+	currentEmail: String,
+	onDismiss: () -> Unit,
+	onConfirm: (String) -> Unit
+) {
+	var email by rememberSaveable { mutableStateOf(currentEmail) }
+
+	AlertDialog(
+		onDismissRequest = onDismiss,
+		title = { Text(stringResource(R.string.dialog_change_email_title)) },
+		text = {
+			CustomTextField(
+				value = email,
+				onValueChange = { email = it },
+				placeholder = stringResource(R.string.dialog_new_email_placeholder)
+			)
+		},
+		confirmButton = {
+			TextButton(
+				onClick = { if (email.isNotBlank()) onConfirm(email.trim()) },
+				enabled = email.isNotBlank()
+			) {
+				Text(stringResource(R.string.dialog_change_button))
+			}
+		},
+		dismissButton = {
+			TextButton(onClick = onDismiss) {
+				Text(stringResource(R.string.cancel))
+			}
+		}
+	)
+}
+
+@Composable
+private fun EditPasswordDialog(
+	onDismiss: () -> Unit,
+	onConfirm: (String) -> Unit
+) {
+	var password by rememberSaveable { mutableStateOf("") }
+
+	AlertDialog(
+		onDismissRequest = onDismiss,
+		title = { Text(stringResource(R.string.dialog_change_password_title)) },
+		text = {
+			PasswordTextField(
+				value = password,
+				onValueChange = { password = it },
+				placeholder = stringResource(R.string.dialog_new_password_placeholder)
+			)
+		},
+		confirmButton = {
+			TextButton(
+				onClick = { if (password.isNotBlank()) onConfirm(password) },
+				enabled = password.isNotBlank()
+			) {
+				Text(stringResource(R.string.dialog_change_button))
+			}
+		},
+		dismissButton = {
+			TextButton(onClick = onDismiss) {
+				Text(stringResource(R.string.cancel))
+			}
+		}
+	)
 }
 
 @Composable
@@ -141,7 +258,7 @@ private fun AccountInfoContent(
 		Column(
 			modifier = Modifier
 				.fillMaxSize()
-				.padding(innerPadding) // Важно: учитываем высоту TopBar
+				.padding(innerPadding)
 				.verticalScroll(rememberScrollState())
 				.padding(Dimens.ScreenContentPadding),
 			horizontalAlignment = Alignment.CenterHorizontally,
@@ -156,11 +273,23 @@ private fun AccountInfoContent(
 					),
 				verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingMedium),
 			) {
-				NameText(userInfo.name, actions.onNameClick)
+				ClickableProfileField(
+					label = stringResource(R.string.name),
+					value = userInfo.name,
+					onClick = actions.onNameClick
+				)
 
-				EmailText(userInfo.email, actions.onEmailClick)
+				ClickableProfileField(
+					label = stringResource(R.string.email),
+					value = userInfo.email,
+					onClick = actions.onEmailClick
+				)
 
-				PasswordText(userInfo.password, actions.onPasswordClick)
+				ClickableProfileField(
+					label = stringResource(R.string.password),
+					value = stringResource(R.string.password_masked),
+					onClick = actions.onPasswordClick
+				)
 
 				Text(
 					text = stringResource(R.string.hint_account_info),
@@ -175,41 +304,13 @@ private fun AccountInfoContent(
 	}
 }
 
-@Composable
-private fun NameText(name: String, onNameClick: () -> Unit) {
-	ClickableProfileField(
-		label = stringResource(R.string.name),
-		value = name,
-		onClick = onNameClick
-	)
-}
-
-@Composable
-private fun EmailText(email: String, onEmailClick: () -> Unit) {
-	ClickableProfileField(
-		label = stringResource(R.string.email),
-		value = email,
-		onClick = onEmailClick
-	)
-}
-
-@Composable
-private fun PasswordText(password: String, onPasswordClick: () -> Unit) {
-	ClickableProfileField(
-		label = stringResource(R.string.password),
-		value = password,
-		onClick = onPasswordClick
-	)
-}
-
 @Preview(showBackground = true)
 @Composable
 fun AccountInfoContentPreview() {
 	MobileTheme {
 		val userInfo = UserInfoModel(
 			name = "Иван Иванов",
-			email = "ivan@example.com",
-			password = "••••••••"
+			email = "ivan@example.com"
 		)
 		val actions = AccountInfoActions(
 			onNameClick = {},
