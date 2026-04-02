@@ -3,6 +3,7 @@ package com.app.mobile.presentation.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.app.mobile.domain.models.hives.WorkDomain
+import com.app.mobile.domain.usecase.hives.works.DeleteWorkUseCase
 import com.app.mobile.domain.usecase.hives.works.GetWorksUseCase
 import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListEvent
 import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListUiState
@@ -30,6 +31,7 @@ class WorksListViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
     private val getWorksUseCase = mockk<GetWorksUseCase>()
+    private val deleteWorkUseCase = mockk<DeleteWorkUseCase>()
 
     @Before
     fun setUp() {
@@ -43,7 +45,7 @@ class WorksListViewModelTest {
 
     private fun createViewModel(hiveId: String = "h-1"): WorksListViewModel {
         val handle = SavedStateHandle(mapOf("hiveId" to hiveId))
-        return WorksListViewModel(handle, getWorksUseCase)
+        return WorksListViewModel(handle, getWorksUseCase, deleteWorkUseCase)
     }
 
     // region loadWorks
