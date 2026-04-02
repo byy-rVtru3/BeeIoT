@@ -9,6 +9,7 @@ import com.app.mobile.domain.mappers.toConfirmationUiModel
 import com.app.mobile.domain.usecase.account.ConfirmationUserUseCase
 import com.app.mobile.presentation.models.account.ConfirmationModelUi
 import com.app.mobile.presentation.models.account.ConfirmationResultUi
+import com.app.mobile.presentation.models.account.TypeConfirmationUi
 import com.app.mobile.presentation.ui.components.BaseViewModel
 import com.app.mobile.presentation.ui.screens.confirmation.ConfirmationRoute
 import kotlinx.coroutines.Job
@@ -79,7 +80,12 @@ class ConfirmationViewModel(
 
                 when (result) {
                     is ConfirmationResultUi.Success -> {
-                        sendEvent(ConfirmationEvent.NavigateToAuthorization)
+                        val event = if (type == TypeConfirmationUi.CHANGE_PASSWORD) {
+                            ConfirmationEvent.NavigateToAccountInfo
+                        } else {
+                            ConfirmationEvent.NavigateToAuthorization
+                        }
+                        sendEvent(event)
                     }
 
                     is ConfirmationResultUi.Error -> {

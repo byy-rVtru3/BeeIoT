@@ -4,5 +4,5 @@ sealed interface AccountInfoDialogState {
     data object Hidden : AccountInfoDialogState
     data class SetName(val name: String) : AccountInfoDialogState
     data class SetEmail(val email: String) : AccountInfoDialogState
-    data class SetPassword(val password: String) : AccountInfoDialogState
+    data object SetPassword : AccountInfoDialogState
 }
