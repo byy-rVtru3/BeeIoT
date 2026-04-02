@@ -4,6 +4,7 @@ sealed interface SettingsEvent {
 	data object NavigateToAccountInfo : SettingsEvent
 	data object NavigateToAboutApp : SettingsEvent
 	data object NavigateToAuthorization : SettingsEvent
+	data object NavigateToNotificationSettings : SettingsEvent
 
 	data class ShowSnackBar(val message: String) : SettingsEvent
 }
