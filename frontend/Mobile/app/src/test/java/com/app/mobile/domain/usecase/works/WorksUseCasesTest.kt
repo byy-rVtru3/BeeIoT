@@ -1,45 +1,37 @@
 package com.app.mobile.domain.usecase.works
 
+import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.domain.models.hives.WorkDomain
-import com.app.mobile.domain.repository.WorkLocalRepository
+import com.app.mobile.domain.repository.WorkRepository
+import com.app.mobile.domain.usecase.hives.works.AddWorkUseCase
 import com.app.mobile.domain.usecase.hives.works.CreateWorkUseCase
 import com.app.mobile.domain.usecase.hives.works.DeleteWorkUseCase
 import com.app.mobile.domain.usecase.hives.works.GetWorkUseCase
 import com.app.mobile.domain.usecase.hives.works.GetWorksUseCase
-import com.app.mobile.domain.usecase.hives.works.SaveWorkUseCase
+import com.app.mobile.domain.usecase.hives.works.UpdateWorkUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
 import java.time.LocalDateTime
 
 class WorksUseCasesTest {
 
-    private val repo = mockk<WorkLocalRepository>()
+    private val repo = mockk<WorkRepository>()
 
     // region GetWorksUseCase
 
     @Test
-    fun `GetWorksUseCase - delegates to repo with correct hiveId`() = runTest {
+    fun `GetWorksUseCase - delegates to repo with correct hiveName`() = runTest {
         val works = listOf(work(id = "1"), work(id = "2"))
-        coEvery { repo.getWorks("hive-1") } returns works
+        coEvery { repo.getWorks("hive-1") } returns ApiResult.Success(works)
 
         val result = GetWorksUseCase(repo).invoke("hive-1")
 
-        assertEquals(works, result)
+        assertEquals(ApiResult.Success(works), result)
         coVerify(exactly = 1) { repo.getWorks("hive-1") }
-    }
-
-    @Test
-    fun `GetWorksUseCase - returns empty list when no works`() = runTest {
-        coEvery { repo.getWorks(any()) } returns emptyList()
-
-        val result = GetWorksUseCase(repo).invoke("hive-empty")
-
-        assertEquals(emptyList<WorkDomain>(), result)
     }
 
     // endregion
@@ -49,20 +41,11 @@ class WorksUseCasesTest {
     @Test
     fun `GetWorkUseCase - returns work when found`() = runTest {
         val expected = work(id = "w-1")
-        coEvery { repo.getWork("w-1") } returns expected
+        coEvery { repo.getWork("w-1") } returns ApiResult.Success(expected)
 
         val result = GetWorkUseCase(repo).invoke("w-1")
 
-        assertEquals(expected, result)
-    }
-
-    @Test
-    fun `GetWorkUseCase - returns null when not found`() = runTest {
-        coEvery { repo.getWork("missing") } returns null
-
-        val result = GetWorkUseCase(repo).invoke("missing")
-
-        assertNull(result)
+        assertEquals(ApiResult.Success(expected), result)
     }
 
     // endregion
@@ -71,7 +54,7 @@ class WorksUseCasesTest {
 
     @Test
     fun `DeleteWorkUseCase - delegates to repo with correct workId`() = runTest {
-        coEvery { repo.deleteWork("w-1") } returns Unit
+        coEvery { repo.deleteWork("w-1") } returns ApiResult.Success(Unit)
 
         DeleteWorkUseCase(repo).invoke("w-1")
 
@@ -80,16 +63,30 @@ class WorksUseCasesTest {
 
     // endregion
 
-    // region SaveWorkUseCase
+    // region AddWorkUseCase
 
     @Test
-    fun `SaveWorkUseCase - delegates to repo with correct work`() = runTest {
-        val work = work(id = "w-2")
-        coEvery { repo.saveWork(work) } returns Unit
+    fun `AddWorkUseCase - delegates to repo with correct work`() = runTest {
+        val newWork = work(id = "w-2")
+        coEvery { repo.addWork(newWork) } returns ApiResult.Success(Unit)
 
-        SaveWorkUseCase(repo).invoke(work)
+        AddWorkUseCase(repo).invoke(newWork)
 
-        coVerify(exactly = 1) { repo.saveWork(work) }
+        coVerify(exactly = 1) { repo.addWork(newWork) }
+    }
+
+    // endregion
+
+    // region UpdateWorkUseCase
+
+    @Test
+    fun `UpdateWorkUseCase - delegates to repo with correct work`() = runTest {
+        val updated = work(id = "w-3")
+        coEvery { repo.updateWork(updated) } returns ApiResult.Success(Unit)
+
+        UpdateWorkUseCase(repo).invoke(updated)
+
+        coVerify(exactly = 1) { repo.updateWork(updated) }
     }
 
     // endregion
