@@ -18,8 +18,7 @@ fun RegistrationModel.toUiModel(repeatPassword: String = "") =
 
 fun RegistrationModel.toUserDomain() = UserDomain(
     name = name,
-    email = email,
-    password = password
+    email = email
 )
 
 fun ApiResult<Unit>.toRegistrationUiModel(): RegistrationResultUi {
