@@ -17,10 +17,6 @@ okhttp = "5.3.2"
 koinBom = "4.1.1"
 koinAndroid = "4.1.1"
 koinAndroidxCompose = "4.1.1"
-ksp = "2.3.2"
-roomCompiler = "2.8.4"
-roomKtx = "2.8.4"
-roomRuntime = "2.8.4"
 dataStore = "1.2.0"
 materialIconsExtendedAndroid = "1.7.8"
 googleGms = "4.4.4"
@@ -42,12 +38,6 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 
 #DataStore
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "dataStore" }
-
-# Room
-androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
-androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomKtx" }
-androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
-
 
 # Koin - Dependency Injection
 # Библиотека для внедрения зависимостей.
@@ -103,5 +93,4 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 gms-google-services = {id = "com.google.gms.google-services", version.ref = "googleGms"}
