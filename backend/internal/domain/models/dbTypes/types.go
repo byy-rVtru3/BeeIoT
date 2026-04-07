@@ -14,10 +14,10 @@ type Hive struct {
 	DateNoise       time.Time
 	SensorID        string
 	Status          bool
-	HubID     *int
-	QueenID   *int
-	HubName   string
-	QueenName string
+	HubID           *int
+	QueenID         *int
+	HubName         string
+	QueenName       string
 }
 
 type Hub struct {
@@ -37,10 +37,12 @@ type Queen struct {
 }
 
 type Task struct {
-	Name  string
-	Time  time.Time
-	Email string
-	Hive  string
+	ID          string
+	HiveName    string
+	Title       string
+	Description string
+	CreatedAt   time.Time
+	Email       string
 }
 
 type HivesTemperatureData struct {

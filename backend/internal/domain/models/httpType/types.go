@@ -15,6 +15,11 @@ type Login struct {
 	Password string `json:"password"`
 }
 
+type UserInfo struct {
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
+
 type Confirm struct {
 	Email    string `json:"email"`
 	Code     string `json:"code"`
@@ -67,14 +72,16 @@ type Hive struct {
 }
 
 type HiveListItem struct {
-	Name  string `json:"name"`
-	Hub   string `json:"hub"`
-	Queen string `json:"queen"`
+	Name   string `json:"name"`
+	Sensor string `json:"sensor"`
+	Hub    string `json:"hub"`
+	Queen  string `json:"queen"`
 }
 
 type HiveDetails struct {
 	Name   string `json:"name"`
 	Active bool   `json:"active"`
+	Sensor string `json:"sensor"`
 	Hub    string `json:"hub"`
 	Queen  string `json:"queen"`
 }
@@ -162,4 +169,28 @@ type UpdateQueen struct {
 type LinkToHiveRequest struct {
 	HiveName   string `json:"hive_name"`
 	TargetName string `json:"target_name"`
+}
+
+type CreateTaskRequest struct {
+	HiveName    string `json:"hive_name"`
+	Title       string `json:"title"`
+	Description string `json:"description,omitempty"`
+}
+
+type UpdateTaskRequest struct {
+	ID          string  `json:"id"`
+	Title       *string `json:"title,omitempty"`
+	Description *string `json:"description,omitempty"`
+}
+
+type DeleteTaskRequest struct {
+	ID string `json:"id"`
+}
+
+type TaskItem struct {
+	ID          string `json:"id"`
+	HiveName    string `json:"hive_name"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	CreatedAt   int64  `json:"created_at"`
 }

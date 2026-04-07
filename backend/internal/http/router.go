@@ -46,6 +46,7 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.Post("/confirm/registration", h.ConfirmRegistration)
 			r.Post("/confirm/password", h.ConfirmChangePassword)
 			r.Post("/refresh/token", h.RefreshToken)
+			r.With(m.CheckAuth).Get("/me", h.GetMe)
 			r.With(m.CheckAuth).Delete("/delete/user", h.DeleteUser)
 			r.With(m.CheckAuth).Delete("/logout", h.Logout)
 			r.With(m.CheckAuth).Post("/change/name", h.ChangeName)
@@ -91,6 +92,13 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.Get("/sensor/last", h.GetLastSensorReading)
 			r.Post("/weight/set", h.SetHiveWeight)
 			r.Delete("/weight/delete", h.DeleteHiveWeight)
+		})
+		r.Route("/task", func(r chi.Router) {
+			r.Use(m.CheckAuth)
+			r.Post("/create", h.CreateTask)
+			r.Get("/list", h.GetTasks)
+			r.Put("/update", h.UpdateTask)
+			r.Delete("/delete", h.DeleteTask)
 		})
 	})
 

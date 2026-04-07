@@ -18,6 +18,7 @@ type DB interface {
 	ChangePassword(ctx context.Context, user httpType.ChangePassword) error
 	DeleteUser(ctx context.Context, email string) error
 	GetUserById(ctx context.Context, id int) (string, error)
+	GetUserByEmail(ctx context.Context, email string) (string, string, error)
 	ChangeNameUser(ctx context.Context, email string, name string) error
 
 	NewHive(ctx context.Context, email, nameHive, sensorName string) error
@@ -61,6 +62,12 @@ type DB interface {
 	SetFirebaseToken(ctx context.Context, email, device, fcm string) error
 	GetFirebaseToken(ctx context.Context, email string) ([]string, error)
 	DeleteFirebaseToken(ctx context.Context, email string, badFcm []string) error
+
+	CreateTask(ctx context.Context, email string, req httpType.CreateTaskRequest) (string, error)
+	GetTasks(ctx context.Context, email, hiveName string) ([]dbTypes.Task, error)
+	UpdateTask(ctx context.Context, email string, req httpType.UpdateTaskRequest) error
+	DeleteTask(ctx context.Context, email, taskID string) error
+	GetTaskByID(ctx context.Context, taskID string) (dbTypes.Task, error)
 }
 
 type InMemoryDB interface {

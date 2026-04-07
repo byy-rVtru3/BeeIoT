@@ -167,6 +167,11 @@ type MockDB struct {
 	ExistUserError  error
 	LoginPassword   string
 	LoginError      error
+	UserEmail       string
+	UserName        string
+	CreatedTaskID   string
+	TaskData        dbTypes.Task
+	TasksList       []dbTypes.Task
 }
 
 func (m *MockDB) IsExistUser(_ context.Context, _ string) (bool, error) {
@@ -221,6 +226,30 @@ func (m *MockDB) GetNoiseSinceDay(_ context.Context, _ int, _ time.Time) (map[ti
 
 func (m *MockDB) GetTemperaturesSinceTimeById(_ context.Context, _ int, _ time.Time) ([]dbTypes.HivesTemperatureData, error) {
 	return []dbTypes.HivesTemperatureData{{Temperature: 25.0}}, nil
+}
+
+func (m *MockDB) GetUserByEmail(_ context.Context, _ string) (string, string, error) {
+	return m.UserEmail, m.UserName, nil
+}
+
+func (m *MockDB) CreateTask(_ context.Context, _ string, _ httpType.CreateTaskRequest) (string, error) {
+	return m.CreatedTaskID, nil
+}
+
+func (m *MockDB) GetTasks(_ context.Context, _ string, _ string) ([]dbTypes.Task, error) {
+	return m.TasksList, nil
+}
+
+func (m *MockDB) UpdateTask(_ context.Context, _ string, _ httpType.UpdateTaskRequest) error {
+	return nil
+}
+
+func (m *MockDB) DeleteTask(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
+func (m *MockDB) GetTaskByID(_ context.Context, _ string) (dbTypes.Task, error) {
+	return m.TaskData, nil
 }
 
 type MockConfirmSender struct {
@@ -559,3 +588,175 @@ func TestGetNoiseAndTemp(t *testing.T) {
 // func TestMQTTSendConfig(t *testing.T) {
 // 	...
 // }
+
+func TestGetMe(t *testing.T) {
+	t.Setenv("JWT_SECRET", "testsecret")
+	logger := zerolog.Nop()
+	mockDB := &MockDB{
+		UserEmail: "test@example.com",
+		UserName:  "Test User",
+	}
+	mockInMem := &MockInMemoryDB{}
+	mockPasswordKeeper := &MockPasswordKeeper{}
+
+	h, err := NewHandler(mockDB, nil, mockInMem, nil, mockPasswordKeeper, logger)
+	if err != nil {
+		t.Fatalf("NewHandler failed: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/api/auth/me", nil)
+	req = req.WithContext(context.WithValue(req.Context(), "email", "test@example.com"))
+	w := httptest.NewRecorder()
+
+	h.GetMe(w, req)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", resp.StatusCode)
+	}
+}
+
+func TestCreateTask(t *testing.T) {
+	t.Setenv("JWT_SECRET", "testsecret")
+	logger := zerolog.Nop()
+	mockDB := &MockDB{
+		CreatedTaskID: "task-123",
+		TaskData: dbTypes.Task{
+			ID:          "task-123",
+			HiveName:    "Улей-1",
+			Title:       "Осенняя ревизия",
+			Description: "Проверка кормов",
+			CreatedAt:   time.Now(),
+			Email:       "test@example.com",
+		},
+	}
+	mockInMem := &MockInMemoryDB{}
+	mockPasswordKeeper := &MockPasswordKeeper{}
+
+	h, err := NewHandler(mockDB, nil, mockInMem, nil, mockPasswordKeeper, logger)
+	if err != nil {
+		t.Fatalf("NewHandler failed: %v", err)
+	}
+
+	body, _ := json.Marshal(httpType.CreateTaskRequest{
+		HiveName:    "Улей-1",
+		Title:       "Осенняя ревизия",
+		Description: "Проверка кормов",
+	})
+	req := httptest.NewRequest("POST", "/api/task/create", bytes.NewBuffer(body))
+	req = req.WithContext(context.WithValue(req.Context(), "email", "test@example.com"))
+	w := httptest.NewRecorder()
+
+	h.CreateTask(w, req)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", resp.StatusCode)
+	}
+}
+
+func TestGetTasks(t *testing.T) {
+	t.Setenv("JWT_SECRET", "testsecret")
+	logger := zerolog.Nop()
+	tasks := []dbTypes.Task{
+		{
+			ID:          "task-1",
+			HiveName:    "Улей-1",
+			Title:       "Ревизия",
+			Description: "Проверка",
+			CreatedAt:   time.Now(),
+			Email:       "test@example.com",
+		},
+	}
+	mockDB := &MockDB{TasksList: tasks}
+	mockInMem := &MockInMemoryDB{}
+	mockPasswordKeeper := &MockPasswordKeeper{}
+
+	h, err := NewHandler(mockDB, nil, mockInMem, nil, mockPasswordKeeper, logger)
+	if err != nil {
+		t.Fatalf("NewHandler failed: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/api/task/list", nil)
+	req = req.WithContext(context.WithValue(req.Context(), "email", "test@example.com"))
+	w := httptest.NewRecorder()
+
+	h.GetTasks(w, req)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", resp.StatusCode)
+	}
+}
+
+func TestUpdateTask(t *testing.T) {
+	t.Setenv("JWT_SECRET", "testsecret")
+	logger := zerolog.Nop()
+	mockDB := &MockDB{
+		TaskData: dbTypes.Task{
+			ID:          "task-1",
+			HiveName:    "Улей-1",
+			Title:       "Ревизия",
+			Description: "Проверка",
+			CreatedAt:   time.Now(),
+			Email:       "test@example.com",
+		},
+	}
+	mockInMem := &MockInMemoryDB{}
+	mockPasswordKeeper := &MockPasswordKeeper{}
+
+	h, err := NewHandler(mockDB, nil, mockInMem, nil, mockPasswordKeeper, logger)
+	if err != nil {
+		t.Fatalf("NewHandler failed: %v", err)
+	}
+
+	newTitle := "Обновленная ревизия"
+	body, _ := json.Marshal(httpType.UpdateTaskRequest{
+		ID:    "task-1",
+		Title: &newTitle,
+	})
+	req := httptest.NewRequest("PUT", "/api/task/update", bytes.NewBuffer(body))
+	req = req.WithContext(context.WithValue(req.Context(), "email", "test@example.com"))
+	w := httptest.NewRecorder()
+
+	h.UpdateTask(w, req)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", resp.StatusCode)
+	}
+}
+
+func TestDeleteTask(t *testing.T) {
+	t.Setenv("JWT_SECRET", "testsecret")
+	logger := zerolog.Nop()
+	mockDB := &MockDB{
+		TaskData: dbTypes.Task{
+			ID:       "task-1",
+			HiveName: "Улей-1",
+			Title:    "Ревизия",
+			Email:    "test@example.com",
+		},
+	}
+	mockInMem := &MockInMemoryDB{}
+	mockPasswordKeeper := &MockPasswordKeeper{}
+
+	h, err := NewHandler(mockDB, nil, mockInMem, nil, mockPasswordKeeper, logger)
+	if err != nil {
+		t.Fatalf("NewHandler failed: %v", err)
+	}
+
+	body, _ := json.Marshal(httpType.DeleteTaskRequest{
+		ID: "task-1",
+	})
+	req := httptest.NewRequest("DELETE", "/api/task/delete", bytes.NewBuffer(body))
+	req = req.WithContext(context.WithValue(req.Context(), "email", "test@example.com"))
+	w := httptest.NewRecorder()
+
+	h.DeleteTask(w, req)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", resp.StatusCode)
+	}
+}

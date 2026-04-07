@@ -292,3 +292,22 @@ func (h *Handler) UpdateFcmToken(w http.ResponseWriter, r *http.Request) {
 	}
 	h.writeBodyJSON(w, "FCM токен успешно обновлен", nil)
 }
+
+func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
+	email, err := h.getEmailFromContext(w, r)
+	if err != nil {
+		return
+	}
+
+	emailResult, name, err := h.db.GetUserByEmail(r.Context(), email)
+	if err != nil {
+		h.logger.Error().Err(err).Str("email", email).Msg("failed to get user info")
+		http.Error(w, "Пользователь не найден", http.StatusNotFound)
+		return
+	}
+
+	h.writeBodyJSON(w, "Данные профиля успешно получены", httpType.UserInfo{
+		Email: emailResult,
+		Name:  name,
+	})
+}

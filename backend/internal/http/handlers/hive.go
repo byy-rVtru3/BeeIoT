@@ -8,9 +8,10 @@ import (
 
 func dbHiveToListItem(h dbTypes.Hive) httpType.HiveListItem {
 	return httpType.HiveListItem{
-		Name:  h.NameHive,
-		Hub:   h.HubName,
-		Queen: h.QueenName,
+		Name:   h.NameHive,
+		Sensor: h.SensorID,
+		Hub:    h.HubName,
+		Queen:  h.QueenName,
 	}
 }
 
@@ -26,6 +27,7 @@ func dbHiveToDetails(h dbTypes.Hive) httpType.HiveDetails {
 	return httpType.HiveDetails{
 		Name:   h.NameHive,
 		Active: h.Status,
+		Sensor: h.SensorID,
 		Hub:    h.HubName,
 		Queen:  h.QueenName,
 	}
@@ -223,4 +225,3 @@ func (h *Handler) LinkQueenToHive(w http.ResponseWriter, r *http.Request) {
 	h.logger.Debug().Str("email", email).Str("hive", req.HiveName).Str("queen", req.TargetName).Msg("queen linked/unlinked")
 	h.writeBodyJSON(w, "Привязка успешна", nil)
 }
-
