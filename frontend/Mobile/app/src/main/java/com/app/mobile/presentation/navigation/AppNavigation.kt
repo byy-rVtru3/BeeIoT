@@ -19,6 +19,9 @@ import androidx.navigation.toRoute
 import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppRoute
 import com.app.mobile.presentation.ui.screens.aboutapp.AboutAppScreen
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppViewModel
+import com.app.mobile.presentation.ui.screens.howtouse.HowToUseRoute
+import com.app.mobile.presentation.ui.screens.howtouse.HowToUseScreen
+import com.app.mobile.presentation.ui.screens.howtouse.viewmodel.HowToUseViewModel
 import com.app.mobile.presentation.ui.screens.main.HomeScreen
 import com.app.mobile.presentation.ui.screens.main.MainRoute
 import com.app.mobile.presentation.ui.screens.main.viewmodel.HomeViewModel
@@ -140,6 +143,7 @@ fun AppNavigation(
                 settingsViewModel,
                 onAccountInfoClick = { navController.navigate(AccountInfoRoute) },
                 onAboutAppClick = { navController.navigate(AboutAppRoute) },
+                onHowToUseClick = { navController.navigate(HowToUseRoute) },
                 onLogoutClick = { navController.navigate(AuthorizationRoute) })
         }
 
@@ -159,6 +163,14 @@ fun AppNavigation(
             val aboutAppViewModel: AboutAppViewModel = koinViewModel()
             AboutAppScreen(
                 aboutAppViewModel,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        animatedComposable<HowToUseRoute> {
+            val howToUseViewModel: HowToUseViewModel = koinViewModel()
+            HowToUseScreen(
+                howToUseViewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }

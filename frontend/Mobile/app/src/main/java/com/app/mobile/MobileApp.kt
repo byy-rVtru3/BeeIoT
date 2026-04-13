@@ -25,6 +25,7 @@ import com.app.mobile.di.screens.hubEditorModule
 import com.app.mobile.di.screens.hiveEditorModule
 import com.app.mobile.di.screens.hiveModule
 import com.app.mobile.di.screens.hivesListModule
+import com.app.mobile.di.screens.howToUseModule
 import com.app.mobile.di.screens.queenEditorModule
 import com.app.mobile.di.screens.queenListModule
 import com.app.mobile.di.screens.queenModule
@@ -62,6 +63,7 @@ class MobileApp : Application() {
 				authRepository,
 				settingsModule,
 				aboutAppModule,
+				howToUseModule,
 				accountInfoModule,
 				hivesDataSourceModule,
 				queenDataSourceModule,

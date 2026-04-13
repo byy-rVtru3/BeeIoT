@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Logout
@@ -46,7 +47,8 @@ fun SettingsScreen(
 	settingsViewModel: SettingsViewModel,
 	onAccountInfoClick: () -> Unit,
 	onLogoutClick: () -> Unit,
-	onAboutAppClick: () -> Unit
+	onAboutAppClick: () -> Unit,
+	onHowToUseClick: () -> Unit
 ) {
 	val settingsUiState by settingsViewModel.uiState.collectAsStateWithLifecycle()
 	val snackBarHostState = remember { SnackbarHostState() }
@@ -57,6 +59,8 @@ fun SettingsScreen(
 			is SettingsEvent.NavigateToAccountInfo -> onAccountInfoClick()
 
 			is SettingsEvent.NavigateToAboutApp -> onAboutAppClick()
+
+			is SettingsEvent.NavigateToHowToUse -> onHowToUseClick()
 
 			is SettingsEvent.NavigateToAuthorization -> onLogoutClick()
 
@@ -81,6 +85,7 @@ fun SettingsScreen(
 			val actions = SettingsActions(
 				onAccountInfoClick = settingsViewModel::onAccountInfoClick,
 				onAboutAppClick = settingsViewModel::onAboutAppClick,
+				onHowToUseClick = settingsViewModel::onHowToUseClick,
 				onLogoutClick = settingsViewModel::onLogoutClick,
 				onToggleTheme = settingsViewModel::onToggleTheme,
 				onNotificationsClick = settingsViewModel::onNotificationsClick
@@ -149,6 +154,7 @@ private fun SettingsContent(
 
 				SettingsGroup {
 					AboutAppButton(actions.onAboutAppClick)
+					HowToUseButton(actions.onHowToUseClick)
 				}
 
 				SettingsGroup {
@@ -218,6 +224,15 @@ private fun AboutAppButton(onAboutAppClick: () -> Unit) {
 }
 
 @Composable
+private fun HowToUseButton(onHowToUseClick: () -> Unit) {
+	SettingsButton(
+		onClick = onHowToUseClick,
+		text = stringResource(R.string.how_to_use_app),
+		icon = Icons.Outlined.HelpOutline
+	)
+}
+
+@Composable
 private fun LogoutButton(onLogoutClick: () -> Unit) {
 	SettingsButton(
 		onClick = onLogoutClick,
@@ -234,6 +249,7 @@ fun SettingsContentPreview() {
 		val actions = SettingsActions(
 			onAccountInfoClick = {},
 			onAboutAppClick = {},
+			onHowToUseClick = {},
 			onLogoutClick = {},
 			onToggleTheme = {},
 			onNotificationsClick = {}

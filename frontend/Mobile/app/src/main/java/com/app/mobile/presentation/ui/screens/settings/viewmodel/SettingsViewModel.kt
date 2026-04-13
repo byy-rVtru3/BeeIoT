@@ -61,6 +61,12 @@ class SettingsViewModel(
 		}
 	}
 
+	fun onHowToUseClick() {
+		if (currentState is SettingsUiState.Content) {
+			sendEvent(SettingsEvent.NavigateToHowToUse)
+		}
+	}
+
 	fun onNotificationsClick() {
 		if (currentState is SettingsUiState.Content) {
 			sendEvent(SettingsEvent.NavigateToNotificationSettings)

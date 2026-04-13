@@ -1,34 +1,22 @@
 package com.app.mobile.presentation.ui.screens.aboutapp
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.mobile.R
-import com.app.mobile.presentation.ui.components.AppTopBar
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
+import com.app.mobile.presentation.ui.components.InfoScreenContent
+import com.app.mobile.presentation.ui.components.InfoSection
 import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppEvent
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppUiState
 import com.app.mobile.presentation.ui.screens.aboutapp.viewmodel.AboutAppViewModel
-import com.app.mobile.ui.theme.Dimens
 import com.app.mobile.ui.theme.MobileTheme
 
 @Composable
@@ -58,36 +46,16 @@ fun AboutAppScreen(aboutAppViewModel: AboutAppViewModel, onBackClick: () -> Unit
 	}
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AboutAppContent(onBackClick: () -> Unit, snackbarHostState: SnackbarHostState) {
-	Scaffold(
-		topBar = {
-			AppTopBar(
-				title = stringResource(R.string.about),
-				hasBackground = false,
-				onBackClick = onBackClick
-			)
-		},
-		snackbarHost = { SnackbarHost(snackbarHostState) },
-		containerColor = MaterialTheme.colorScheme.background
-	) { innerPadding ->
-		Column(
-			modifier = Modifier
-				.fillMaxSize()
-				.padding(innerPadding)
-				.padding(Dimens.ScreenContentPadding),
-			horizontalAlignment = Alignment.CenterHorizontally,
-			verticalArrangement = Arrangement.Top
-		) {
-			Text(
-				text = stringResource(R.string.app_info),
-				style = MaterialTheme.typography.bodyMedium,
-				color = MaterialTheme.colorScheme.onBackground,
-				textAlign = TextAlign.Start
-			)
-		}
-	}
+	InfoScreenContent(
+		title = stringResource(R.string.about),
+		sections = listOf(
+			InfoSection(body = stringResource(R.string.app_info))
+		),
+		onBackClick = onBackClick,
+		snackbarHostState = snackbarHostState
+	)
 }
 
 @Preview(showBackground = true)
