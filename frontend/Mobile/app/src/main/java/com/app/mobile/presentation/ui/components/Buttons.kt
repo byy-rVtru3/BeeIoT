@@ -7,9 +7,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -75,6 +78,7 @@ fun SettingsButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
     exit: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -102,6 +106,10 @@ fun SettingsButton(
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ),
+        contentPadding = PaddingValues(
+            horizontal = Dimens.Size12,
+            vertical = Dimens.Size10
+        ),
         border = BorderStroke(
             Dp(borderWidth), if (exit) {
                 MaterialTheme.colorScheme.error
@@ -111,12 +119,19 @@ fun SettingsButton(
         ),
         interactionSource = interactionSource
     ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(Dimens.IconSizeMedium)
+            )
+            Spacer(modifier = Modifier.width(Dimens.ItemSpacingSmallMedium))
+        }
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier
-                .weight(1f)
-                .padding(vertical = Dimens.ButtonTextPadding),
+                .weight(1f),
             textAlign = Start
         )
     }
