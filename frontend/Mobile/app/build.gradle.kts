@@ -120,6 +120,9 @@ dependencies {
     // Charts: Vico
     implementation(libs.vico.compose.m3)
 
+    // ML Kit: Google Code Scanner (QR / barcodes)
+    implementation(libs.play.services.code.scanner)
+
     // Инструменты для отладки и тестирования (Debug & Test).
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)

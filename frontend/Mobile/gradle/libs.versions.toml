@@ -22,6 +22,7 @@ materialIconsExtendedAndroid = "1.7.8"
 googleGms = "4.4.4"
 workManager = "2.11.1"
 vico = "2.1.2"
+playServicesCodeScanner = "16.1.0"
 mockk = "1.13.12"
 coroutinesTest = "1.10.1"
 turbine = "1.2.0"
@@ -82,6 +83,9 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 
 # Charts - Vico
 vico-compose-m3 = { module = "com.patrykandpatrick.vico:compose-m3", version.ref = "vico" }
+
+# ML Kit - Google Code Scanner (QR/Barcode)
+play-services-code-scanner = { module = "com.google.android.gms:play-services-code-scanner", version.ref = "playServicesCodeScanner" }
 
 # Debugging & Tooling
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
