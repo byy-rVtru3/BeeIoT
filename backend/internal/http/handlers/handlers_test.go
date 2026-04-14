@@ -218,6 +218,46 @@ func (m *MockDB) GetEmailHiveBySensorID(_ context.Context, _ string) (string, st
 	return "test@example.com", "Test Hive", nil
 }
 
+func (m *MockDB) NewHub(_ context.Context, _, _, _ string) error {
+	return nil
+}
+
+func (m *MockDB) GetHubs(_ context.Context, _ string) ([]dbTypes.Hub, error) {
+	return []dbTypes.Hub{{Id: 1, NameHub: "Test Hub", Sensor: "hub-001"}}, nil
+}
+
+func (m *MockDB) GetHubBySensor(_ context.Context, _, _ string) (dbTypes.Hub, error) {
+	return dbTypes.Hub{Id: 1, NameHub: "Test Hub", Sensor: "hub-001"}, nil
+}
+
+func (m *MockDB) DeleteHub(_ context.Context, _, _ string) error {
+	return nil
+}
+
+func (m *MockDB) UpdateHub(_ context.Context, _ string, _ httpType.UpdateHub) error {
+	return nil
+}
+
+func (m *MockDB) NewQueen(_ context.Context, _, _, _ string) error {
+	return nil
+}
+
+func (m *MockDB) GetQueens(_ context.Context, _ string) ([]dbTypes.Queen, error) {
+	return []dbTypes.Queen{{Id: 1, Name: "Матка-1", StartDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)}}, nil
+}
+
+func (m *MockDB) GetQueenByName(_ context.Context, _, _ string) (dbTypes.Queen, error) {
+	return dbTypes.Queen{Id: 1, Name: "Матка-1", StartDate: time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)}, nil
+}
+
+func (m *MockDB) DeleteQueen(_ context.Context, _, _ string) error {
+	return nil
+}
+
+func (m *MockDB) UpdateQueen(_ context.Context, _ string, _ httpType.UpdateQueen) error {
+	return nil
+}
+
 func (m *MockDB) GetNoiseSinceDay(_ context.Context, _ int, _ time.Time) (map[time.Time][]dbTypes.HivesNoiseData, error) {
 	return map[time.Time][]dbTypes.HivesNoiseData{
 		time.Now(): {{Level: 50.0}},
@@ -758,5 +798,319 @@ func TestDeleteTask(t *testing.T) {
 	resp := w.Result()
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected 200, got %d", resp.StatusCode)
+	}
+}
+
+// ==================== Hub handler tests ====================
+
+func TestCreateHub(t *testing.T) {
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	h := &Handler{logger: logger, db: mockDB}
+
+	ctx := context.WithValue(context.Background(), "email", "test@example.com")
+
+	// Успешное создание
+	body := []byte(`{"id": "hub-001", "name": "Мой хаб"}`)
+	req := httptest.NewRequest("POST", "/api/hub/create", bytes.NewBuffer(body))
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	h.CreateHub(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+
+	// Пустой ID — должен вернуть 400
+	body = []byte(`{"id": "", "name": "Мой хаб"}`)
+	req = httptest.NewRequest("POST", "/api/hub/create", bytes.NewBuffer(body))
+	req = req.WithContext(ctx)
+	w = httptest.NewRecorder()
+
+	h.CreateHub(w, req)
+
+	if w.Result().StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected 400 for empty hub id, got %d", w.Result().StatusCode)
+	}
+
+	// Пустое имя — должен вернуть 400
+	body = []byte(`{"id": "hub-001", "name": ""}`)
+	req = httptest.NewRequest("POST", "/api/hub/create", bytes.NewBuffer(body))
+	req = req.WithContext(ctx)
+	w = httptest.NewRecorder()
+
+	h.CreateHub(w, req)
+
+	if w.Result().StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected 400 for empty hub name, got %d", w.Result().StatusCode)
+	}
+}
+
+func TestGetHubs(t *testing.T) {
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	h := &Handler{logger: logger, db: mockDB}
+
+	ctx := context.WithValue(context.Background(), "email", "test@example.com")
+	req := httptest.NewRequest("GET", "/api/hubs", nil)
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	h.GetHubs(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+
+	var response Response
+	if err := json.NewDecoder(w.Result().Body).Decode(&response); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+	if response.Status != "ok" {
+		t.Errorf("Expected status ok, got %s", response.Status)
+	}
+}
+
+func TestGetHub(t *testing.T) {
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	h := &Handler{logger: logger, db: mockDB}
+
+	ctx := context.WithValue(context.Background(), "email", "test@example.com")
+
+	// Успешный запрос
+	req := httptest.NewRequest("GET", "/api/hub?id=hub-001", nil)
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	h.GetHub(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+
+	// Без параметра id — 400
+	req = httptest.NewRequest("GET", "/api/hub", nil)
+	req = req.WithContext(ctx)
+	w = httptest.NewRecorder()
+
+	h.GetHub(w, req)
+
+	if w.Result().StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected 400 for missing id param, got %d", w.Result().StatusCode)
+	}
+}
+
+func TestDeleteHubHandler(t *testing.T) {
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	h := &Handler{logger: logger, db: mockDB}
+
+	ctx := context.WithValue(context.Background(), "email", "test@example.com")
+	body := []byte(`{"id": "hub-001"}`)
+	req := httptest.NewRequest("DELETE", "/api/hub/delete", bytes.NewBuffer(body))
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	h.DeleteHub(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+}
+
+func TestUpdateHubHandler(t *testing.T) {
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	h := &Handler{logger: logger, db: mockDB}
+
+	ctx := context.WithValue(context.Background(), "email", "test@example.com")
+	body := []byte(`{"id": "hub-001", "name": "Новое имя"}`)
+	req := httptest.NewRequest("PUT", "/api/hub/update", bytes.NewBuffer(body))
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	h.UpdateHub(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+
+	// Пустой ID — 400
+	body = []byte(`{"id": ""}`)
+	req = httptest.NewRequest("PUT", "/api/hub/update", bytes.NewBuffer(body))
+	req = req.WithContext(ctx)
+	w = httptest.NewRecorder()
+
+	h.UpdateHub(w, req)
+
+	if w.Result().StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected 400 for empty hub id, got %d", w.Result().StatusCode)
+	}
+}
+
+// ==================== Queen handler tests ====================
+
+func TestCreateQueen(t *testing.T) {
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	h := &Handler{logger: logger, db: mockDB}
+
+	ctx := context.WithValue(context.Background(), "email", "test@example.com")
+
+	// Успешное создание
+	body := []byte(`{"name": "Матка-1", "start_date": "2024-06-01"}`)
+	req := httptest.NewRequest("POST", "/api/queen/create", bytes.NewBuffer(body))
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	h.CreateQueen(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+
+	var response Response
+	if err := json.NewDecoder(w.Result().Body).Decode(&response); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+	if response.Status != "ok" {
+		t.Errorf("Expected status ok, got %s", response.Status)
+	}
+
+	// Пустое имя — 400
+	body = []byte(`{"name": "", "start_date": "2024-06-01"}`)
+	req = httptest.NewRequest("POST", "/api/queen/create", bytes.NewBuffer(body))
+	req = req.WithContext(ctx)
+	w = httptest.NewRecorder()
+
+	h.CreateQueen(w, req)
+
+	if w.Result().StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected 400 for empty queen name, got %d", w.Result().StatusCode)
+	}
+
+	// Неверный формат даты — 400
+	body = []byte(`{"name": "Матка-2", "start_date": "01-06-2024"}`)
+	req = httptest.NewRequest("POST", "/api/queen/create", bytes.NewBuffer(body))
+	req = req.WithContext(ctx)
+	w = httptest.NewRecorder()
+
+	h.CreateQueen(w, req)
+
+	if w.Result().StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected 400 for invalid date format, got %d", w.Result().StatusCode)
+	}
+}
+
+func TestGetQueens(t *testing.T) {
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	h := &Handler{logger: logger, db: mockDB}
+
+	ctx := context.WithValue(context.Background(), "email", "test@example.com")
+	req := httptest.NewRequest("GET", "/api/queens", nil)
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	h.GetQueens(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+}
+
+func TestGetQueen(t *testing.T) {
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	h := &Handler{logger: logger, db: mockDB}
+
+	ctx := context.WithValue(context.Background(), "email", "test@example.com")
+
+	// Успешный запрос
+	req := httptest.NewRequest("GET", "/api/queen?name=%D0%9C%D0%B0%D1%82%D0%BA%D0%B0-1", nil)
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	h.GetQueen(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+
+	// Без параметра name — 400
+	req = httptest.NewRequest("GET", "/api/queen", nil)
+	req = req.WithContext(ctx)
+	w = httptest.NewRecorder()
+
+	h.GetQueen(w, req)
+
+	if w.Result().StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected 400 for missing name param, got %d", w.Result().StatusCode)
+	}
+}
+
+func TestUpdateQueen(t *testing.T) {
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	h := &Handler{logger: logger, db: mockDB}
+
+	ctx := context.WithValue(context.Background(), "email", "test@example.com")
+	newName := "Матка-обновленная"
+	body, _ := json.Marshal(httpType.UpdateQueen{
+		OldName: "Матка-1",
+		NewName: &newName,
+	})
+	req := httptest.NewRequest("PUT", "/api/queen/update", bytes.NewBuffer(body))
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	h.UpdateQueen(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+
+	// Пустое old_name — 400
+	body, _ = json.Marshal(httpType.UpdateQueen{OldName: ""})
+	req = httptest.NewRequest("PUT", "/api/queen/update", bytes.NewBuffer(body))
+	req = req.WithContext(ctx)
+	w = httptest.NewRecorder()
+
+	h.UpdateQueen(w, req)
+
+	if w.Result().StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected 400 for empty old_name, got %d", w.Result().StatusCode)
+	}
+}
+
+func TestDeleteQueen(t *testing.T) {
+	logger := zerolog.Nop()
+	mockDB := &MockDB{}
+	h := &Handler{logger: logger, db: mockDB}
+
+	ctx := context.WithValue(context.Background(), "email", "test@example.com")
+	body := []byte(`{"name": "Матка-1"}`)
+	req := httptest.NewRequest("DELETE", "/api/queen/delete", bytes.NewBuffer(body))
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	h.DeleteQueen(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Result().StatusCode)
+	}
+
+	// Пустое имя — 400
+	body = []byte(`{"name": ""}`)
+	req = httptest.NewRequest("DELETE", "/api/queen/delete", bytes.NewBuffer(body))
+	req = req.WithContext(ctx)
+	w = httptest.NewRecorder()
+
+	h.DeleteQueen(w, req)
+
+	if w.Result().StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected 400 for empty queen name, got %d", w.Result().StatusCode)
 	}
 }

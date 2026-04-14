@@ -170,6 +170,37 @@ func (h *Handler) DeleteHive(w http.ResponseWriter, r *http.Request) {
 	h.writeBodyJSON(w, "Улей успешно удален", nil)
 }
 
+func (h *Handler) ArchiveHive(w http.ResponseWriter, r *http.Request) {
+	email, err := h.getEmailFromContext(w, r)
+	if err != nil {
+		return
+	}
+
+	var req httpType.ArchiveHive
+	if err := h.readBodyJSON(w, r, &req); err != nil {
+		return
+	}
+
+	if req.Name == "" {
+		h.logger.Warn().Str("email", email).Msg("hive name is empty in archive request")
+		http.Error(w, "Имя улья обязательно", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.db.UpdateHiveStatus(r.Context(), email, req.Name, req.Active); err != nil {
+		h.logger.Error().Err(err).Str("email", email).Str("hive_name", req.Name).Msg("error updating hive status")
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
+	}
+
+	msg := "Улей перемещён в архив"
+	if req.Active {
+		msg = "Улей восстановлен из архива"
+	}
+	h.logger.Debug().Str("email", email).Str("hive_name", req.Name).Bool("active", req.Active).Msg("hive status updated")
+	h.writeBodyJSON(w, msg, nil)
+}
+
 func (h *Handler) LinkHubToHive(w http.ResponseWriter, r *http.Request) {
 	email, err := h.getEmailFromContext(w, r)
 	if err != nil {
