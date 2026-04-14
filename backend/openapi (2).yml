@@ -1,0 +1,2529 @@
+openapi: 3.0.3
+info:
+  title: BeeIoT API
+  description: |
+    REST API для системы мониторинга пчелиных ульев BeeIoT.
+
+    ## Глобальные middleware
+    **Timeout:** Все запросы автоматически прерываются через 5 секунд (`chi middleware.Timeout`).
+    При превышении времени выполнения запрос завершается с ошибкой `503 Service Unavailable` и текстом `context deadline exceeded`.
+
+    ## Авторизация
+    Эндпоинты, помеченные 🔒, защищены middleware `CheckAuth`.
+    Middleware извлекает JWT токен из заголовка `Authorization: Bearer {token}`,
+    валидирует его подпись и срок действия, а затем проверяет наличие токена в Redis.
+    При успешной проверке email пользователя помещается в контекст запроса.
+
+    Возможные ответы middleware:
+    - `401` — отсутствует заголовок, неверный формат, пустой токен, истёкший токен, токен не найден в Redis
+    - `500` — внутренняя ошибка при парсинге токена или обращении к Redis
+    - `503` — превышено время ожидания (5s timeout)
+  version: 1.0.0
+  contact:
+    name: BeeIoT Team
+
+servers:
+  - url: http://localhost:8000/api
+    description: Development
+
+tags:
+  - name: Auth
+    description: Регистрация, авторизация, управление паролями и сессиями
+  - name: Hive
+    description: CRUD операции над ульями (все эндпоинты защищены CheckAuth)
+  - name: Telemetry
+    description: Получение и управление телеметрическими данными (шум, вес, температура)
+  - name: Hub
+    description: CRUD операции над хабами
+  - name: Queen
+    description: Управление матками и расчет фаз их развития
+  - name: Tasks
+    description: CRUD операции для работ и заметок по ульям (все эндпоинты защищены CheckAuth)
+  - name: MQTT
+    description: Управление датчиками через MQTT (конфигурация, health check)
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT токен, полученный через `/auth/login`.
+        Middleware `CheckAuth` проверяет:
+        1. Наличие заголовка `Authorization`
+        2. Формат `Bearer {token}`
+        3. Валидность подписи и срока действия JWT
+        4. Существование токена в Redis (in-memory DB)
+
+        При успешной проверке email из payload помещается в `context`.
+
+  schemas:
+    Response:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        message:
+          type: string
+        data:
+          description: Данные ответа (тип зависит от эндпоинта)
+      required:
+        - status
+        - message
+
+    # --- Схемы User/Account ---
+    UserInfo:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        name:
+          type: string
+          example: Иван
+
+    # --- Схемы Tasks (Работы по улью) ---
+    CreateTaskRequest:
+      type: object
+      properties:
+        hive_name:
+          type: string
+          example: Улей-1
+          description: Название улья, к которому привязывается работа
+        title:
+          type: string
+          example: Осенняя ревизия
+        description:
+          type: string
+          example: Проверка наличия кормов, сокращение гнезда, обработка от клеща
+      required:
+        - hive_name
+        - title
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          example: task-uuid-1234
+          description: Уникальный идентификатор работы
+        title:
+          type: string
+          example: Осенняя ревизия (дополнено)
+          description: Если не передано — остается старым
+        description:
+          type: string
+          example: Обработка от клеща препаратом X
+          description: Если не передано — остается старым
+      required:
+        - id
+
+    DeleteTaskRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          example: task-uuid-1234
+          description: Уникальный идентификатор работы для удаления
+      required:
+        - id
+
+    TaskItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: task-uuid-1234
+        hive_name:
+          type: string
+          example: Улей-1
+        title:
+          type: string
+          example: Осенняя ревизия
+        description:
+          type: string
+          example: Проверка наличия кормов, сокращение гнезда, обработка от клеща
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-04-02T12:00:00Z"
+
+    Registration:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          example: MyPassword123
+        name:
+          type: string
+          example: Иван
+      required:
+        - email
+        - password
+
+    Login:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          example: MyPassword123
+      required:
+        - email
+        - password
+
+    ConfirmRegistration:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        code:
+          type: string
+          example: "482013"
+          description: 6-значный код подтверждения
+      required:
+        - email
+        - code
+
+    ConfirmPasswordChange:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        code:
+          type: string
+          example: "482013"
+          description: 6-значный код подтверждения
+      required:
+        - email
+        - code
+
+    ChangePassword:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          example: NewPassword456
+          description: Новый пароль
+      required:
+        - email
+        - password
+
+    ChangeName:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Иван
+          description: Новое имя пользователя
+      required:
+        - name
+
+    UpdateFcmToken:
+      type: object
+      properties:
+        token:
+          type: string
+          example: dGVzdC1mY20tdG9rZW4...
+          description: Firebase Cloud Messaging токен устройства
+        device:
+          type: string
+          example: 550e8400-e29b-41d4-a716-446655440000
+          description: UUID устройства
+      required:
+        - token
+        - device
+
+    CreateHive:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Улей-1
+        sensor:
+          type: string
+          example: sensor-001
+          description: Идентификатор датчика для привязки к улью (опционально). Если датчик не найден у пользователя, улей создаётся без привязки.
+      required:
+        - name
+
+    GetHivesRequest:
+      type: object
+      properties:
+        active:
+          type: boolean
+          example: true
+          description: Фильтр по статусу активности (вместо status в БД)
+
+    GetHiveRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Улей-1
+          description: Название улья
+      required:
+        - name
+
+    UpdateHive:
+      type: object
+      properties:
+        old_name:
+          type: string
+          example: Улей-1
+          description: Старое имя улья
+        new_name:
+          type: string
+          example: Улей-Главный
+          description: Новое имя улья. Если не указано - остается старое значение
+        active:
+          type: boolean
+          example: true
+          description: Статус активности. Если не указан - остается старое значение
+        sensor:
+          type: string
+          example: sensor-001
+          description: Идентификатор датчика. Если пустое значение - не изменяется
+      required:
+        - old_name
+
+    DeleteHive:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Улей-1
+      required:
+        - name
+
+    HiveListItem:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Улей-1
+        sensor:
+          type: string
+          example: sensor-001
+          description: Идентификатор датчика, привязанного к улью
+        hub:
+          type: string
+          example: "hub-serial-001"
+          description: Физический идентификатор привязанного хаба
+        queen:
+          type: string
+          example: Матка-2026
+          description: Имя привязанной матки
+
+    HiveDetails:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Улей-1
+        sensor:
+          type: string
+          example: sensor-001
+          description: Идентификатор датчика, привязанного к улью
+        hub:
+          type: string
+          example: "hub-serial-001"
+          description: Физический идентификатор привязанного хаба
+        queen:
+          type: string
+          example: Матка-2026
+          description: Имя привязанной матки
+        active:
+          type: boolean
+          example: true
+          description: Статус активности улья
+
+    LinkToHiveRequest:
+      type: object
+      properties:
+        hive_name:
+          type: string
+          example: Улей-1
+        target_name:
+          type: string
+          example: hub-serial-001
+          description: Имя/ID хаба или матки для привязки. Если передать пустую строку, привязка будет удалена.
+      required:
+        - hive_name
+
+    # --- Схемы Hub ---
+    CreateHub:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "hub-serial-001"
+          description: Уникальный физический идентификатор хаба (серийный номер, MAC-адрес и т.д.)
+        name:
+          type: string
+          example: Hub-Alpha
+          description: Пользовательское имя хаба
+      required:
+        - id
+        - name
+
+    UpdateHub:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "hub-serial-001"
+          description: Идентификатор хаба, который нужно изменить
+        name:
+          type: string
+          example: Hub-Beta
+          description: Новое пользовательское имя хаба
+      required:
+        - id
+
+    DeleteHub:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "hub-serial-001"
+          description: Идентификатор хаба для удаления
+      required:
+        - id
+
+    HubListItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "hub-serial-001"
+          description: Физический идентификатор хаба
+        name:
+          type: string
+          example: Hub-Alpha
+          description: Пользовательское имя хаба
+
+    # --- Схемы Queen ---
+    CreateQueen:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Матка-Карника-26
+        start_date:
+          type: string
+          example: "2026-02-19"
+          description: Дата начала (яйца) в формате YYYY-MM-DD
+      required:
+        - name
+        - start_date
+
+    UpdateQueen:
+      type: object
+      properties:
+        old_name:
+          type: string
+          example: Матка-Карника-26
+        new_name:
+          type: string
+          example: Матка-Бакфаст-26
+        start_date:
+          type: string
+          example: "2026-02-20"
+          description: Новая дата для перерасчета календаря. Если пусто — остается старая.
+      required:
+        - old_name
+
+    DeleteQueen:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Матка-Карника-26
+      required:
+        - name
+
+    QueenListItem:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Матка-Карника-26
+        start_date:
+          type: string
+          example: "2026-02-19"
+
+    QueenDetails:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Матка-Карника-26
+        calendar:
+          $ref: '#/components/schemas/QueenPhaseCalendar'
+
+    QueenPhaseCalendar:
+      type: object
+      properties:
+        start_date:
+          type: string
+          example: "2026-02-19"
+        egg_phase:
+          type: object
+          properties:
+            standing:
+              type: string
+              example: "2026-02-19"
+            tilted:
+              type: string
+              example: "2026-02-20"
+            lying:
+              type: string
+              example: "2026-02-21"
+        larva_phase:
+          type: object
+          properties:
+            start:
+              type: string
+            day_1:
+              type: string
+            day_2:
+              type: string
+            day_3:
+              type: string
+            day_4:
+              type: string
+            day_5:
+              type: string
+            sealed:
+              type: string
+        pupa_phase:
+          type: object
+          properties:
+            start:
+              type: string
+            end:
+              type: string
+            duration:
+              type: string
+            selection:
+              type: string
+        queen_phase:
+          type: object
+          properties:
+            emergence_start:
+              type: string
+            emergence_end:
+              type: string
+            maturation_start:
+              type: string
+            maturation_end:
+              type: string
+            mating_flight_start:
+              type: string
+            mating_flight_end:
+              type: string
+            insemination_start:
+              type: string
+            insemination_end:
+              type: string
+            egg_laying_check_start:
+              type: string
+            egg_laying_check_end:
+              type: string
+
+    LoginResponseData:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    BadRequestError:
+      type: string
+      description: Ошибка неверного формата запроса
+      example: Неверный формат JSON
+
+    ErrorResponse:
+      type: string
+      description: Текстовое сообщение об ошибке
+
+    TelemetryDataPoint:
+      type: object
+      properties:
+        time:
+          type: integer
+          format: int64
+          description: Unix timestamp
+          example: 1708704000
+        value:
+          type: number
+          format: float64
+          description: Значение измерения
+          example: 42.5
+
+    GetTelemetryRequest:
+      type: object
+      properties:
+        hub:
+          type: string
+          description: Физический идентификатор хаба
+          example: hub-serial-001
+        since:
+          type: integer
+          format: int64
+          description: "Unix timestamp начала выборки (в секундах, не миллисекундах)"
+          example: 1708704000
+      required:
+        - hub
+        - since
+
+    SetWeightRequest:
+      type: object
+      properties:
+        hub:
+          type: string
+          description: Физический идентификатор хаба
+          example: hub-serial-001
+        time:
+          type: string
+          format: date-time
+          description: Время измерения в формате RFC3339
+          example: "2024-02-23T12:00:00Z"
+        weight:
+          type: number
+          format: float64
+          description: Значение веса
+          example: 45.5
+      required:
+        - hub
+        - time
+        - weight
+
+    DeleteWeightRequest:
+      type: object
+      properties:
+        hub:
+          type: string
+          description: Физический идентификатор хаба
+          example: hub-serial-001
+        time:
+          type: string
+          format: date-time
+          description: Время записи для удаления в формате RFC3339
+          example: "2024-02-23T12:00:00Z"
+      required:
+        - hub
+        - time
+
+    DeviceConfigRequest:
+      type: object
+      properties:
+        sensor:
+          type: string
+          example: sensor-001
+          description: Уникальное имя датчика
+        config:
+          type: object
+          properties:
+            sampling_rate_noise:
+              type: integer
+              description: Частота сбора данных о шуме (секунды). -1 — не установлена
+              example: 60
+            sampling_rate_temperature:
+              type: integer
+              description: Частота сбора данных о температуре (секунды). -1 — не установлена
+              example: 60
+            restart_device:
+              type: boolean
+              description: Перезагрузить устройство
+              example: false
+            health_check:
+              type: boolean
+              description: Запросить проверку состояния
+              example: false
+            frequency_status:
+              type: integer
+              description: Частота отправки статуса (секунды). -1 — не установлена
+              example: 10000
+            delete_device:
+              type: boolean
+              description: Удалить устройство
+              example: false
+      required:
+        - sensor
+
+    HealthCheckRequest:
+      type: object
+      properties:
+        sensor:
+          type: string
+          example: sensor-001
+          description: Уникальное имя датчика
+      required:
+        - sensor
+
+    DeviceStatus:
+      type: object
+      description: Статус датчика, полученный в ответ на health check
+      properties:
+        battery_level:
+          type: integer
+          description: Уровень заряда батареи (0–100). -1 означает отсутствие данных
+          example: 85
+        signal_strength:
+          type: integer
+          description: Уровень сигнала (0–100). -1 означает отсутствие данных
+          example: 72
+        timestamp:
+          type: integer
+          format: int64
+          description: Unix timestamp статуса (в секундах)
+          example: 1708704000
+        errors:
+          type: array
+          items:
+            type: string
+          description: Список ошибок датчика (пустой, если ошибок нет)
+          example: []
+
+    LastSensorReading:
+      type: object
+      properties:
+        temperature:
+          type: number
+          format: float64
+          description: Температура в цельсиях. -1 означает отсутствие данных
+          example: 34.5
+        temperature_time:
+          type: integer
+          format: int64
+          description: Unix timestamp измерения температуры
+          example: 1708704000
+        noise:
+          type: number
+          format: float64
+          description: Уровень шума в децибелах. -1 означает отсутствие данных
+          example: 42.0
+        noise_time:
+          type: integer
+          format: int64
+          description: Unix timestamp измерения шума
+          example: 1708704000
+        weight:
+          type: number
+          format: float64
+          description: Вес улья в кг. -1 означает отсутствие данных
+          example: 45.2
+        weight_time:
+          type: integer
+          format: int64
+          description: Unix timestamp измерения веса
+          example: 1708704000
+
+paths:
+  # ==================== AUTH ====================
+  /auth/registration:
+    post:
+      tags: [Auth]
+      summary: Регистрация пользователя
+      description: |
+        Создаёт код подтверждения и отправляет его на email.
+        Пользователь НЕ создаётся в БД до подтверждения кода через `/auth/confirm/registration`.
+        Если пользователь с таким email уже существует, возвращается 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Registration'
+      responses:
+        '200':
+          description: Код подтверждения отправлен
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Код подтверждения отправлен на email
+                      data:
+                        type: 'null'
+                        example: null
+        '400':
+          description: Неверный формат JSON
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Неверный формат JSON
+        '409':
+          description: Пользователь уже существует
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Пользователь с таким email уже существует
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/confirm/registration:
+    post:
+      tags: [Auth]
+      summary: Подтверждение регистрации
+      description: |
+        Проверяет код подтверждения и создаёт пользователя в БД.
+        Пароль хешируется через bcrypt при создании кода (на этапе `/auth/registration`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmRegistration'
+      responses:
+        '200':
+          description: Аккаунт создан
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Ваш аккаунт успешно зарегистрирован
+        '400':
+          description: Неверный формат JSON
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        '401':
+          description: Неверный или истекший код подтверждения
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Неверный или истекший код подтверждения
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Авторизация
+      description: |
+        Проверяет email и пароль, генерирует JWT токен и сохраняет его в Redis.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+      responses:
+        '200':
+          description: Успешная авторизация
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Авторизация успешна
+                      data:
+                        $ref: '#/components/schemas/LoginResponseData'
+        '400':
+          description: Неверный формат JSON
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        '404':
+          description: Пользователь не найден или неверный пароль
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Пользователь с таким email не зарегистрирован или неверный пароль
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/change:
+    post:
+      tags: [Auth]
+      summary: Запрос смены пароля
+      description: |
+        Проверяет существование пользователя, удаляет все его JWT токены из Redis,
+        создаёт код подтверждения с новым паролем и отправляет код на email.
+        Смена пароля завершается через `/auth/confirm/password`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePassword'
+      responses:
+        '200':
+          description: Код подтверждения отправлен
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Код подтверждения отправлен на email
+        '400':
+          description: Неверный формат JSON
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        '404':
+          description: Пользователь не найден
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Пользователь с таким email не зарегистрирован
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/change/name:
+    post:
+      tags: [Auth]
+      summary: Смена имени пользователя 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+
+        Обновляет имя пользователя в БД.
+        Email извлекается из контекста (установлен middleware).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeName'
+      responses:
+        '200':
+          description: Имя изменено
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Имя успешно изменено
+        '400':
+          description: Неверный формат JSON
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Отсутствует заголовок авторизации
+                  - Неверный формат заголовка авторизации
+                  - Пустой токен авторизации
+                  - Срок действия токена истек или он невалидный
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/confirm/password:
+    post:
+      tags: [Auth]
+      summary: Подтверждение смены пароля
+      description: |
+        Проверяет код подтверждения, существование пользователя и обновляет пароль в БД.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmPasswordChange'
+      responses:
+        '200':
+          description: Пароль изменён
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Пароль успешно изменен
+        '400':
+          description: Неверный формат JSON
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        '401':
+          description: Неверный или истекший код
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Неверный или истекший код подтверждения
+        '404':
+          description: Пользователь не найден
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Пользователь с таким email не зарегистрирован
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh/token:
+    post:
+      tags: [Auth]
+      summary: Обновление токена
+      description: |
+        Создаёт новый код подтверждения и отправляет его на email.
+        Используется для обновления сессии.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Registration'
+      responses:
+        '200':
+          description: Код подтверждения отправлен
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Код подтверждения отправлен на email
+        '400':
+          description: Неверный формат JSON
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    delete:
+      tags: [Auth]
+      summary: Выход из системы 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+
+        Удаляет текущий JWT токен из Redis. Остальные сессии пользователя остаются активными.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Успешный выход
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Вы успешно вышли из системы
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Отсутствует заголовок авторизации
+                  - Неверный формат заголовка авторизации
+                  - Пустой токен авторизации
+                  - Срок действия токена истек или он невалидный
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/delete/user:
+    delete:
+      tags: [Auth]
+      summary: Удаление аккаунта 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+
+        Удаляет пользователя из PostgreSQL и все его JWT токены из Redis.
+        Email извлекается из контекста (установлен middleware).
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Аккаунт удалён
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Ваш аккаунт успешно удален
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Отсутствует заголовок авторизации
+                  - Неверный формат заголовка авторизации
+                  - Пустой токен авторизации
+                  - Срок действия токена истек или он невалидный
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/fcm/update:
+    post:
+      tags: [Auth]
+      summary: Обновление FCM токена 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+
+        Сохраняет или обновляет Firebase Cloud Messaging токен для устройства пользователя.
+        Используется для отправки push-уведомлений.
+        Email извлекается из контекста (установлен middleware).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFcmToken'
+      responses:
+        '200':
+          description: FCM токен обновлён
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: FCM токен успешно обновлен
+                      data:
+                        type: 'null'
+                        example: null
+        '400':
+          description: Пустой токен или устройство
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - FCM токен не должен быть пустым
+                  - uuid устройства не должно быть пустым
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Отсутствует заголовок авторизации
+                  - Неверный формат заголовка авторизации
+                  - Пустой токен авторизации
+                  - Срок действия токена истек или он невалидный
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    # ==================== ACCOUNT INFO ====================
+  /auth/me:
+    get:
+      tags: [ Auth ]
+      summary: Получение информации об аккаунте 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+        Возвращает данные текущего авторизованного пользователя. Email берется из контекста.
+      security:
+        - BearerAuth: [ ]
+      responses:
+        '200':
+          description: Данные аккаунта получены
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Данные профиля успешно получены
+                      data:
+                        $ref: '#/components/schemas/UserInfo'
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ==================== TASKS (РАБОТЫ ПО УЛЬЮ) ====================
+  /task/create:
+    post:
+      tags: [ Tasks ]
+      summary: Добавление новой работы по улью 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+        Создает новую запись о работе. Привязывается к указанному в теле запроса `hive_name`.
+      security:
+        - BearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '200':
+          description: Работа создана
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Работа успешно добавлена
+                      data:
+                        $ref: '#/components/schemas/TaskItem'
+        '400':
+          description: Неверный формат JSON или отсутствует улей
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+
+  /task/list:
+    get:
+      tags: [ Tasks ]
+      summary: Получение списка работ 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+        Возвращает список всех работ пользователя. Можно отфильтровать по конкретному улью.
+      security:
+        - BearerAuth: [ ]
+      parameters:
+        - name: hive_name
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Название улья для фильтрации списка работ. Если не указано, возвращаются все работы пользователя.
+      responses:
+        '200':
+          description: Список работ получен
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TaskItem'
+        '401':
+          description: Не авторизован
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /task/update:
+    put:
+      tags: [ Tasks ]
+      summary: Редактирование работы 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+        Обновляет поля title и/или description по уникальному ID работы.
+      security:
+        - BearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: Работа обновлена
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Запись о работе успешно обновлена
+        '404':
+          description: Работа не найдена
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Работа с таким ID не найдена
+
+  /task/delete:
+    delete:
+      tags: [ Tasks ]
+      summary: Удаление работы 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+        Удаляет запись о работе по её ID.
+      security:
+        - BearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteTaskRequest'
+      responses:
+        '200':
+          description: Работа удалена
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Запись о работе успешно удалена
+        '404':
+          description: Работа не найдена
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Работа с таким ID не найдена
+
+  # ==================== HIVE ====================
+  /hive/create:
+    post:
+      tags: [Hive]
+      summary: Создание улья 🔒
+      description: |
+        **Требует middleware `CheckAuth`** (применён на весь роут `/hive`).
+
+        Создаёт новый улей для текущего пользователя.
+        Опционально можно указать имя датчика для привязки к улью.
+        Если датчик не найден у пользователя, улей создаётся без привязки.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHive'
+      responses:
+        '200':
+          description: Улей создан
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Улей успешно создан
+        '400':
+          description: Неверный формат JSON
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Отсутствует заголовок авторизации
+                  - Неверный формат заголовка авторизации
+                  - Пустой токен авторизации
+                  - Срок действия токена истек или он невалидный
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /hive/list:
+    get:
+      tags: [Hive]
+      summary: Список ульев 🔒
+      description: |
+        **Требует middleware `CheckAuth`** (применён на весь роут `/hive`).
+
+        Возвращает ульи текущего пользователя.
+        Можно фильтровать по статусу активности через query-параметр `active`.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: |
+            Фильтр по статусу:
+            - `true` — только активные ульи
+            - `false` — только архивные ульи
+            - не указан — все ульи
+      responses:
+        '200':
+          description: Список ульев
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Список ульев успешно получен
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/HiveListItem'
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Отсутствует заголовок авторизации
+                  - Неверный формат заголовка авторизации
+                  - Пустой токен авторизации
+                  - Срок действия токена истек или он невалидный
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /hive/:
+    get:
+      tags: [Hive]
+      summary: Получение улья по имени 🔒
+      description: |
+        **Требует middleware `CheckAuth`** (применён на весь роут `/hive`).
+
+        Возвращает информацию об улье по имени. Имя передаётся через query-параметр `name`.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+            example: Улей-1
+          description: Название улья
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: |
+            Фильтр по статусу:
+            - `true` — вернуть только если улей активен
+            - `false` — вернуть только если улей в архиве
+            - не указан — вернуть в любом статусе
+      responses:
+        '200':
+          description: Данные улья
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Улей успешно получен
+                      data:
+                        $ref: '#/components/schemas/HiveDetails'
+        '400':
+          description: Параметр name не указан
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Параметр name обязателен
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Отсутствует заголовок авторизации
+                  - Неверный формат заголовка авторизации
+                  - Пустой токен авторизации
+                  - Срок действия токена истек или он невалидный
+        '404':
+          description: Улей не найден
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Улей не найден
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /hive/update:
+    put:
+      tags: [Hive]
+      summary: Обновление улья 🔒
+      description: |
+        **Требует middleware `CheckAuth`** (применён на весь роут `/hive`).
+
+        Обновляет улей текущего пользователя:
+        - Изменение имени (old_name → new_name) - если new_name не указан, остается старое имя
+        - Статус активности (boolean: true/false) - если не указан, остается старое значение
+        - Привязку к датчику - если sensor пустое или не указан, не изменяется
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHive'
+      responses:
+        '200':
+          description: Улей обновлён
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: улей успешно обновлен
+        '400':
+          description: Пустое имя улья
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Старое имя улья не может быть пустым
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Отсутствует заголовок авторизации
+                  - Неверный формат заголовка авторизации
+                  - Пустой токен авторизации
+                  - Срок действия токена истек или он невалидный
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /hive/delete:
+    delete:
+      tags: [Hive]
+      summary: Удаление улья 🔒
+      description: |
+        **Требует middleware `CheckAuth`** (применён на весь роут `/hive`).
+
+        Удаляет улей текущего пользователя по имени.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteHive'
+      responses:
+        '200':
+          description: Улей удалён
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Улей успешно удален
+        '400':
+          description: Пустое имя улья
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Имя улья не может быть пустым
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Отсутствует заголовок авторизации
+                  - Неверный формат заголовка авторизации
+                  - Пустой токен авторизации
+                  - Срок действия токена истек или он невалидный
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /hive/link/hub:
+    post:
+      tags: [Hive]
+      summary: Привязка хаба к улью 🔒
+      description: Привязывает хаб к указанному улью. Передача пустой строки в target_name отвяжет текущий хаб.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkToHiveRequest'
+      responses:
+        '200':
+          description: Привязка успешна
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+
+  /hive/link/queen:
+    post:
+      tags: [Hive]
+      summary: Привязка матки к улью 🔒
+      description: Привязывает матку к указанному улью. Передача пустой строки в target_name отвяжет текущую матку.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkToHiveRequest'
+      responses:
+        '200':
+          description: Привязка успешна
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+
+  # ==================== HUB ====================
+  /hub/create:
+    post:
+      tags: [Hub]
+      summary: Создание хаба 🔒
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHub'
+      responses:
+        '200':
+          description: Хаб создан
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Хаб успешно создан
+        '400':
+          description: Неверный запрос
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+
+  /hub/list:
+    get:
+      tags: [Hub]
+      summary: Список всех хабов 🔒
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Список хабов получен
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/HubListItem'
+
+  /hub/:
+    get:
+      tags: [Hub]
+      summary: Получение хаба по ID 🔒
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Физический идентификатор хаба
+      responses:
+        '200':
+          description: Хаб найден
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/HubListItem'
+        '404':
+          description: Хаб не найден
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Хаб не найден
+
+  /hub/update:
+    put:
+      tags: [Hub]
+      summary: Изменение хаба 🔒
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHub'
+      responses:
+        '200':
+          description: Хаб обновлен
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Хаб успешно обновлен
+
+  /hub/delete:
+    delete:
+      tags: [Hub]
+      summary: Удаление хаба 🔒
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteHub'
+      responses:
+        '200':
+          description: Хаб удален
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Хаб успешно удален
+        '400':
+          description: Неверный запрос
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+
+  # ==================== QUEEN ====================
+  /queen/create:
+    post:
+      tags: [Queen]
+      summary: Создание матки и расчет календаря 🔒
+      description: Создает матку, сохраняет в БД и сразу возвращает рассчитанный календарь фаз развития.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQueen'
+      responses:
+        '200':
+          description: Матка создана, календарь рассчитан
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/QueenDetails'
+        '400':
+          description: Неверный формат
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+
+  /queen/list:
+    get:
+      tags: [Queen]
+      summary: Получение всех маток 🔒
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Список маток
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/QueenListItem'
+
+  /queen/:
+    get:
+      tags: [Queen]
+      summary: Получение матки (с календарем) 🔒
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Название матки
+      responses:
+        '200':
+          description: Полная информация о матке
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/QueenDetails'
+
+  /queen/update:
+    put:
+      tags: [Queen]
+      summary: Изменение матки 🔒
+      description: Позволяет изменить имя или дату старта (что вызовет перерасчет календаря).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQueen'
+      responses:
+        '200':
+          description: Матка обновлена
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+
+  /queen/delete:
+    delete:
+      tags: [Queen]
+      summary: Удаление матки 🔒
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteQueen'
+      responses:
+        '200':
+          description: Матка удалена
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+
+  # ==================== TELEMETRY ====================
+  /telemetry/noise/get:
+    get:
+      tags: [Telemetry]
+      summary: Получение данных шума 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+
+        Возвращает данные шума для хаба с заданного момента времени.
+        Данные выдаются с агрегацией по часам.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: hub
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Физический идентификатор хаба
+          example: hub-serial-001
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+            example: 1708704000
+          description: |
+            Unix timestamp начала выборки (в секундах, не миллисекундах). Если не указан — последние 24 часа.
+      responses:
+        '200':
+          description: Данные шума получены
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Данные шума успешно получены
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TelemetryDataPoint'
+        '400':
+          description: Параметр hub не указан
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Параметр "hub" обязателен
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /telemetry/weight/get:
+    get:
+      tags: [Telemetry]
+      summary: Получение данных веса 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+
+        Возвращает данные веса для хаба с заданного момента времени.
+        Данные выдаются с агрегацией по часам.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: hub
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Физический идентификатор хаба
+          example: hub-serial-001
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+            example: 1708704000
+          description: |
+            Unix timestamp начала выборки (в секундах, не миллисекундах). Если не указан — последние 24 часа.
+      responses:
+        '200':
+          description: Данные веса получены
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Данные веса успешно получены
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TelemetryDataPoint'
+        '400':
+          description: Параметр hub не указан
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Параметр "hub" обязателен
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /telemetry/temperature/get:
+    get:
+      tags: [Telemetry]
+      summary: Получение данных температуры 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+
+        Возвращает данные температуры для хаба с заданного момента времени.
+        Данные выдаются с агрегацией по часам.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: hub
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Физический идентификатор хаба
+          example: hub-serial-001
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+            example: 1708704000
+          description: |
+            Unix timestamp начала выборки (в секундах, не миллисекундах). Если не указан — последние 24 часа.
+      responses:
+        '200':
+          description: Данные температуры получены
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Данные температуры успешно получены
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TelemetryDataPoint'
+        '400':
+          description: Параметр hub не указан
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Параметр "hub" обязателен
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /telemetry/sensor/last:
+    get:
+      tags: [Telemetry]
+      summary: Последние данные датчика 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+
+        Возвращает последние показания датчика, привязанного к хабу.
+        Данные хранятся в Redis и обновляются при каждом получении данных от датчика по MQTT.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: hub
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Физический идентификатор хаба
+          example: hub-serial-001
+      responses:
+        '200':
+          description: Последние данные датчика получены
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Последние данные датчика получены
+                      data:
+                        $ref: '#/components/schemas/LastSensorReading'
+        '400':
+          description: Параметр hub не указан
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Параметр "hub" обязателен
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Улей, датчик или данные не найдены
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Улей не найден
+                  - К данному улью не привязан датчик
+                  - Нет данных от датчика
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /telemetry/weight/set:
+    post:
+      tags: [Telemetry]
+      summary: Установка данных веса 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+
+        Устанавливает значение веса для улья в указанное время.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetWeightRequest'
+      responses:
+        '200':
+          description: Данные веса установлены
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Данные веса успешно установлены
+        '400':
+          description: Неверный формат JSON
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /telemetry/weight/delete:
+    delete:
+      tags: [Telemetry]
+      summary: Удаление данных веса 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+
+        Удаляет запись о весе улья в указанное время.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteWeightRequest'
+      responses:
+        '200':
+          description: Данные веса удалены
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Данные веса успешно удалены
+        '400':
+          description: Неверный формат JSON
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        '401':
+          description: Не авторизован (middleware CheckAuth)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ==================== MQTT ====================
+  /mqtt/config:
+    post:
+      tags: [MQTT]
+      summary: Отправка конфигурации на датчик 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+
+        Отправляет конфигурацию на датчик через MQTT (топик `/device/{sensor}/config`, QoS 1).
+        Позволяет задать частоту сбора данных, перезагрузку устройства и другие параметры.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceConfigRequest'
+      responses:
+        '200':
+          description: Конфигурация отправлена
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Конфигурация успешно отправлена
+        '400':
+          description: Имя датчика не указано
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Имя датчика обязательно
+        '500':
+          description: Ошибка отправки конфигурации
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Ошибка отправки конфигурации
+
+  /mqtt/health:
+    post:
+      tags: [MQTT]
+      summary: Отправка health check на датчик 🔒
+      description: |
+        **Требует middleware `CheckAuth`.**
+
+        Отправляет запрос на проверку состояния (health check) датчика через MQTT (топик `/device/{sensor}/config`, QoS 1).
+        Отправляет конфигурацию с `health_check=true`, затем ожидает ответ от датчика (до 4 секунд).
+
+        Публикация MQTT-сообщения выполняется в фоне (fire-and-forget): даже если HTTP-запрос
+        истечёт по таймауту, сообщение останется в очереди MQTT-клиента и будет доставлено
+        датчику при выходе из гибернации (QoS 1).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HealthCheckRequest'
+      responses:
+        '200':
+          description: Датчик ответил — статус получен
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      message:
+                        example: Health check выполнен успешно
+                      data:
+                        $ref: '#/components/schemas/DeviceStatus'
+        '400':
+          description: Имя датчика не указано
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Имя датчика обязательно
+        '504':
+          description: Датчик не ответил в отведённое время (4 с)
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Датчик не ответил на health check в отведённое время
+  /instructions/list:
+    get:
+      tags:
+        - Instructions
+      summary: Получить список инструкций 🔒 (Admin only)
+      description: |
+        Возвращает список всех инструкций по использованию приложения. 
+        Доступно только администраторам.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Успешное получение списка
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InstructionItem"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /instructions/create:
+    post:
+      tags:
+        - Instructions
+      summary: Создать инструкцию 🔒 (Admin only)
+      description: |
+        Добавляет новую инструкцию. Доступно только администраторам.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInstructionRequest"
+      responses:
+        "201":
+          description: Инструкция успешно создана
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /instructions/{id}:
+    delete:
+      tags:
+        - Instructions
+      summary: Удалить инструкцию 🔒 (Admin only)
+      description: Удаляет инструкцию по её ID. Доступно только администраторам.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID инструкции
+      responses:
+        "200":
+          description: Успешное удаление
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    InstructionItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Как добавить улей"
+        content:
+          type: string
+          example: "Перейдите в меню 'Ульи' и нажмите 'Добавить'..."
+        created_at:
+          type: integer
+          description: UNIX timestamp
+          example: 1698765432
+
+    CreateInstructionRequest:
+      type: object
+      required:
+        - title
+        - content
+      properties:
+        title:
+          type: string
+          example: "Как добавить улей"
+        content:
+          type: string
+          example: "Перейдите в меню 'Ульи' и нажмите 'Добавить'..."
+
+    ForbiddenError:
+      description: Доступ запрещен (Только для администраторов)
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: "Доступ запрещен"
