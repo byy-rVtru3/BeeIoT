@@ -11,6 +11,7 @@ import com.app.mobile.domain.usecase.hives.hub.SaveHubUseCase
 import com.app.mobile.presentation.models.hub.HubModel
 import com.app.mobile.presentation.ui.components.BaseViewModel
 import com.app.mobile.presentation.ui.screens.hub.editor.HubEditorRoute
+import com.app.mobile.presentation.ui.screens.hub.editor.qr.HubQrParseResult
 
 class HubEditorViewModel(
     savedStateHandle: SavedStateHandle,
@@ -59,6 +60,18 @@ class HubEditorViewModel(
                 state.copy(hubModel = state.hubModel.copy(id = id))
             } else state
         }
+    }
+
+    fun onQrScanned(result: HubQrParseResult) {
+        when (result) {
+            is HubQrParseResult.Success -> onIdChange(result.hubId)
+            is HubQrParseResult.Invalid    -> sendEvent(HubEditorEvent.QrScanInvalid)
+        }
+    }
+
+    fun onQrScanFailed(throwable: Throwable) {
+        Log.e("HubEditorViewModel", "QR scan failed", throwable)
+        sendEvent(HubEditorEvent.QrScannerUnavailable)
     }
 
     fun onSaveClick() {

@@ -1,5 +1,6 @@
 package com.app.mobile.presentation.ui.screens.hub.editor
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -7,8 +8,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.QrCodeScanner
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -32,6 +37,7 @@ import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.ObserveAsEvents
 import com.app.mobile.presentation.ui.components.PrimaryButton
 import com.app.mobile.presentation.ui.screens.hub.editor.models.HubEditorActions
+import com.app.mobile.presentation.ui.screens.hub.editor.qr.rememberHubQrScannerLauncher
 import com.app.mobile.presentation.ui.screens.hub.editor.viewmodel.HubEditorEvent
 import com.app.mobile.presentation.ui.screens.hub.editor.viewmodel.HubEditorUiState
 import com.app.mobile.presentation.ui.screens.hub.editor.viewmodel.HubEditorViewModel
@@ -44,19 +50,25 @@ fun HubEditorScreen(
 ) {
 	val hubEditorUiState by hubEditorViewModel.uiState.collectAsStateWithLifecycle()
 	val snackbarHostState = remember { SnackbarHostState() }
+	val scannerLauncher = rememberHubQrScannerLauncher()
+	val invalidQrMessage = stringResource(R.string.hub_qr_invalid)
+	val scannerUnavailableMessage = stringResource(R.string.hub_qr_scanner_unavailable)
 
 	LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
 		hubEditorViewModel.loadHub()
 	}
 
 	ObserveAsEvents(hubEditorViewModel.event) { event ->
-		when (event) {
-			is HubEditorEvent.NavigateBack -> onBackClick()
-			is HubEditorEvent.ShowSnackBar -> snackbarHostState.showSnackbar(
-				message = event.message,
-				duration = SnackbarDuration.Short
-			)
+		val message = when (event) {
+			is HubEditorEvent.NavigateBack         -> {
+				onBackClick(); return@ObserveAsEvents
+			}
+
+			is HubEditorEvent.ShowSnackBar         -> event.message
+			is HubEditorEvent.QrScanInvalid        -> invalidQrMessage
+			is HubEditorEvent.QrScannerUnavailable -> scannerUnavailableMessage
 		}
+		snackbarHostState.showSnackbar(message = message, duration = SnackbarDuration.Short)
 	}
 
 	when (val state = hubEditorUiState) {
@@ -67,6 +79,12 @@ fun HubEditorScreen(
 			val actions = HubEditorActions(
 				onNameChange = hubEditorViewModel::onNameChange,
 				onIdChange = hubEditorViewModel::onIdChange,
+				onScanQrClick = {
+					scannerLauncher.scan(
+						onResult = hubEditorViewModel::onQrScanned,
+						onError = hubEditorViewModel::onQrScanFailed
+					)
+				},
 				onSaveClick = hubEditorViewModel::onSaveClick
 			)
 			HubEditorContent(
@@ -127,7 +145,17 @@ private fun HubEditorContent(
 					label = stringResource(R.string.hub_id_label),
 					value = hubModel.id,
 					placeholder = stringResource(R.string.hub_id_placeholder),
-					onValueChange = actions.onIdChange
+					onValueChange = actions.onIdChange,
+					trailingIcon = {
+						Icon(
+							imageVector = Icons.Outlined.QrCodeScanner,
+							contentDescription = stringResource(R.string.hub_id_scan_qr),
+							tint = MaterialTheme.colorScheme.primary,
+							modifier = Modifier
+								.size(Dimens.TextFieldIconSize)
+								.clickable(onClick = actions.onScanQrClick)
+						)
+					}
 				)
 
 				Spacer(modifier = Modifier.weight(1f))
@@ -148,7 +176,8 @@ private fun HubEditorField(
 	value: String,
 	placeholder: String,
 	onValueChange: (String) -> Unit,
-	modifier: Modifier = Modifier
+	modifier: Modifier = Modifier,
+	trailingIcon: @Composable (() -> Unit)? = null
 ) {
 	Column(
 		modifier = modifier,
@@ -163,7 +192,8 @@ private fun HubEditorField(
 			value = value,
 			onValueChange = onValueChange,
 			placeholder = placeholder,
-			modifier = Modifier.fillMaxWidth()
+			modifier = Modifier.fillMaxWidth(),
+			trailingIcon = trailingIcon
 		)
 	}
 }

@@ -79,6 +79,9 @@
     <string name="hub_name_placeholder">Введите название хаба</string>
     <string name="hub_id_label">ID хаба</string>
     <string name="hub_id_placeholder">Введите ID хаба</string>
+    <string name="hub_id_scan_qr">Отсканировать QR-код</string>
+    <string name="hub_qr_invalid">Не удалось распознать QR-код хаба</string>
+    <string name="hub_qr_scanner_unavailable">Не удалось запустить сканер QR-кода</string>
     <string name="section_latest_readings">Последние показания с хаба</string>
     <string name="label_temperature">Температура:</string>
     <string name="label_noise">Шум:</string>
