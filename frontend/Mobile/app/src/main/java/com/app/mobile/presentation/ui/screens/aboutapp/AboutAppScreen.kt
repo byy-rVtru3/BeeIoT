@@ -39,19 +39,27 @@ fun AboutAppScreen(aboutAppViewModel: AboutAppViewModel, onBackClick: () -> Unit
 	}
 
 	when (val state = aboutAppUiState) {
-		is AboutAppUiState.Content -> AboutAppContent(onBackClick, snackbarHostState)
-		is AboutAppUiState.Error   -> ErrorMessage(state.message, {})
+		is AboutAppUiState.Content -> AboutAppContent(
+			onBackClick = onBackClick,
+			snackbarHostState = snackbarHostState,
+			aboutText = state.aboutText
+		)
+		is AboutAppUiState.Error   -> ErrorMessage(state.message, aboutAppViewModel::resetError)
 		is AboutAppUiState.Loading -> FullScreenProgressIndicator()
 
 	}
 }
 
 @Composable
-private fun AboutAppContent(onBackClick: () -> Unit, snackbarHostState: SnackbarHostState) {
+private fun AboutAppContent(
+	onBackClick: () -> Unit,
+	snackbarHostState: SnackbarHostState,
+	aboutText: String
+) {
 	InfoScreenContent(
 		title = stringResource(R.string.about),
 		sections = listOf(
-			InfoSection(body = stringResource(R.string.app_info))
+			InfoSection(body = aboutText)
 		),
 		onBackClick = onBackClick,
 		snackbarHostState = snackbarHostState
@@ -62,6 +70,10 @@ private fun AboutAppContent(onBackClick: () -> Unit, snackbarHostState: Snackbar
 @Composable
 fun AboutAppContentPreview() {
 	MobileTheme {
-		AboutAppContent(onBackClick = {}, snackbarHostState = remember { SnackbarHostState() })
+		AboutAppContent(
+			onBackClick = {},
+			snackbarHostState = remember { SnackbarHostState() },
+			aboutText = stringResource(R.string.app_info)
+		)
 	}
 }

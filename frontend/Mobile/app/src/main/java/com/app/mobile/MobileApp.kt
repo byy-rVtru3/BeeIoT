@@ -10,6 +10,7 @@ import com.app.mobile.di.themeModule
 import com.app.mobile.di.repository.authRepository
 import com.app.mobile.di.repository.hivesDataSourceModule
 import com.app.mobile.di.repository.hubRepositoryModule
+import com.app.mobile.di.repository.infoContentRepositoryModule
 import com.app.mobile.di.repository.queenDataSourceModule
 import com.app.mobile.di.repository.repositoryApiModule
 import com.app.mobile.di.repository.telemetryRepositoryModule
@@ -26,6 +27,7 @@ import com.app.mobile.di.screens.hiveEditorModule
 import com.app.mobile.di.screens.hiveModule
 import com.app.mobile.di.screens.hivesListModule
 import com.app.mobile.di.screens.howToUseModule
+import com.app.mobile.di.screens.infoContentModule
 import com.app.mobile.di.screens.queenEditorModule
 import com.app.mobile.di.screens.queenListModule
 import com.app.mobile.di.screens.queenModule
@@ -62,6 +64,8 @@ class MobileApp : Application() {
 				sessionModule,
 				authRepository,
 				settingsModule,
+				infoContentRepositoryModule,
+				infoContentModule,
 				aboutAppModule,
 				howToUseModule,
 				accountInfoModule,

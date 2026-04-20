@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.mobile.R
+import com.app.mobile.presentation.models.info.HowToSectionUi
 import com.app.mobile.presentation.ui.components.AppTopBar
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
@@ -47,30 +48,22 @@ fun HowToUseScreen(howToUseViewModel: HowToUseViewModel, onBackClick: () -> Unit
     }
 
     when (val state = howToUseUiState) {
-        is HowToUseUiState.Content -> HowToUseContent(onBackClick, snackbarHostState)
-        is HowToUseUiState.Error -> ErrorMessage(state.message, {})
+        is HowToUseUiState.Content -> HowToUseContent(
+            onBackClick = onBackClick,
+            snackbarHostState = snackbarHostState,
+            sections = state.sections
+        )
+        is HowToUseUiState.Error -> ErrorMessage(state.message, howToUseViewModel::resetError)
         is HowToUseUiState.Loading -> FullScreenProgressIndicator()
     }
 }
 
 @Composable
-private fun HowToUseContent(onBackClick: () -> Unit, snackbarHostState: SnackbarHostState) {
-    val sections = listOf(
-        HowToUseAccordionSection(
-            title = stringResource(R.string.how_to_use_section_title_1),
-            body = stringResource(R.string.how_to_use_section_body_1)
-        ),
-        HowToUseAccordionSection(
-            title = stringResource(R.string.how_to_use_section_title_2),
-            body = stringResource(R.string.how_to_use_section_body_2),
-            showStepNumbers = false
-        ),
-        HowToUseAccordionSection(
-            title = stringResource(R.string.how_to_use_section_title_3),
-            body = stringResource(R.string.how_to_use_section_body_3)
-        )
-        
-    )
+private fun HowToUseContent(
+    onBackClick: () -> Unit,
+    snackbarHostState: SnackbarHostState,
+    sections: List<HowToSectionUi>
+) {
 
     Scaffold(
         topBar = {
@@ -84,7 +77,13 @@ private fun HowToUseContent(onBackClick: () -> Unit, snackbarHostState: Snackbar
         containerColor = MaterialTheme.colorScheme.surfaceVariant
     ) { innerPadding ->
         HowToUseAccordion(
-            sections = sections,
+            sections = sections.map {
+                HowToUseAccordionSection(
+                    title = it.title,
+                    body = it.body,
+                    showStepNumbers = it.showStepNumbers
+                )
+            },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
@@ -98,6 +97,26 @@ private fun HowToUseContent(onBackClick: () -> Unit, snackbarHostState: Snackbar
 @Composable
 fun HowToUseContentPreview() {
     MobileTheme {
-        HowToUseContent(onBackClick = {}, snackbarHostState = remember { SnackbarHostState() })
+        HowToUseContent(
+            onBackClick = {},
+            snackbarHostState = remember { SnackbarHostState() },
+            sections = listOf(
+                HowToSectionUi(
+                    title = stringResource(R.string.how_to_use_section_title_1),
+                    body = stringResource(R.string.how_to_use_section_body_1),
+                    showStepNumbers = true
+                ),
+                HowToSectionUi(
+                    title = stringResource(R.string.how_to_use_section_title_2),
+                    body = stringResource(R.string.how_to_use_section_body_2),
+                    showStepNumbers = false
+                ),
+                HowToSectionUi(
+                    title = stringResource(R.string.how_to_use_section_title_3),
+                    body = stringResource(R.string.how_to_use_section_body_3),
+                    showStepNumbers = true
+                )
+            )
+        )
     }
 }

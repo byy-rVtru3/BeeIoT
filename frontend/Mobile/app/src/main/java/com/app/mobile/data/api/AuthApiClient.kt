@@ -30,6 +30,7 @@ import com.app.mobile.data.api.models.task.DeleteTaskRequest
 import com.app.mobile.data.api.models.task.TaskCreateResponse
 import com.app.mobile.data.api.models.task.TaskListResponse
 import com.app.mobile.data.api.models.task.UpdateTaskRequest
+import kotlinx.serialization.json.JsonElement
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -58,6 +59,9 @@ interface AuthApiClient {
 
     @POST("auth/fcm/update")
     suspend fun registerPushToken(@Body pushTokenCreation: PushTokenCreationModel): Response<ResponseApiModel>
+
+    @GET("instructions/list")
+    suspend fun getInstructionsList(): Response<JsonElement>
 
     // --- Hive ---
 
