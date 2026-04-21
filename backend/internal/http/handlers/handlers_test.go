@@ -288,6 +288,22 @@ func (m *MockDB) GetTaskByID(_ context.Context, _ string) (dbTypes.Task, error) 
 	return m.TaskData, nil
 }
 
+func (m *MockDB) IsAdmin(_ context.Context, _ string) (bool, error) {
+	return false, nil
+}
+
+func (m *MockDB) CreateInstruction(_ context.Context, _ httpType.CreateInstructionRequest) (int, error) {
+	return 0, nil
+}
+
+func (m *MockDB) GetInstructions(_ context.Context) ([]dbTypes.Instruction, error) {
+	return nil, nil
+}
+
+func (m *MockDB) DeleteInstruction(_ context.Context, _ int) error {
+	return nil
+}
+
 type MockConfirmSender struct {
 	LastEmail string
 	LastCode  string

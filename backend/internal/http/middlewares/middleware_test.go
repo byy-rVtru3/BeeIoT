@@ -20,6 +20,10 @@ func (m *MockInMemoryDB) ExistJwt(ctx context.Context, email, jwtId string) (boo
 	return true, nil
 }
 
+type MockDB struct {
+	interfaces.DB
+}
+
 func TestCheckAuth(t *testing.T) {
 	os.Setenv("JWT_SECRET", "testsecret")
 	defer os.Unsetenv("JWT_SECRET")
@@ -27,7 +31,7 @@ func TestCheckAuth(t *testing.T) {
 	logger := zerolog.Nop()
 	inMem := &MockInMemoryDB{}
 
-	mw, err := NewMiddleWares(inMem, logger)
+	mw, err := NewMiddleWares(&MockDB{}, inMem, logger)
 	if err != nil {
 		t.Fatalf("NewMiddleWares failed: %v", err)
 	}
