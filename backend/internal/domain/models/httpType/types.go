@@ -189,3 +189,15 @@ type TaskItem struct {
 	Description string `json:"description"`
 	CreatedAt   int64  `json:"created_at"`
 }
+
+type CreateInstructionRequest struct {
+	Title   string `json:"title"`
+	Content string `json:"content"`
+}
+
+type InstructionItem struct {
+	ID        int    `json:"id"`
+	Title     string `json:"title"`
+	Content   string `json:"content"`
+	CreatedAt int64  `json:"created_at"`
+}

@@ -45,6 +45,13 @@ type Task struct {
 	Email       string
 }
 
+type Instruction struct {
+	ID        int
+	Title     string
+	Content   string
+	CreatedAt time.Time
+}
+
 type HivesTemperatureData struct {
 	Date        time.Time
 	Temperature float64

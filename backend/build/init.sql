@@ -2,7 +2,8 @@ CREATE TABLE users (
                        id SERIAL PRIMARY KEY,
                        email TEXT UNIQUE NOT NULL,
                        name TEXT,
-                       password TEXT NOT NULL
+                       password TEXT NOT NULL,
+                       is_admin BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE firebase (
@@ -72,4 +73,11 @@ CREATE TABLE noise (
                        level FLOAT NOT NULL,
                        recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                        UNIQUE (hub_id, recorded_at)
+);
+
+CREATE TABLE instructions (
+                       id SERIAL PRIMARY KEY,
+                       title TEXT NOT NULL,
+                       content TEXT NOT NULL,
+                       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

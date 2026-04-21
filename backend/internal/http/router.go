@@ -28,7 +28,7 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 		logger.Error().Err(err).Msg("could not create new handler")
 		return
 	}
-	m, err := middlewares.NewMiddleWares(inMemDb, logger)
+	m, err := middlewares.NewMiddleWares(db, inMemDb, logger)
 	if err != nil {
 		logger.Error().Err(err).Msg("could not create new middleware")
 		return
@@ -99,6 +99,12 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.Get("/list", h.GetTasks)
 			r.Put("/update", h.UpdateTask)
 			r.Delete("/delete", h.DeleteTask)
+		})
+		r.Route("/instructions", func(r chi.Router) {
+			r.Use(m.CheckAuth, m.CheckAdmin)
+			r.Get("/list", h.GetInstructions)
+			r.Post("/create", h.CreateInstruction)
+			r.Delete("/{id}", h.DeleteInstruction)
 		})
 	})
 

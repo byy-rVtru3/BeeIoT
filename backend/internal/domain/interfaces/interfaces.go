@@ -20,6 +20,7 @@ type DB interface {
 	GetUserById(ctx context.Context, id int) (string, error)
 	GetUserByEmail(ctx context.Context, email string) (string, string, error)
 	ChangeNameUser(ctx context.Context, email string, name string) error
+	IsAdmin(ctx context.Context, email string) (bool, error)
 
 	NewHive(ctx context.Context, email, nameHive, sensorName string) error
 	GetHives(ctx context.Context, email string, active *bool) ([]dbTypes.Hive, error)
@@ -67,6 +68,10 @@ type DB interface {
 	UpdateTask(ctx context.Context, email string, req httpType.UpdateTaskRequest) error
 	DeleteTask(ctx context.Context, email, taskID string) error
 	GetTaskByID(ctx context.Context, taskID string) (dbTypes.Task, error)
+
+	CreateInstruction(ctx context.Context, req httpType.CreateInstructionRequest) (int, error)
+	GetInstructions(ctx context.Context) ([]dbTypes.Instruction, error)
+	DeleteInstruction(ctx context.Context, id int) error
 }
 
 type InMemoryDB interface {
