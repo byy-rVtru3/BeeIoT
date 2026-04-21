@@ -59,7 +59,6 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.Get("/", h.GetHive)
 			r.Put("/update", h.UpdateHive)
 			r.Delete("/delete", h.DeleteHive)
-			r.Post("/archive", h.ArchiveHive)
 			r.Post("/link/hub", h.LinkHubToHive)
 			r.Post("/link/queen", h.LinkQueenToHive)
 		})

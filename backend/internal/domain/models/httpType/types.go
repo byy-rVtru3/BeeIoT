@@ -91,11 +91,6 @@ type CreateHive struct {
 	Sensor string `json:"sensor,omitempty"`
 }
 
-type ArchiveHive struct {
-	Name   string `json:"name"`
-	Active bool   `json:"active"`
-}
-
 type UpdateHive struct {
 	OldName string  `json:"old_name"`
 	NewName *string `json:"new_name,omitempty"`

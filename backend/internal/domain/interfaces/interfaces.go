@@ -26,7 +26,6 @@ type DB interface {
 	GetHiveByName(ctx context.Context, email, nameHive string, active *bool) (dbTypes.Hive, error)
 	DeleteHive(ctx context.Context, email, nameHive string) error
 	UpdateHive(ctx context.Context, email string, data httpType.UpdateHive) error
-	UpdateHiveStatus(ctx context.Context, email, name string, status bool) error
 	UpdateHiveTemperatureCheck(ctx context.Context, hiveId int, t time.Time) error
 	UpdateHiveNoiseCheck(ctx context.Context, hiveId int, t time.Time) error
 	GetEmailHiveBySensorID(ctx context.Context, sensorID string) (string, string, error)

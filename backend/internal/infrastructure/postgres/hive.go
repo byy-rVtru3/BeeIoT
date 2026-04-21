@@ -152,13 +152,6 @@ func (db *Postgres) UpdateHiveNoiseCheck(ctx context.Context, hiveId int, t time
 	return err
 }
 
-func (db *Postgres) UpdateHiveStatus(ctx context.Context, email, name string, status bool) error {
-	text := `UPDATE hives SET status = $3
-	         WHERE name = $2 AND user_id = (SELECT id FROM users WHERE email = $1)`
-	_, err := db.pull.Exec(ctx, text, email, name, status)
-	return err
-}
-
 func (db *Postgres) GetEmailHiveBySensorID(ctx context.Context, sensorID string) (string, string, error) {
 	text := `SELECT u.email, h.name FROM users u
 			 JOIN hives h ON h.user_id = u.id

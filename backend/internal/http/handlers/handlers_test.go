@@ -206,10 +206,6 @@ func (m *MockDB) UpdateHive(_ context.Context, _ string, _ httpType.UpdateHive) 
 	return nil
 }
 
-func (m *MockDB) UpdateHiveStatus(_ context.Context, _, _ string, _ bool) error {
-	return nil
-}
-
 func (m *MockDB) DeleteHive(_ context.Context, _ string, _ string) error {
 	return nil
 }
