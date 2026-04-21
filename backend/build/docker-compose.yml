@@ -99,11 +99,31 @@ services:
         condition: service_healthy
       mqtt:
         condition: service_healthy
-    ports:
-      - "80:8000"
+    # Порт не публикуется наружу — Go доступен только nginx внутри app-net.
+    # Прямой доступ к :8000 снаружи закрыт.
+    expose:
+      - "8000"
     networks:
       - app-net
     restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nginx_container
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - go-server
+    networks:
+      - app-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/api/health 2>&1 | grep -q . || exit 0"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   swagger-ui:
     image: swaggerapi/swagger-ui:latest
