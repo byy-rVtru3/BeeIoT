@@ -82,7 +82,7 @@ def main():
     args = parse_args()
     seen_devices = set()
 
-    def on_connect(client, userdata, flags, rc, properties=None):
+    def on_connect(client, userdata, flags, rc, *_args, **_kwargs):
         if rc == 0:
             print(colored(f"[OK] Connected to {args.host}:{args.port}", COLOR_OK))
             client.subscribe("/device/+/data", qos=1)
@@ -92,7 +92,10 @@ def main():
         else:
             print(colored(f"[ERR] Connect failed rc={rc}", COLOR_ERR))
 
-    def on_disconnect(client, userdata, rc, properties=None):
+    def on_disconnect(client, userdata, *cb_args, **_kwargs):
+        # paho-mqtt v1: (rc,)            — 1 args
+        # paho-mqtt v2: (flags, rc, props) — 3 args
+        rc = cb_args[-2] if len(cb_args) >= 2 else (cb_args[0] if cb_args else "?")
         print(colored(f"[--] Disconnected rc={rc}", COLOR_ERR))
 
     def on_message(client, userdata, msg):
