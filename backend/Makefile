@@ -1,4 +1,4 @@
-.PHONY: run run_build load_test load_test_build unit_test client_test logs stop clean help
+.PHONY: run run_build load_test load_test_build unit_test client_test logs stop clean help admin unadmin list_admins
 
 # Загрузка переменных окружения из .env
 ifneq (,$(wildcard .env))
@@ -59,5 +59,19 @@ client_test: ## Запустить сервер в Docker и клиента ло
 
 clean: stop ## Очистить файлы и остановить инфраструктуру
 	@rm -f coverage.out
+
+admin: ## Сделать пользователя админом: make admin EMAIL=foo@bar.com
+	@if [ -z "$(EMAIL)" ]; then echo "$(YELLOW)Используй: make admin EMAIL=foo@bar.com$(NC)"; exit 1; fi
+	@$(DOCKER_COMPOSE) exec -T db psql -U $(DB_USER) -d $(DB_NAME) -c \
+		"UPDATE users SET is_admin = true WHERE email = '$(EMAIL)' RETURNING email, is_admin;"
+
+unadmin: ## Снять админку с пользователя: make unadmin EMAIL=foo@bar.com
+	@if [ -z "$(EMAIL)" ]; then echo "$(YELLOW)Используй: make unadmin EMAIL=foo@bar.com$(NC)"; exit 1; fi
+	@$(DOCKER_COMPOSE) exec -T db psql -U $(DB_USER) -d $(DB_NAME) -c \
+		"UPDATE users SET is_admin = false WHERE email = '$(EMAIL)' RETURNING email, is_admin;"
+
+list_admins: ## Показать всех админов
+	@$(DOCKER_COMPOSE) exec -T db psql -U $(DB_USER) -d $(DB_NAME) -c \
+		"SELECT email, name FROM users WHERE is_admin = true;"
 
 all: run ## Запустить все
