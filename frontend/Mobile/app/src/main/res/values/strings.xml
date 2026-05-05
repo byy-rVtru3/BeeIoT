@@ -40,6 +40,8 @@
     <string name="empty_queens_list_screen">Пока нету маток, чтобы добавить матку нажмите на кнопку "Добавить матку"</string>
 
     <string name="empty_archive_list_screen">В архиве пока пусто</string>
+    <string name="swipe_to_archive">Архивировать</string>
+    <string name="swipe_to_unarchive">Вернуть из архива</string>
     <string name="hive_last_connection_format">Последняя связь\n%1$s</string>
     <string name="hive">Улей</string>
     <string name="no_hive">Нет улья</string>

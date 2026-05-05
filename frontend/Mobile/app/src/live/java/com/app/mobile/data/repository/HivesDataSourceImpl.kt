@@ -17,9 +17,9 @@ class HivesDataSourceImpl(
     private val authApiClient: AuthApiClient
 ) : HivesDataSource {
 
-    override suspend fun getHives(): ApiResult<List<HiveDomainPreview>> =
+    override suspend fun getHives(active: Boolean?): ApiResult<List<HiveDomainPreview>> =
         safeApiCall(
-            apiCall = { authApiClient.getHives() },
+            apiCall = { authApiClient.getHives(active) },
             onSuccess = { response -> response.data?.map { it.toDomain() } ?: emptyList() }
         )
 

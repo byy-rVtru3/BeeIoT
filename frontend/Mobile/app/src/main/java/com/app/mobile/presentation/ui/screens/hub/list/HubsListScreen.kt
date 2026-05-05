@@ -166,10 +166,9 @@ private fun HubsGrid(
         itemsIndexed(hubs, key = { _, hub -> hub.id }) { index, hub ->
             val isLeftColumn = index % 2 == 0
             SwipeToDeleteContainer(
-                onDelete = { actions.onDeleteHub(hub.id) },
-                modifier = Modifier.animateItem(),
-                enableSwipeToStart = isLeftColumn,
-                enableSwipeToEnd = !isLeftColumn
+                onSwipeToStart = if (isLeftColumn) { { actions.onDeleteHub(hub.id) } } else null,
+                onSwipeToEnd = if (!isLeftColumn) { { actions.onDeleteHub(hub.id) } } else null,
+                modifier = Modifier.animateItem()
             ) {
                 HubTileCard(
                     name = hub.name,
