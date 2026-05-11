@@ -32,7 +32,8 @@ func (db *Postgres) GetWeightSinceTime(ctx context.Context, email, hub string, t
 	text := `SELECT level, recorded_at
              FROM weight w
              INNER JOIN hubs h ON h.id = w.hub_id
-             WHERE h.email = $1 AND h.sensor = $2 AND w.recorded_at >= $3;`
+             WHERE h.email = $1 AND h.sensor = $2 AND w.recorded_at >= $3
+             ORDER BY w.recorded_at ASC;`
 	rows, err := db.pull.Query(ctx, text, email, hub, t)
 	if err != nil {
 		return nil, err

@@ -20,7 +20,8 @@ func (db *Postgres) NewNoise(ctx context.Context, noise httpType.NoiseLevel) err
 func (db *Postgres) GetNoiseSinceTime(ctx context.Context, email, hub string, t time.Time) ([]dbTypes.HivesNoiseData, error) {
 	text := `SELECT level, recorded_at FROM noise n
              INNER JOIN hubs h ON n.hub_id = h.id
-	         WHERE h.email = $1 AND h.sensor = $2 AND n.recorded_at >= $3;`
+	         WHERE h.email = $1 AND h.sensor = $2 AND n.recorded_at >= $3
+             ORDER BY n.recorded_at ASC;`
 	rows, err := db.pull.Query(ctx, text, email, hub, t)
 	if err != nil {
 		return nil, err
@@ -39,7 +40,8 @@ func (db *Postgres) GetNoiseSinceTime(ctx context.Context, email, hub string, t 
 
 func (db *Postgres) GetNoiseSinceDay(ctx context.Context, hubId int, date time.Time) (map[time.Time][]dbTypes.HivesNoiseData, error) {
 	text := `SELECT level, recorded_at FROM noise
-			 WHERE hub_id = $1 AND recorded_at >= $2;`
+			 WHERE hub_id = $1 AND recorded_at >= $2
+             ORDER BY recorded_at ASC;`
 	rows, err := db.pull.Query(ctx, text, hubId, date)
 	if err != nil {
 		return nil, err

@@ -20,7 +20,8 @@ func (db *Postgres) NewTemperature(ctx context.Context, temp httpType.Temperatur
 func (db *Postgres) GetTemperaturesSinceTime(ctx context.Context, email, hub string, t time.Time) ([]dbTypes.HivesTemperatureData, error) {
 	text := `SELECT level, recorded_at FROM temperature t
              INNER JOIN hubs h ON t.hub_id = h.id
-             WHERE h.email = $1 AND h.sensor = $2 AND t.recorded_at >= $3;`
+             WHERE h.email = $1 AND h.sensor = $2 AND t.recorded_at >= $3
+             ORDER BY t.recorded_at ASC;`
 	rows, err := db.pull.Query(ctx, text, email, hub, t)
 	if err != nil {
 		return nil, err
@@ -40,7 +41,8 @@ func (db *Postgres) GetTemperaturesSinceTime(ctx context.Context, email, hub str
 func (db *Postgres) GetTemperaturesSinceTimeById(ctx context.Context, hubId int, t time.Time) ([]dbTypes.HivesTemperatureData, error) {
 	text := `SELECT level, recorded_at FROM temperature
              WHERE hub_id = $1
-			 AND recorded_at >= $2;`
+			 AND recorded_at >= $2
+             ORDER BY recorded_at ASC;`
 	rows, err := db.pull.Query(ctx, text, hubId, t)
 	if err != nil {
 		return nil, err
