@@ -138,6 +138,19 @@ services:
       - app-net
     restart: unless-stopped
 
+  web-admin:
+    build:
+      context: ../../frontend/Web
+      dockerfile: Dockerfile
+    container_name: web_admin_container
+    depends_on:
+      - go-server
+    ports:
+      - "3000:80"
+    networks:
+      - app-net
+    restart: unless-stopped
+
 volumes:
   db_data:
   redis_data:
