@@ -6,6 +6,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.Logout
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -39,7 +47,8 @@ fun SettingsScreen(
 	settingsViewModel: SettingsViewModel,
 	onAccountInfoClick: () -> Unit,
 	onLogoutClick: () -> Unit,
-	onAboutAppClick: () -> Unit
+	onAboutAppClick: () -> Unit,
+	onHowToUseClick: () -> Unit
 ) {
 	val settingsUiState by settingsViewModel.uiState.collectAsStateWithLifecycle()
 	val snackBarHostState = remember { SnackbarHostState() }
@@ -50,6 +59,8 @@ fun SettingsScreen(
 			is SettingsEvent.NavigateToAccountInfo -> onAccountInfoClick()
 
 			is SettingsEvent.NavigateToAboutApp -> onAboutAppClick()
+
+			is SettingsEvent.NavigateToHowToUse -> onHowToUseClick()
 
 			is SettingsEvent.NavigateToAuthorization -> onLogoutClick()
 
@@ -74,6 +85,7 @@ fun SettingsScreen(
 			val actions = SettingsActions(
 				onAccountInfoClick = settingsViewModel::onAccountInfoClick,
 				onAboutAppClick = settingsViewModel::onAboutAppClick,
+				onHowToUseClick = settingsViewModel::onHowToUseClick,
 				onLogoutClick = settingsViewModel::onLogoutClick,
 				onToggleTheme = settingsViewModel::onToggleTheme,
 				onNotificationsClick = settingsViewModel::onNotificationsClick
@@ -131,21 +143,39 @@ private fun SettingsContent(
 					.fillMaxSize()
 
 			) {
-				AccountInfoButton(actions.onAccountInfoClick)
+				SettingsGroup {
+					AccountInfoButton(actions.onAccountInfoClick)
+					NotificationsButton(actions.onNotificationsClick)
+                    ThemeToggleButton(
+						isDarkTheme = isDarkTheme,
+						onToggleTheme = actions.onToggleTheme
+					)
+				}
 
-				ThemeToggleButton(
-					isDarkTheme = isDarkTheme,
-					onToggleTheme = actions.onToggleTheme
-				)
+				SettingsGroup {
+					AboutAppButton(actions.onAboutAppClick)
+					HowToUseButton(actions.onHowToUseClick)
+				}
 
-				NotificationsButton(actions.onNotificationsClick)
-
-				AboutAppButton(actions.onAboutAppClick)
-
-				LogoutButton(actions.onLogoutClick)
+				SettingsGroup {
+					LogoutButton(actions.onLogoutClick)
+				}
 			}
 
 		}
+	}
+}
+
+@Composable
+private fun SettingsGroup(
+	modifier: Modifier = Modifier,
+	content: @Composable () -> Unit
+) {
+	Column(
+		modifier = modifier,
+		verticalArrangement = Arrangement.spacedBy(Dimens.ItemsSpacingSmall)
+	) {
+		content()
 	}
 }
 
@@ -158,6 +188,11 @@ private fun ThemeToggleButton(isDarkTheme: Boolean, onToggleTheme: () -> Unit) {
 		} else {
 			stringResource(R.string.switch_to_dark_theme)
 		},
+		icon = if (isDarkTheme) {
+			Icons.Outlined.LightMode
+		} else {
+			Icons.Outlined.DarkMode
+		}
 	)
 }
 
@@ -166,7 +201,7 @@ private fun AccountInfoButton(onAccountInfoClick: () -> Unit) {
 	SettingsButton(
 		onClick = onAccountInfoClick,
 		text = stringResource(R.string.account),
-
+		icon = Icons.Outlined.AccountCircle
 		)
 }
 
@@ -175,6 +210,7 @@ private fun NotificationsButton(onNotificationsClick: () -> Unit) {
 	SettingsButton(
 		onClick = onNotificationsClick,
 		text = stringResource(R.string.notifications),
+		icon = Icons.Outlined.Notifications
 	)
 }
 
@@ -183,8 +219,17 @@ private fun AboutAppButton(onAboutAppClick: () -> Unit) {
 	SettingsButton(
 		onClick = onAboutAppClick,
 		text = stringResource(R.string.about),
-
+		icon = Icons.Outlined.Info
 		)
+}
+
+@Composable
+private fun HowToUseButton(onHowToUseClick: () -> Unit) {
+	SettingsButton(
+		onClick = onHowToUseClick,
+		text = stringResource(R.string.how_to_use_app),
+		icon = Icons.Outlined.HelpOutline
+	)
 }
 
 @Composable
@@ -192,6 +237,7 @@ private fun LogoutButton(onLogoutClick: () -> Unit) {
 	SettingsButton(
 		onClick = onLogoutClick,
 		text = stringResource(R.string.logout),
+		icon = Icons.Outlined.Logout,
 		exit = true,
 	)
 }
@@ -203,6 +249,7 @@ fun SettingsContentPreview() {
 		val actions = SettingsActions(
 			onAccountInfoClick = {},
 			onAboutAppClick = {},
+			onHowToUseClick = {},
 			onLogoutClick = {},
 			onToggleTheme = {},
 			onNotificationsClick = {}
