@@ -160,10 +160,9 @@ private fun WorksList(
 		) { index, work ->
 			val isLeftColumn = index % 2 == 0
 			SwipeToDeleteContainer(
-				onDelete = { onDeleteWork(work.id) },
-				modifier = Modifier.animateItem(),
-				enableSwipeToStart = isLeftColumn,
-				enableSwipeToEnd = !isLeftColumn
+				onSwipeToStart = if (isLeftColumn) { { onDeleteWork(work.id) } } else null,
+				onSwipeToEnd = if (!isLeftColumn) { { onDeleteWork(work.id) } } else null,
+				modifier = Modifier.animateItem()
 			) {
 				WorkTileCard(
 					title = work.title,

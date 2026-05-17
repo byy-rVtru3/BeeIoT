@@ -172,7 +172,7 @@ private fun QueensList(
 	) {
 		items(queens, key = { it.name }) { queen ->
 			SwipeToDeleteContainer(
-				onDelete = { actions.onDeleteQueen(queen.name) },
+				onSwipeToStart = { actions.onDeleteQueen(queen.name) },
 				modifier = Modifier.animateItem()
 			) {
 				QueenItem(queen, actions.onQueenClick)

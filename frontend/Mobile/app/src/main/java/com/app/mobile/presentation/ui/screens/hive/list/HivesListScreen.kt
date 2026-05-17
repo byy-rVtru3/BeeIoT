@@ -16,7 +16,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -77,36 +80,33 @@ fun HivesListScreen(
 			onRetry = hivesListViewModel::onRetry
 		)
 
-		is HivesListUiState.Empty   -> EmptyHivesListScreen(
-			selectedTab = selectedTab,
-			onTabSelected = hivesListViewModel::onTabSelected,
-			onCreateHiveClick = hivesListViewModel::onCreateHiveClick
-		)
-
 		is HivesListUiState.Content -> {
 			val actions = HivesListActions(
 				onHiveClick = hivesListViewModel::onHiveClick,
 				onCreateHiveClick = hivesListViewModel::onCreateHiveClick,
-				onDeleteHive = hivesListViewModel::onDeleteHive
+				onDeleteHive = hivesListViewModel::onDeleteHive,
+				onArchiveHive = hivesListViewModel::onArchiveHive,
+				onUnarchiveHive = hivesListViewModel::onUnarchiveHive
 			)
 			HivesListContent(
-				state.hives,
+				activeHives = state.activeHives,
+				archivedHives = state.archivedHives,
 				isRefreshing = state.isRefreshing,
 				onRefresh = hivesListViewModel::refresh,
-				snackbarHostState,
-				actions,
+				snackbarHostState = snackbarHostState,
+				actions = actions,
 				selectedTab = selectedTab,
 				onTabSelected = hivesListViewModel::onTabSelected
 			)
 		}
 	}
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HivesListContent(
-	hives: List<HivePreview>,
+	activeHives: List<HivePreview>,
+	archivedHives: List<HivePreview>,
 	isRefreshing: Boolean,
 	onRefresh: () -> Unit,
 	snackbarHostState: SnackbarHostState,
@@ -132,9 +132,9 @@ private fun HivesListContent(
         ) {
             when (selectedTab) {
                 0 -> {
-                    if (hives.isNotEmpty()) {
-                        HivesList(
-                            hives = hives,
+                    if (activeHives.isNotEmpty()) {
+                        ActiveHivesList(
+                            hives = activeHives,
                             actions = actions,
                             modifier = innerPadding
                         )
@@ -146,10 +146,18 @@ private fun HivesListContent(
                     }
                 }
                 1 -> {
-                    EmptyStub(
-                        text = stringResource(R.string.empty_archive_list_screen),
-                        modifier = innerPadding
-                    )
+                    if (archivedHives.isNotEmpty()) {
+                        ArchivedHivesList(
+                            hives = archivedHives,
+                            actions = actions,
+                            modifier = innerPadding
+                        )
+                    } else {
+                        EmptyStub(
+                            text = stringResource(R.string.empty_archive_list_screen),
+                            modifier = innerPadding
+                        )
+                    }
                 }
             }
         }
@@ -157,11 +165,14 @@ private fun HivesListContent(
 }
 
 @Composable
-private fun HivesList(
+private fun ActiveHivesList(
 	hives: List<HivePreview>,
 	actions: HivesListActions,
 	modifier: Modifier = Modifier
 ) {
+	val archiveIcon = ImageVector.vectorResource(R.drawable.ic_archive)
+	val trashIcon = ImageVector.vectorResource(R.drawable.ic_trash)
+
 	LazyColumn(
 		modifier = modifier
 			.fillMaxSize()
@@ -174,7 +185,42 @@ private fun HivesList(
 	) {
 		items(hives, key = { it.name }) { hive ->
 			SwipeToDeleteContainer(
-				onDelete = { actions.onDeleteHive(hive.name) },
+				onSwipeToEnd = { actions.onArchiveHive(hive.name) },
+				onSwipeToStart = { actions.onDeleteHive(hive.name) },
+				endIcon = archiveIcon,
+				startIcon = trashIcon,
+				endColor = Color(0xFFE65100),
+				modifier = Modifier.animateItem()
+			) {
+				HiveItem(hive, actions.onHiveClick)
+			}
+		}
+	}
+}
+
+@Composable
+private fun ArchivedHivesList(
+	hives: List<HivePreview>,
+	actions: HivesListActions,
+	modifier: Modifier = Modifier
+) {
+	val returnIcon = ImageVector.vectorResource(R.drawable.ic_return)
+
+	LazyColumn(
+		modifier = modifier
+			.fillMaxSize()
+			.padding(horizontal = Dimens.ScreenContentPadding),
+		verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
+		contentPadding = PaddingValues(
+			top = Dimens.ScreenContentPadding,
+			bottom = Dimens.ScreenContentPadding
+		)
+	) {
+		items(hives, key = { it.name }) { hive ->
+			SwipeToDeleteContainer(
+				onSwipeToEnd = { actions.onUnarchiveHive(hive.name) },
+				endIcon = returnIcon,
+				endColor = Color(0xFF2E7D32),
 				modifier = Modifier.animateItem()
 			) {
 				HiveItem(hive, actions.onHiveClick)
@@ -188,42 +234,8 @@ private fun HivesList(
 private fun HiveItem(hive: HivePreview, onHiveClick: (String) -> Unit) {
 	HiveItemCard(
 		name = hive.name,
-		// TODO: Добавьте поле lastConnection в модель HivePreview
 		lastConnection = "2024.04.12",
-
-		// TODO: Добавьте поле isConnected (Boolean) в модель HivePreview
-		isSignalActive = true, // Если true - иконка черная, false - серая
-
+		isSignalActive = true,
 		onClick = { onHiveClick(hive.name) }
 	)
-}
-
-@Composable
-private fun EmptyHivesListScreen(
-	selectedTab: Int,
-	onTabSelected: (Int) -> Unit,
-	onCreateHiveClick: () -> Unit
-) {
-    val tabs = listOf(stringResource(R.string.active_hives), stringResource(R.string.archive))
-
-    val emptyText = if (selectedTab == 0) {
-        stringResource(R.string.empty_hives_list_screen)
-    } else {
-        stringResource(R.string.empty_archive_list_screen)
-    }
-
-    TabbedScreenScaffold(
-        tabs = tabs,
-        selectedTabIndex = selectedTab,
-        onTabSelected = onTabSelected,
-        showFabOnTab = 0,
-        fabIcon = Icons.Filled.Add,
-        fabContentDescription = stringResource(R.string.add_hive),
-        onFabClick = onCreateHiveClick
-    ) { padding ->
-        EmptyStub(
-            text = emptyText,
-            modifier = padding
-        )
-    }
 }

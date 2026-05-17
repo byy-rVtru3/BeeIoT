@@ -6,7 +6,7 @@ import com.app.mobile.domain.models.hives.HiveDomainPreview
 import com.app.mobile.domain.models.hives.HiveResult
 
 interface HivesDataSource {
-    suspend fun getHives(): ApiResult<List<HiveDomainPreview>>
+    suspend fun getHives(active: Boolean? = null): ApiResult<List<HiveDomainPreview>>
     suspend fun getHive(name: String): ApiResult<HiveResult>
     suspend fun createHive(name: String): ApiResult<Unit>
     suspend fun updateHive(oldName: String, newName: String? = null, active: Boolean? = null): ApiResult<Unit>

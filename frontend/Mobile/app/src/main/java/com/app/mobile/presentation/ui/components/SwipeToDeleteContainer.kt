@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -38,26 +39,44 @@ import kotlin.math.roundToInt
 
 private const val DISMISS_THRESHOLD = 0.45f
 
+/**
+ * @param onSwipeToEnd  action on right swipe; null disables right swipe
+ * @param onSwipeToStart action on left swipe; null disables left swipe
+ * @param endIcon       icon shown during right swipe
+ * @param startIcon     icon shown during left swipe
+ * @param endColor      background color for right swipe
+ * @param startColor    background color for left swipe
+ */
 @Composable
 fun SwipeToDeleteContainer(
-    onDelete: () -> Unit,
+    onSwipeToStart: (() -> Unit)? = null,
+    onSwipeToEnd: (() -> Unit)? = null,
+    startIcon: ImageVector? = null,
+    endIcon: ImageVector? = null,
+    startColor: Color? = null,
+    endColor: Color? = null,
     modifier: Modifier = Modifier,
-    enableSwipeToStart: Boolean = true,
-    enableSwipeToEnd: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    val enableSwipeToEnd = onSwipeToEnd != null
+    val enableSwipeToStart = onSwipeToStart != null
+
     var itemWidth by remember { mutableIntStateOf(0) }
     val offsetX = remember { Animatable(0f) }
-    var isDismissed by remember { mutableStateOf(false) }
+    var dismissDirection by remember { mutableStateOf<DismissDirection?>(null) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(isDismissed) {
-        if (isDismissed) onDelete()
+    LaunchedEffect(dismissDirection) {
+        if (dismissDirection == DismissDirection.End) onSwipeToEnd?.invoke()
+        if (dismissDirection == DismissDirection.Start) onSwipeToStart?.invoke()
     }
 
     val progress = if (itemWidth > 0) (abs(offsetX.value) / itemWidth).coerceIn(0f, 1f) else 0f
     val isSwipingRight = offsetX.value > 1f
     val isSwipingLeft = offsetX.value < -1f
+
+    val errorColor = MaterialTheme.colorScheme.error
+    val onErrorColor = MaterialTheme.colorScheme.onError
 
     Box(
         modifier = modifier
@@ -69,17 +88,28 @@ fun SwipeToDeleteContainer(
             val bgAlpha = (progress / DISMISS_THRESHOLD).coerceIn(0f, 1f)
             val iconScale = 0.6f + bgAlpha * 0.4f
 
+            val bgColor = if (isSwipingRight) {
+                (endColor ?: errorColor).copy(alpha = bgAlpha)
+            } else {
+                (startColor ?: errorColor).copy(alpha = bgAlpha)
+            }
+            val icon = if (isSwipingRight) {
+                endIcon ?: ImageVector.vectorResource(R.drawable.ic_trash)
+            } else {
+                startIcon ?: ImageVector.vectorResource(R.drawable.ic_trash)
+            }
+
             Box(
                 modifier = Modifier
                     .matchParentSize()
                     .clip(RoundedCornerShape(Dimens.ItemCardRadius))
-                    .background(MaterialTheme.colorScheme.error.copy(alpha = bgAlpha)),
+                    .background(bgColor),
                 contentAlignment = iconAlignment
             ) {
                 Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.ic_trash),
+                    imageVector = icon,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onError.copy(alpha = bgAlpha),
+                    tint = onErrorColor.copy(alpha = bgAlpha),
                     modifier = Modifier
                         .padding(horizontal = Dimens.ItemCardPadding)
                         .size(Dimens.HiveItemCardIconSize)
@@ -104,14 +134,14 @@ fun SwipeToDeleteContainer(
                                             targetValue = itemWidth.toFloat() + 64f,
                                             animationSpec = MotionSpecs.SwipeDismiss
                                         )
-                                        isDismissed = true
+                                        dismissDirection = DismissDirection.End
                                     }
                                     offsetX.value <= -thresholdPx && enableSwipeToStart -> {
                                         offsetX.animateTo(
                                             targetValue = -(itemWidth.toFloat() + 64f),
                                             animationSpec = MotionSpecs.SwipeDismiss
                                         )
-                                        isDismissed = true
+                                        dismissDirection = DismissDirection.Start
                                     }
                                     else -> {
                                         offsetX.animateTo(
@@ -149,3 +179,5 @@ fun SwipeToDeleteContainer(
         }
     }
 }
+
+private enum class DismissDirection { Start, End }
