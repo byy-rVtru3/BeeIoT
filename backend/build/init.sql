@@ -51,6 +51,17 @@ CREATE TABLE hives (
 );
 CREATE INDEX ON hives (user_id);
 
+CREATE TABLE tasks (
+                       id TEXT PRIMARY KEY,
+                       email TEXT NOT NULL,
+                       hive_name TEXT NOT NULL,
+                       title TEXT NOT NULL,
+                       description TEXT,
+                       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX ON tasks (email);
+CREATE INDEX ON tasks (email, hive_name);
+
 CREATE TABLE temperature (
                              id SERIAL PRIMARY KEY,
                              hub_id INTEGER REFERENCES hubs(id) ON DELETE CASCADE,
