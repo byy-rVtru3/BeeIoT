@@ -95,6 +95,20 @@ func (d *Postgres) GetEmailByHubSensor(ctx context.Context, hubSensor string) (s
 	return email, nil
 }
 
+// GetEmailHiveByHubSensor находит email и имя улья, привязанного к хабу с указанным sensor.
+// Используется как fallback, когда датчик подключён через hub, а не через sensors-таблицу.
+func (d *Postgres) GetEmailHiveByHubSensor(ctx context.Context, hubSensor string) (string, string, error) {
+	q := `SELECT hu.email, h.name FROM hubs hu
+	      JOIN hives h ON h.hub_id = hu.id
+	      WHERE hu.sensor = $1`
+	var email, hiveName string
+	err := d.pull.QueryRow(ctx, q, hubSensor).Scan(&email, &hiveName)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get email and hive by hub sensor: %w", err)
+	}
+	return email, hiveName, nil
+}
+
 func (d *Postgres) UpdateHub(ctx context.Context, email string, data httpType.UpdateHub) error {
 	if data.Name == nil {
 		return nil // Nothing to update

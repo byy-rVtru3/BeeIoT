@@ -88,6 +88,10 @@ func (m *MockDB) GetEmailByHubSensor(_ context.Context, _ string) (string, error
 	return m.GetEmailByHubSensorResult, m.GetEmailByHubSensorError
 }
 
+func (m *MockDB) GetEmailHiveByHubSensor(_ context.Context, _ string) (string, string, error) {
+	return "", "", context.Canceled
+}
+
 func (m *MockDB) NewNoise(_ context.Context, _ httpType.NoiseLevel) error {
 	return m.NewNoiseError
 }
@@ -255,7 +259,7 @@ func TestCheckSignalStrength(t *testing.T) {
 		Timestamp:      time.Now().Unix(),
 	}
 
-	err := client.checkSignalStrength(context.Background(), "sensor1", status)
+	err := client.checkSignalStrength(context.Background(), "sensor1", "test@test.com", "Hive1", status)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -273,7 +277,7 @@ func TestCheckErrors(t *testing.T) {
 		Timestamp: time.Now().Unix(),
 	}
 
-	err := client.checkErrors(context.Background(), "sensor1", status)
+	err := client.checkErrors(context.Background(), "sensor1", "test@test.com", "Hive1", status)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -322,42 +326,6 @@ func TestAddNoiseAndTemp(t *testing.T) {
 	err = client.addTemperature(ctx, "test@test.com", "Hive1", mqttTypes.DeviceData{Temperature: 25, TemperatureTime: 1234567890})
 	if err != nil {
 		t.Error(err)
-	}
-}
-
-func TestCheckBatteryLevel_DBError(t *testing.T) {
-	logger := zerolog.Nop()
-	db := &MockDB{GetEmailHiveBySensorIDError: context.DeadlineExceeded}
-	client := &Client{db: db, logger: logger, inMemDb: &MockInMemoryDB{}}
-
-	status := mqttTypes.DeviceStatus{BatteryLevel: 10} // Low to trigger DB call
-	err := client.checkBatteryLevel(context.Background(), "s1", status)
-	if err == nil {
-		t.Error("Expected error from checkBatteryLevel when DB fails")
-	}
-}
-
-func TestCheckSignalStrength_DBError(t *testing.T) {
-	logger := zerolog.Nop()
-	db := &MockDB{GetEmailHiveBySensorIDError: context.DeadlineExceeded}
-	client := &Client{db: db, logger: logger, inMemDb: &MockInMemoryDB{}}
-
-	status := mqttTypes.DeviceStatus{SignalStrength: 5} // Low to trigger DB call
-	err := client.checkSignalStrength(context.Background(), "s1", status)
-	if err == nil {
-		t.Error("Expected error from checkSignalStrength when DB fails")
-	}
-}
-
-func TestCheckErrors_DBError(t *testing.T) {
-	logger := zerolog.Nop()
-	db := &MockDB{GetEmailHiveBySensorIDError: context.DeadlineExceeded}
-	client := &Client{db: db, logger: logger, inMemDb: &MockInMemoryDB{}}
-
-	status := mqttTypes.DeviceStatus{Errors: []string{"error"}} // Present to trigger DB call
-	err := client.checkErrors(context.Background(), "s1", status)
-	if err == nil {
-		t.Error("Expected error from checkErrors when DB fails")
 	}
 }
 
@@ -462,13 +430,13 @@ func TestCheckBatterySignal_NoNotifications(t *testing.T) {
 	client := &Client{logger: logger, inMemDb: inMem, db: d}
 
 	// battery ok
-	err := client.checkBatteryLevel(context.Background(), "s1", mqttTypes.DeviceStatus{BatteryLevel: 50, Timestamp: time.Now().Unix()})
+	err := client.checkBatteryLevel(context.Background(), "s1", "e@e", "H", mqttTypes.DeviceStatus{BatteryLevel: 50, Timestamp: time.Now().Unix()})
 	if err != nil {
 		t.Fatalf("expected no error for sufficient battery, got %v", err)
 	}
 
 	// signal ok
-	err = client.checkSignalStrength(context.Background(), "s1", mqttTypes.DeviceStatus{SignalStrength: 50, Timestamp: time.Now().Unix()})
+	err = client.checkSignalStrength(context.Background(), "s1", "e@e", "H", mqttTypes.DeviceStatus{SignalStrength: 50, Timestamp: time.Now().Unix()})
 	if err != nil {
 		t.Fatalf("expected no error for sufficient signal, got %v", err)
 	}
@@ -480,7 +448,7 @@ func TestCheckErrors_NoErrors(t *testing.T) {
 	d := &MockDB{GetEmailHiveBySensorIDResultEmail: "e@e", GetEmailHiveBySensorIDResultHive: "H"}
 	client := &Client{logger: logger, inMemDb: inMem, db: d}
 
-	err := client.checkErrors(context.Background(), "s1", mqttTypes.DeviceStatus{Errors: []string{}, Timestamp: time.Now().Unix()})
+	err := client.checkErrors(context.Background(), "s1", "e@e", "H", mqttTypes.DeviceStatus{Errors: []string{}, Timestamp: time.Now().Unix()})
 	if err != nil {
 		t.Fatalf("expected nil when no errors present, got %v", err)
 	}
