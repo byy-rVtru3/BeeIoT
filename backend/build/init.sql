@@ -86,9 +86,24 @@ CREATE TABLE noise (
                        UNIQUE (hub_id, recorded_at)
 );
 
-CREATE TABLE instructions (
-                       id SERIAL PRIMARY KEY,
-                       title TEXT NOT NULL,
-                       content TEXT NOT NULL,
-                       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE app_description (
+                       id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+                       title VARCHAR(80) NOT NULL,
+                       short VARCHAR(160) NOT NULL,
+                       full TEXT NOT NULL,
+                       updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                       updated_by VARCHAR(255)
 );
+
+CREATE TABLE instruction_items (
+                       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                       title VARCHAR(100) NOT NULL,
+                       body TEXT NOT NULL,
+                       numbered BOOLEAN NOT NULL DEFAULT false,
+                       position INT NOT NULL,
+                       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX instruction_items_position_idx
+                       ON instruction_items(position);

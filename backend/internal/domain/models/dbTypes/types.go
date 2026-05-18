@@ -45,11 +45,22 @@ type Task struct {
 	Email       string
 }
 
-type Instruction struct {
-	ID        int
+type AppDescription struct {
 	Title     string
-	Content   string
+	Short     string
+	Full      string
+	UpdatedAt time.Time
+	UpdatedBy string
+}
+
+type InstructionItem struct {
+	ID        string
+	Title     string
+	Body      string
+	Numbered  bool
+	Position  int
 	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type HivesTemperatureData struct {

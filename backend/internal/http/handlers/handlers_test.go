@@ -292,16 +292,32 @@ func (m *MockDB) IsAdmin(_ context.Context, _ string) (bool, error) {
 	return false, nil
 }
 
-func (m *MockDB) CreateInstruction(_ context.Context, _ httpType.CreateInstructionRequest) (int, error) {
-	return 0, nil
+func (m *MockDB) GetAppDescription(_ context.Context) (dbTypes.AppDescription, error) {
+	return dbTypes.AppDescription{}, nil
 }
 
-func (m *MockDB) GetInstructions(_ context.Context) ([]dbTypes.Instruction, error) {
+func (m *MockDB) UpsertAppDescription(_ context.Context, _ httpType.UpdateAppDescriptionRequest, _ string) (dbTypes.AppDescription, error) {
+	return dbTypes.AppDescription{}, nil
+}
+
+func (m *MockDB) GetInstructionItems(_ context.Context) ([]dbTypes.InstructionItem, error) {
 	return nil, nil
 }
 
-func (m *MockDB) DeleteInstruction(_ context.Context, _ int) error {
+func (m *MockDB) CreateInstructionItem(_ context.Context, _ httpType.CreateInstructionItemRequest) (dbTypes.InstructionItem, error) {
+	return dbTypes.InstructionItem{}, nil
+}
+
+func (m *MockDB) UpdateInstructionItem(_ context.Context, _ string, _ httpType.UpdateInstructionItemRequest) (dbTypes.InstructionItem, error) {
+	return dbTypes.InstructionItem{}, nil
+}
+
+func (m *MockDB) DeleteInstructionItem(_ context.Context, _ string) error {
 	return nil
+}
+
+func (m *MockDB) ReorderInstructionItems(_ context.Context, _ []string) ([]dbTypes.InstructionItem, error) {
+	return nil, nil
 }
 
 type MockConfirmSender struct {

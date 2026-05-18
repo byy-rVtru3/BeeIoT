@@ -39,6 +39,10 @@ tags:
     description: Управление матками и расчет фаз их развития
   - name: MQTT
     description: Управление датчиками через MQTT (конфигурация, health check)
+  - name: AppDescription
+    description: Описание приложения (синглтон). Чтение публичное, изменение — только для админа.
+  - name: Instruction
+    description: Пункты инструкции (аккордеон). Чтение публичное, CRUD и реордеринг — только для админа.
 
 components:
   securitySchemes:
@@ -467,6 +471,132 @@ components:
     ErrorResponse:
       type: string
       description: Текстовое сообщение об ошибке
+
+    AppDescription:
+      type: object
+      description: Описание приложения (синглтон)
+      properties:
+        title:
+          type: string
+          maxLength: 80
+          example: BeeIoT
+        short:
+          type: string
+          maxLength: 160
+          example: Мониторинг ульев в реальном времени
+        full:
+          type: string
+          example: Полное описание приложения с подробностями...
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-05-18T10:00:00Z"
+        updated_by:
+          type: string
+          example: admin@example.com
+      required:
+        - title
+        - short
+        - full
+
+    UpdateAppDescriptionRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 80
+          example: BeeIoT
+        short:
+          type: string
+          maxLength: 160
+          example: Мониторинг ульев в реальном времени
+        full:
+          type: string
+          example: Полное описание приложения...
+      required:
+        - title
+        - short
+        - full
+
+    InstructionItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 9e0c0a8e-7e5e-4b3c-9b3d-9b8e7a6c5d4f
+        title:
+          type: string
+          maxLength: 100
+          example: Установка датчика
+        body:
+          type: string
+          example: |
+            Шаг 1.
+
+            Шаг 2.
+        numbered:
+          type: boolean
+          example: true
+        position:
+          type: integer
+          example: 1
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-05-18T10:00:00Z"
+      required:
+        - id
+        - title
+        - body
+        - numbered
+        - position
+
+    CreateInstructionItemRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 100
+          example: Установка датчика
+        body:
+          type: string
+          example: Текст пункта...
+        numbered:
+          type: boolean
+          example: true
+        position:
+          type: integer
+          description: Если не указано — пункт добавляется в конец
+          example: 1
+      required:
+        - title
+        - body
+        - numbered
+
+    UpdateInstructionItemRequest:
+      type: object
+      description: Любое поле опционально; обновляется только переданное
+      properties:
+        title:
+          type: string
+          maxLength: 100
+        body:
+          type: string
+        numbered:
+          type: boolean
+
+    ReorderInstructionItemsRequest:
+      type: object
+      properties:
+        order:
+          type: array
+          description: Массив UUID пунктов в новом порядке. Длина должна совпадать с числом пунктов в БД.
+          items:
+            type: string
+            format: uuid
+      required:
+        - order
 
     TelemetryDataPoint:
       type: object
@@ -2099,3 +2229,391 @@ paths:
               schema:
                 type: string
                 example: Датчик не ответил на health check в отведённое время
+
+  # ==================== APP DESCRIPTION ====================
+  /app-description:
+    get:
+      tags: [AppDescription]
+      summary: Получить описание приложения (публичный)
+      description: Возвращает описание приложения. Используется мобильным клиентом без авторизации.
+      responses:
+        '200':
+          description: Описание получено
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/AppDescription'
+        '404':
+          description: Описание ещё не задано
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Описание приложения не задано
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/app-description:
+    get:
+      tags: [AppDescription]
+      summary: 🔒 Получить описание приложения (админ)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Описание получено
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/AppDescription'
+        '401':
+          description: Не авторизован
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: Доступ запрещён (не админ)
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Доступ запрещен
+        '404':
+          description: Описание ещё не задано
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Описание приложения не задано
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [AppDescription]
+      summary: 🔒 Создать/обновить описание приложения
+      description: Upsert по фиксированному id=1. Поле `updated_by` берётся из JWT.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAppDescriptionRequest'
+      responses:
+        '200':
+          description: Описание обновлено
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/AppDescription'
+        '400':
+          description: Превышены лимиты длины или пустые поля
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        '401':
+          description: Не авторизован
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: Доступ запрещён (не админ)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ==================== INSTRUCTION ITEMS ====================
+  /instruction/items:
+    get:
+      tags: [Instruction]
+      summary: Получить пункты инструкции (публичный)
+      description: Возвращает все пункты, отсортированные по `position`.
+      responses:
+        '200':
+          description: Список получен
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/InstructionItem'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/instruction/items/:
+    get:
+      tags: [Instruction]
+      summary: 🔒 Получить пункты инструкции (админ)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Список получен
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/InstructionItem'
+        '401':
+          description: Не авторизован
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: Доступ запрещён (не админ)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Instruction]
+      summary: 🔒 Создать пункт инструкции
+      description: Если `position` не указан, пункт добавляется в конец (`MAX(position)+1`).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInstructionItemRequest'
+      responses:
+        '200':
+          description: Пункт создан
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/InstructionItem'
+        '400':
+          description: Невалидный заголовок/тело
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        '401':
+          description: Не авторизован
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: Доступ запрещён (не админ)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/instruction/items/reorder:
+    put:
+      tags: [Instruction]
+      summary: 🔒 Изменить порядок пунктов (drag&drop)
+      description: |
+        Принимает полный список id в новом порядке. Длина `order`
+        должна совпадать с числом пунктов в БД.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderInstructionItemsRequest'
+      responses:
+        '200':
+          description: Порядок обновлён
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/InstructionItem'
+        '400':
+          description: Неверный список порядка (длина не совпадает, неизвестный id и т.п.)
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Неверный список порядка
+        '401':
+          description: Не авторизован
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: Доступ запрещён (не админ)
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /admin/instruction/items/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      tags: [Instruction]
+      summary: 🔒 Обновить пункт инструкции
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInstructionItemRequest'
+      responses:
+        '200':
+          description: Пункт обновлён
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/InstructionItem'
+        '400':
+          description: Невалидные поля
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        '401':
+          description: Не авторизован
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: Доступ запрещён (не админ)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Пункт не найден
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Пункт не найден
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Instruction]
+      summary: 🔒 Удалить пункт инструкции
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Пункт удалён
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                            example: ok
+        '401':
+          description: Не авторизован
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: Доступ запрещён (не админ)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Пункт не найден
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Пункт не найден
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

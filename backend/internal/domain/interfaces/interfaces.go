@@ -69,9 +69,14 @@ type DB interface {
 	DeleteTask(ctx context.Context, email, taskID string) error
 	GetTaskByID(ctx context.Context, taskID string) (dbTypes.Task, error)
 
-	CreateInstruction(ctx context.Context, req httpType.CreateInstructionRequest) (int, error)
-	GetInstructions(ctx context.Context) ([]dbTypes.Instruction, error)
-	DeleteInstruction(ctx context.Context, id int) error
+	GetAppDescription(ctx context.Context) (dbTypes.AppDescription, error)
+	UpsertAppDescription(ctx context.Context, req httpType.UpdateAppDescriptionRequest, updatedBy string) (dbTypes.AppDescription, error)
+
+	GetInstructionItems(ctx context.Context) ([]dbTypes.InstructionItem, error)
+	CreateInstructionItem(ctx context.Context, req httpType.CreateInstructionItemRequest) (dbTypes.InstructionItem, error)
+	UpdateInstructionItem(ctx context.Context, id string, req httpType.UpdateInstructionItemRequest) (dbTypes.InstructionItem, error)
+	DeleteInstructionItem(ctx context.Context, id string) error
+	ReorderInstructionItems(ctx context.Context, order []string) ([]dbTypes.InstructionItem, error)
 }
 
 type InMemoryDB interface {

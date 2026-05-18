@@ -108,11 +108,22 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.Put("/update", h.UpdateTask)
 			r.Delete("/delete", h.DeleteTask)
 		})
-		r.Route("/instructions", func(r chi.Router) {
+		r.Get("/app-description", h.GetAppDescription)
+		r.Get("/instruction/items", h.GetInstructionItems)
+
+		r.Route("/admin", func(r chi.Router) {
 			r.Use(m.CheckAuth, m.CheckAdmin)
-			r.Get("/list", h.GetInstructions)
-			r.Post("/create", h.CreateInstruction)
-			r.Delete("/{id}", h.DeleteInstruction)
+
+			r.Get("/app-description", h.GetAppDescription)
+			r.Put("/app-description", h.UpdateAppDescription)
+
+			r.Route("/instruction/items", func(r chi.Router) {
+				r.Get("/", h.GetInstructionItems)
+				r.Post("/", h.CreateInstructionItem)
+				r.Put("/reorder", h.ReorderInstructionItems)
+				r.Put("/{id}", h.UpdateInstructionItem)
+				r.Delete("/{id}", h.DeleteInstructionItem)
+			})
 		})
 	})
 

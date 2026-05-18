@@ -190,14 +190,42 @@ type TaskItem struct {
 	CreatedAt   int64  `json:"created_at"`
 }
 
-type CreateInstructionRequest struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
+type AppDescription struct {
+	Title     string `json:"title"`
+	Short     string `json:"short"`
+	Full      string `json:"full"`
+	UpdatedAt string `json:"updated_at,omitempty"`
+	UpdatedBy string `json:"updated_by,omitempty"`
+}
+
+type UpdateAppDescriptionRequest struct {
+	Title string `json:"title"`
+	Short string `json:"short"`
+	Full  string `json:"full"`
 }
 
 type InstructionItem struct {
-	ID        int    `json:"id"`
+	ID        string `json:"id"`
 	Title     string `json:"title"`
-	Content   string `json:"content"`
-	CreatedAt int64  `json:"created_at"`
+	Body      string `json:"body"`
+	Numbered  bool   `json:"numbered"`
+	Position  int    `json:"position"`
+	UpdatedAt string `json:"updated_at,omitempty"`
+}
+
+type CreateInstructionItemRequest struct {
+	Title    string `json:"title"`
+	Body     string `json:"body"`
+	Numbered bool   `json:"numbered"`
+	Position *int   `json:"position,omitempty"`
+}
+
+type UpdateInstructionItemRequest struct {
+	Title    *string `json:"title,omitempty"`
+	Body     *string `json:"body,omitempty"`
+	Numbered *bool   `json:"numbered,omitempty"`
+}
+
+type ReorderInstructionItemsRequest struct {
+	Order []string `json:"order"`
 }
