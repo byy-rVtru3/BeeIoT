@@ -90,7 +90,7 @@ CREATE TABLE app_description (
                        id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
                        title VARCHAR(80) NOT NULL,
                        short VARCHAR(160) NOT NULL,
-                       full TEXT NOT NULL,
+                       "full" TEXT NOT NULL,
                        updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                        updated_by VARCHAR(255)
 );
