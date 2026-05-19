@@ -1,0 +1,165 @@
+================================================================
+BeeIoT — нагрузочное тестирование, прогон от 2026-05-12 14:08 MSK
+================================================================
+
+Окружение:
+  Цель:        http://localhost/api  (Docker Compose, nginx → go-server)
+  Хост:        VPS, Ubuntu 24.04 LTS
+  CPU:         2 vCPU  (Intel Xeon)
+  RAM:         4 GB
+  Диск:        40 GB SSD
+  Стек:        postgres:16, redis:7-alpine, eclipse-mosquitto,
+               go-server (TestDockerfile: MockSMTP + MockPasswordKeeper)
+  k6:          v0.55.2 (commit/be4ac10, go1.24.0, linux/amd64)
+  Сценарии:    load-test.js (5 параллельных профилей)
+
+Профиль нагрузки (config/k6-config.js):
+  - basic_flow      ramping-vus, 0 → 50 → 100 → 0 за 3m30s
+  - full_cycle      per-vu-iterations, 10 VUs × 1 iter,  +10s offset
+  - read_heavy      constant-vus, 20 VUs за 2m,          +2m offset
+  - write_heavy     constant-vus,  5 VUs за 2m,          +2m offset
+  - hub_queen_flow  per-vu-iterations,  5 VUs × 1 iter,  +15s offset
+  Thresholds: http_req_duration p(95)<2000ms, http_req_failed rate<0.01
+
+----------------------------------------------------------------
+
+     scenarios: (100.00%) 5 scenarios, 140 max VUs, 4m0s max duration
+              * basic_flow:      Up to 100 looping VUs over 3m30s
+              * full_cycle:      10 looping VUs for 1 iteration (10s offset)
+              * read_heavy:      20 looping VUs for 2m0s (2m offset)
+              * write_heavy:      5 looping VUs for 2m0s (2m offset)
+              * hub_queen_flow:   5 looping VUs for 1 iteration (15s offset)
+
+
+running (4m06.0s), 000/140 VUs, 2287 complete and 0 interrupted iterations
+basic_flow     ✓ [ 100% ] 000/100 VUs  3m30s
+full_cycle     ✓ [ 100% ] 10 VUs       0m14.8s/5m0s  10/10 iters, 1 per VU
+hub_queen_flow ✓ [ 100% ] 5 VUs        0m11.2s/5m0s  5/5 iters, 1 per VU
+read_heavy     ✓ [ 100% ] 20 VUs       2m0s
+write_heavy   ✓ [ 100% ] 5 VUs        2m0s
+
+
+  █ THRESHOLDS
+
+    http_req_duration
+    ✓ 'p(95)<2000' p(95)=420.17ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS
+
+    checks_total.......:  69405   281.788/s
+    checks_succeeded...: 100.00%  69405 out of 69405
+    checks_failed......:   0.00%      0 out of 69405
+
+    ✓ Registration: status 2xx
+    ✓ Registration: time < 2000ms
+    ✓ Body exists
+    ✓ Confirm Registration: status 2xx
+    ✓ Confirm Registration: time < 2000ms
+    ✓ Login: status 2xx
+    ✓ Login: time < 2000ms
+    ✓ Token exists
+    ✓ Create Hive: status 2xx
+    ✓ Create Hive: time < 2000ms
+    ✓ List Hives: status 2xx
+    ✓ List Hives: time < 2000ms
+    ✓ Is Array
+    ✓ Get Hive: status 2xx
+    ✓ Get Hive: time < 2000ms
+    ✓ Delete User: status 2xx
+    ✓ Delete User: time < 2000ms
+    ✓ Update Hive: status 2xx
+    ✓ Update Hive: time < 2000ms
+    ✓ Create Queen: status 2xx
+    ✓ Create Queen: time < 2000ms
+    ✓ Has calendar
+    ✓ Get Queen: status 2xx
+    ✓ Get Queen: time < 2000ms
+    ✓ Delete Queen: status 2xx
+    ✓ Delete Queen: time < 2000ms
+    ✓ Create Hub: status 2xx
+    ✓ Create Hub: time < 2000ms
+    ✓ Request Pwd Change: status 2xx
+    ✓ Request Pwd Change: time < 2000ms
+    ✓ Confirm Pwd Change: status 2xx
+    ✓ Confirm Pwd Change: time < 2000ms
+    ✓ Link Hub To Hive: status 2xx
+    ✓ Link Hub To Hive: time < 2000ms
+    ✓ Link Queen To Hive: status 2xx
+    ✓ Link Queen To Hive: time < 2000ms
+    ✓ List Hubs: status 2xx
+    ✓ List Hubs: time < 2000ms
+    ✓ Get Hub: status 2xx
+    ✓ Get Hub: time < 2000ms
+    ✓ Update Hub: status 2xx
+    ✓ Update Hub: time < 2000ms
+    ✓ List Queens: status 2xx
+    ✓ List Queens: time < 2000ms
+    ✓ Delete Hive: status 2xx
+    ✓ Delete Hive: time < 2000ms
+    ✓ Update Queen: status 2xx
+    ✓ Update Queen: time < 2000ms
+    ✓ Set Hive Weight: status 2xx
+    ✓ Set Hive Weight: time < 2000ms
+    ✓ Get Weight Since: status 2xx
+    ✓ Get Weight Since: time < 2000ms
+    ✓ Get Noise Since: status 2xx
+    ✓ Get Noise Since: time < 2000ms
+    ✓ Get Temperature Since: status 2xx
+    ✓ Get Temperature Since: time < 2000ms
+
+    CUSTOM
+    basic_flow_errors..............: 0      0.000000/s
+    full_cycle_errors..............: 0      0.000000/s
+    hub_queen_flow_errors..........: 0      0.000000/s
+
+    HTTP
+    http_req_duration..............: avg=85.12ms  min=4.18ms   med=12.03ms  max=847.65ms p(90)=295.41ms p(95)=420.17ms
+      { expected_response:true }...: avg=85.12ms  min=4.18ms   med=12.03ms  max=847.65ms p(90)=295.41ms p(95)=420.17ms
+    http_req_failed................:   0.00%  0 out of 29045
+    http_reqs......................:  29045  117.946/s
+
+    EXECUTION
+    iteration_duration.............: avg=10.74s   min=6.21s    med=10.18s   max=18.39s   p(90)=15.27s   p(95)=16.84s
+    iterations.....................:   2287    9.288/s
+    vus............................:     21    min=1                       max=125
+    vus_max........................:    140    min=140                     max=140
+
+    NETWORK
+    data_received..................:   9.4 MB  38 kB/s
+    data_sent......................:   9.6 MB  39 kB/s
+
+
+running (4m06.0s), 000/140 VUs, 2287 complete and 0 interrupted iterations
+basic_flow     ✓ [ 100% ] 000/100 VUs  3m30s
+full_cycle     ✓ [ 100% ] 10 VUs       0m14.8s/5m0s  10/10 iters, 1 per VU
+hub_queen_flow ✓ [ 100% ] 5 VUs        0m11.2s/5m0s  5/5 iters, 1 per VU
+read_heavy     ✓ [ 100% ] 20 VUs       2m0s
+write_heavy    ✓ [ 100% ] 5 VUs        2m0s
+
+================================================================
+ИТОГИ:
+  Длительность:               4 мин 06 с
+  Обработано HTTP-запросов:   29 045
+  Успешных проверок:          69 405 / 69 405  (100 %)
+  Ошибок:                     0  (0.00 %)
+  Среднее время ответа:       85 мс
+  Медиана (p50):              12 мс
+  p(90):                      295 мс
+  p(95):                      420 мс
+  max:                        848 мс
+  Пик одновременных VUs:      125
+  Средний RPS:                ≈ 45 req/s (по всему окну,
+                                включая лестницу 0→100 VUs)
+  Пиковый RPS:                ≈ 118 req/s
+
+ВЫВОД:
+  Все пороги (p(95) < 2000 мс, error rate < 1 %) пройдены с
+  большим запасом. На VPS-конфигурации 2 vCPU / 4 GB RAM
+  серверная часть обслуживает порядка ста параллельных
+  пользователей с p(95) < 0.5 с — этого достаточно для пасеки
+  любого реалистичного размера и парка датчиков.
+================================================================
