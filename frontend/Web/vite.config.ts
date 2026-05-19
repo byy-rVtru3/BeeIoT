@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
           configure: (proxy) => {
-            proxy.on('proxyReq', (proxyReq, req) => {
+            proxy.on('proxyReq', (_proxyReq, req) => {
               console.log(`[proxy] --> ${req.method} ${req.url}  =>  ${proxyTarget}${req.url}`);
             });
             proxy.on('proxyRes', (proxyRes, req) => {
