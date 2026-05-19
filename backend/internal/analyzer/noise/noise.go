@@ -91,6 +91,7 @@ func (a *Analyzer) analyzeDay(
 			if math.Abs(prev-cur) < criticalNoiseDelta {
 				continue
 			}
+			a.logger.Info().Int("hiveId", hive.Id).Str("hive", hive.NameHive).Float64("prev", prev).Float64("cur", cur).Msg("abnormal noise detected")
 			if a.notification == nil {
 				a.logger.Warn().Int("hiveId", hive.Id).Msg("notification service is nil, skipping")
 				continue
@@ -99,6 +100,10 @@ func (a *Analyzer) analyzeDay(
 			if err != nil {
 				a.logger.Warn().Int("hiveId", hive.Id).
 					Str("email", hive.Email).Err(err).Msg("failed to get firebase token")
+				continue
+			}
+			a.logger.Info().Int("hiveId", hive.Id).Str("email", hive.Email).Int("tokens", len(tokens)).Msg("sending noise notification")
+			if len(tokens) == 0 {
 				continue
 			}
 			badToken, err := a.notification.SendNotification(a.ctx, notification.Data{

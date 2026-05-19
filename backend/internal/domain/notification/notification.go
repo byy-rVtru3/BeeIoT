@@ -59,6 +59,10 @@ func NewNotification(ctx context.Context, logger zerolog.Logger) (*Notification,
 }
 
 func (n *Notification) SendNotification(ctx context.Context, data Data) ([]string, error) {
+	if len(data.Tokens) == 0 {
+		n.logger.Warn().Str("title", data.Title).Msg("SendNotification: no tokens, skipping")
+		return nil, nil
+	}
 	data.Data["mobile_notification_type"] = n.feelImportant(data.Important)
 	message := &messaging.MulticastMessage{
 		Data:   data.Data,
@@ -70,8 +74,15 @@ func (n *Notification) SendNotification(ctx context.Context, data Data) ([]strin
 	}
 	response, err := n.fcmClient.SendEachForMulticast(ctx, message)
 	if err != nil {
+		n.logger.Error().Err(err).Str("title", data.Title).Int("tokens", len(data.Tokens)).Msg("SendNotification: fcm error")
 		return nil, err
 	}
+	n.logger.Info().
+		Str("title", data.Title).
+		Int("tokens", len(data.Tokens)).
+		Int("success", response.SuccessCount).
+		Int("failure", response.FailureCount).
+		Msg("SendNotification: result")
 	if response.FailureCount > 0 {
 		return n.deleteInvalidTokens(response.Responses, data.Tokens)
 	}

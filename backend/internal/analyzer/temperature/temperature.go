@@ -77,39 +77,52 @@ func (a *Analyzer) isNormallyTemperature(temp float64) bool {
 }
 
 func (a *Analyzer) temperatureAnalysis(data []dbTypes.HivesTemperatureData, hive dbTypes.Hive) {
+	var abnormalCount int
+	var lastAbnormal float64
 	for _, elem := range data {
 		if a.isNormallyTemperature(elem.Temperature) {
 			continue
 		}
-		if a.notification == nil {
-			a.logger.Warn().Int("hiveId", hive.Id).Msg("notification service is nil, skipping")
-			continue
-		}
-		tokens, err := a.db.GetFirebaseToken(a.ctx, hive.Email)
+		abnormalCount++
+		lastAbnormal = elem.Temperature
+	}
+	if abnormalCount == 0 {
+		a.logger.Info().Int("hiveId", hive.Id).Str("hive", hive.NameHive).Int("samples", len(data)).Msg("temperature normal, no notification")
+		return
+	}
+	a.logger.Info().Int("hiveId", hive.Id).Str("hive", hive.NameHive).Int("abnormal", abnormalCount).Float64("last", lastAbnormal).Msg("abnormal temperature detected")
+	if a.notification == nil {
+		a.logger.Warn().Int("hiveId", hive.Id).Msg("notification service is nil, skipping")
+		return
+	}
+	tokens, err := a.db.GetFirebaseToken(a.ctx, hive.Email)
+	if err != nil {
+		a.logger.Warn().Err(err).Int("hiveId", hive.Id).Str("email", hive.Email).Msg("failed to get firebase tokens")
+		return
+	}
+	a.logger.Info().Int("hiveId", hive.Id).Str("email", hive.Email).Int("tokens", len(tokens)).Msg("sending temperature notification")
+	if len(tokens) == 0 {
+		return
+	}
+	badToken, err := a.notification.SendNotification(a.ctx, notification.Data{
+		Title: "Критический уровень температуры в улье",
+		Body: fmt.Sprintf(`Последнее значение: %.2f (аномальных замеров: %d).
+Норма: %.2f +- %.2f. Необходимо проверить состояние улья`, lastAbnormal, abnormalCount, temperatureNormal, temperatureDeltaUp),
+		Data: map[string]string{
+			"hive": hive.NameHive,
+		},
+		Tokens:    tokens,
+		Important: false,
+	})
+	switch {
+	case errors.Is(err, notification.ErrInvalidTokens):
+		err = a.db.DeleteFirebaseToken(a.ctx, hive.Email, badToken)
 		if err != nil {
-			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Str("email", hive.Email).Msg("failed to get firebase tokens")
-			continue
-		}
-		badToken, err := a.notification.SendNotification(a.ctx, notification.Data{
-			Title: "Критический уровень температуры в улье",
-			Body: fmt.Sprintf(`Текущее значение температуры сейчас: %.2f.
-Норма: %.2f +- %.2f. Необходимо проверить состояние улья`, elem.Temperature, temperatureNormal, temperatureDeltaUp),
-			Data: map[string]string{
-				"hive": hive.NameHive,
-			},
-			Tokens:    tokens,
-			Important: false,
-		})
-		switch {
-		case errors.Is(err, notification.ErrInvalidTokens):
-			err = a.db.DeleteFirebaseToken(a.ctx, hive.Email, badToken)
-			if err != nil {
-				a.logger.Warn().Int("hiveId", hive.Id).
-					Str("email", hive.Email).Err(err).Msg("failed to delete invalid firebase token")
-			}
-		case err != nil:
 			a.logger.Warn().Int("hiveId", hive.Id).
-				Str("email", hive.Email).Err(err).Msg("failed to send notification")
+				Str("email", hive.Email).Err(err).Msg("failed to delete invalid firebase token")
 		}
+	case err != nil:
+		a.logger.Warn().Int("hiveId", hive.Id).
+			Str("email", hive.Email).Err(err).Msg("failed to send notification")
 	}
 }
