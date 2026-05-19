@@ -22,7 +22,11 @@ def _log(msg):
 
 class SIM7020:
     def __init__(self, uart_id, tx, rx, baudrate=115200, pwrkey=-1):
-        self.uart = UART(uart_id, baudrate=baudrate, tx=tx, rx=rx, timeout=200, timeout_char=20)
+        invert = getattr(config, 'MODEM_UART_INVERT', None)
+        kw = dict(baudrate=baudrate, tx=tx, rx=rx, timeout=200, timeout_char=20)
+        if invert:
+            kw['invert'] = invert
+        self.uart = UART(uart_id, **kw)
         self.pwrkey = Pin(pwrkey, Pin.OUT) if pwrkey >= 0 else None
         self._mqtt_id = -1          # индекс MQTT-сессии, выданный AT+CMQNEW
         self._rx_buf = b""          # хвост от прошлого чтения (для URC)
@@ -69,6 +73,7 @@ class SIM7020:
         self._drain()
         if config.DEBUG:
             _log(">> {}".format(cmd))
+            self._drain()  # смываем свой же вывод (UART0 TX → UART1 RX на GPIO43)
         self.uart.write((cmd + "\r\n").encode())
 
         deadline = utime.ticks_add(utime.ticks_ms(), timeout_ms)
@@ -91,7 +96,7 @@ class SIM7020:
             else:
                 utime.sleep_ms(20)
         if config.DEBUG:
-            _log("<< TIMEOUT (got {} bytes)".format(len(raw)))
+            _log("<< TIMEOUT (got {} bytes) raw={}".format(len(raw), raw))
         return None
 
     # ===================================================================
@@ -120,9 +125,9 @@ class SIM7020:
         return False
 
     def power_off(self):
-        """Корректное отключение."""
+        """Корректное отключение. Модем отвечает 'NORMAL POWER DOWN'."""
         try:
-            self._send_at("AT+CPOWD=1", "OK", 2000)
+            self._send_at("AT+CPOWD=1", "NORMAL POWER DOWN", 2000)
         except Exception:
             pass
 

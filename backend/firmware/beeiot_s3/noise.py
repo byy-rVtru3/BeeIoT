@@ -37,25 +37,35 @@ class NoiseSensor:
             ibuf=config.I2S_BUFFER_BYTES * 2,
         )
         self.buf = bytearray(config.I2S_BUFFER_BYTES)
-        # Прогрев — первый кадр после init часто содержит мусор / DC offset
-        try:
-            self.i2s.readinto(self.buf)
-        except Exception:
-            pass
+        # Прогрев — после deepsleep I2S может выдавать нули несколько кадров.
+        # Читаем до 5 раз, пока не увидим ненулевые байты.
+        for _ in range(5):
+            try:
+                n = self.i2s.readinto(self.buf)
+                if n and any(self.buf[:min(64, n)]):
+                    break
+            except Exception:
+                pass
+            utime.sleep_ms(50)
 
     def read(self):
         """
         Возвращает уровень шума в dB SPL (float, 1 знак),
         либо -1.0 при ошибке.
+
+        Алгоритм:
+          1. Собираем окно сэмплов (NOISE_WINDOW_MS).
+          2. Вычитаем DC-смещение (среднее) — INMP441 даёт постоянную составляющую,
+             без её удаления RMS улетает в стратосферу и даёт фиктивные ~110+ dB.
+          3. RMS → dBFS → dB SPL по калибровке.
         """
         try:
             samples_needed = (config.I2S_SAMPLE_RATE_HZ * config.NOISE_WINDOW_MS) // 1000
-            sum_sq = 0
-            count = 0
             sample_size = config.I2S_BITS // 8   # = 4 для 32-битного слова
+            samples = []
             deadline = utime.ticks_add(utime.ticks_ms(), 1000)
 
-            while count < samples_needed:
+            while len(samples) < samples_needed:
                 if utime.ticks_diff(deadline, utime.ticks_ms()) <= 0:
                     break
                 n = self.i2s.readinto(self.buf)
@@ -64,27 +74,48 @@ class NoiseSensor:
                     continue
                 for i in range(0, n, sample_size):
                     raw = struct.unpack_from("<i", self.buf, i)[0]
-                    # Сдвигаем 24 бита данных из верхних разрядов вниз
-                    sample = raw >> 8
-                    sum_sq += sample * sample
-                    count += 1
-                    if count >= samples_needed:
+                    samples.append(raw >> 8)
+                    if len(samples) >= samples_needed:
                         break
 
+            count = len(samples)
             if count == 0:
                 _log("No samples read")
                 return -1.0
 
-            mean_sq = sum_sq / count
+            # 1) DC offset
+            mean = sum(samples) / count
+
+            # 2) Фильтруем "мусорные" сэмплы — у этого мика половина буфера
+            # бьётся в ±2^22 из-за неконфигурируемого LR-канала. Считаем RMS
+            # только по реальным (которые меньше JUNK_THRESHOLD от dc).
+            JUNK_THRESHOLD = 1 << 18    # 256 КБ — отсекает явный мусор, реальный звук до ~95 dB SPL проходит
+            sum_sq = 0
+            clean_count = 0
+            for s in samples:
+                d = s - mean
+                if abs(d) < JUNK_THRESHOLD:
+                    sum_sq += d * d
+                    clean_count += 1
+
+            # Если совсем мало чистых — мик помер, возвращаем error
+            if clean_count < 32:
+                _log("too much junk ({}/{} clean)".format(clean_count, count))
+                return -1.0
+            mean_sq = sum_sq / clean_count
+
+            if config.DEBUG:
+                peak_all = max(abs(s - mean) for s in samples)
+                _log("clean={}/{} dc={:.0f} peak_all={} rms={:.0f}".format(
+                    clean_count, count, mean, peak_all, math.sqrt(mean_sq)))
+
             if mean_sq < 1:
-                # Полная тишина → бесконечно отрицательный dB. Возвращаем нижний разумный.
                 return 0.0
 
             rms = math.sqrt(mean_sq)
-            full_scale = float(1 << 23)        # 24-битный знаковый максимум
+            full_scale = float(1 << 23)
             dbfs = 20.0 * math.log10(rms / full_scale)
             db_spl = dbfs + config.NOISE_DB_OFFSET
-            # Клипуем разумный диапазон
             if db_spl < 0:
                 db_spl = 0.0
             return round(db_spl, 1)

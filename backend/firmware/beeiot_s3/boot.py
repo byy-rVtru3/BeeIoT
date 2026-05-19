@@ -8,3 +8,9 @@ boot.py — выполняется при старте, до main.py.
 
 import gc
 gc.enable()
+
+try:
+    from machine import UART
+    UART(0).deinit()
+except Exception:
+    pass
