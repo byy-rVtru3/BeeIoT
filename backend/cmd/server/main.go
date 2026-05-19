@@ -54,8 +54,8 @@ func main() {
 		logger.Error().Err(err).Msg("Failed to initialize notification")
 		return
 	}
-	temperature.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, notifi).Start()
-	noise.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, notifi).Start()
+	temperature.NewAnalyzer(analyzersCtx, 24*time.Hour, db, notifi).Start()
+	noise.NewAnalyzer(analyzersCtx, 24*time.Hour, db, notifi).Start()
 
 	logger.Info().Msg("Initializing MQTT...")
 	mqttServer, err := mqtt.NewMQTTClient(db, redis, notifi, logger)

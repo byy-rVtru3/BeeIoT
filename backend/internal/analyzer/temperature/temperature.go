@@ -27,6 +27,7 @@ func NewAnalyzer(ctx context.Context, period time.Duration, db interfaces.DB, no
 
 func (a *Analyzer) Start() {
 	go func() {
+		a.analyzeTemperature()
 		ticker := time.NewTicker(a.period)
 		defer ticker.Stop()
 		for {
