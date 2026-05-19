@@ -75,7 +75,21 @@ func (a *Analyzer) createStartDayTime(year int, month time.Month, day int) time.
 	return time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
 }
 
-const criticalNoiseDelta = 200.0
+// criticalNoiseDelta — порог изменения среднего уровня шума (в dB SPL) между
+// двумя соседними днями, при котором поднимается уведомление.
+//
+// Прошивка в firmware/beeiot_s3/noise.py пишет уровень шума в dB SPL после
+// калибровки INMP441 (RMS → dBFS → dB SPL с offset из NOISE_DB_OFFSET).
+// Типичный диапазон шума пчелиной семьи — 40…80 dB SPL. Изменение на 8 dB
+// соответствует субъективному удвоению громкости и хорошо коррелирует с
+// событиями, которые мы реально хотим ловить: начало роения, появление
+// нескольких маток, резкое ослабление семьи.
+//
+// Хотим чувствительнее — снижаем до 5.0; хотим консервативнее — поднимаем
+// до 10.0. Старое значение 200.0 было нонсенсом (200 дБ — уровень ударной
+// волны, в улье физически недостижим), из-за чего анализатор никогда не
+// срабатывал.
+const criticalNoiseDelta = 8.0
 
 func (a *Analyzer) analyzeDay(
 	data map[time.Time][]dbTypes.HivesNoiseData, hive dbTypes.Hive, curTime time.Time) {
