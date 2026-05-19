@@ -1,6 +1,6 @@
 package com.app.mobile.data.repository
 
-import com.app.mobile.data.api.AuthApiClient
+import com.app.mobile.data.api.PublicApiClient
 import com.app.mobile.data.api.models.ApiResult
 import com.app.mobile.data.api.models.instructions.InstructionItemDto
 import com.app.mobile.data.api.safeApiCall
@@ -9,17 +9,11 @@ import com.app.mobile.data.content.InfoContentDefaultsProvider
 import com.app.mobile.domain.models.info.InfoContentDomain
 import com.app.mobile.domain.models.info.InstructionSectionDomain
 import com.app.mobile.domain.repository.InfoContentRepository
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.decodeFromJsonElement
 
 class InfoContentRepositoryImpl(
-    private val authApiClient: AuthApiClient,
+    private val publicApiClient: PublicApiClient,
     private val cacheStore: InfoContentCacheStore,
-    private val defaultsProvider: InfoContentDefaultsProvider,
-    private val json: Json
+    private val defaultsProvider: InfoContentDefaultsProvider
 ) : InfoContentRepository {
 
     override suspend fun getLocalContent(): InfoContentDomain {
@@ -32,123 +26,94 @@ class InfoContentRepositoryImpl(
             return ApiResult.Success(localContent)
         }
 
-        return when (
-            val result = safeApiCall(
-                apiCall = { authApiClient.getInstructionsList() },
-                onSuccess = ::parseInstructionItems
-            )
-        ) {
-            is ApiResult.Success -> {
-                val mergedContent = mergeRemoteContent(
-                    remoteItems = result.data,
-                    fallback = localContent
-                )
-                cacheStore.saveContent(mergedContent)
-                ApiResult.Success(mergedContent)
-            }
+        val aboutTextResult = fetchAboutText(localContent.aboutText)
+        if (aboutTextResult is ApiResult.NetworkError) return aboutTextResult
+        if (aboutTextResult is ApiResult.UnexpectedError) return aboutTextResult
 
-            is ApiResult.HttpError -> {
-                if (result.code == HTTP_CODE_UNAUTHORIZED || result.code == HTTP_CODE_FORBIDDEN) {
-                    cacheStore.saveLastSyncAtMillis()
-                    ApiResult.Success(localContent)
-                } else {
-                    result
-                }
-            }
+        val sectionsResult = fetchInstructionSections(localContent.howToSections)
+        if (sectionsResult is ApiResult.NetworkError) return sectionsResult
+        if (sectionsResult is ApiResult.UnexpectedError) return sectionsResult
 
-            is ApiResult.NetworkError -> ApiResult.NetworkError(result.exception)
-            is ApiResult.UnexpectedError -> ApiResult.UnexpectedError(result.exception)
-        }
-    }
+        val aboutText = (aboutTextResult as ApiResult.Success).data
+        val howToSections = (sectionsResult as ApiResult.Success).data
 
-    private suspend fun shouldRefresh(): Boolean {
-        val lastSyncAt = cacheStore.getLastSyncAtMillis()
-        if (lastSyncAt <= 0L) {
-            return true
-        }
-
-        val timeFromLastSync = System.currentTimeMillis() - lastSyncAt
-        return timeFromLastSync >= SYNC_INTERVAL_MS
-    }
-
-    private fun parseInstructionItems(responseBody: JsonElement): List<InstructionItemDto> {
-        val listElement = extractListElement(responseBody)
-        return listElement.mapNotNull { element ->
-            runCatching {
-                json.decodeFromJsonElement<InstructionItemDto>(element)
-            }.getOrNull()
-        }
-    }
-
-    private fun extractListElement(responseBody: JsonElement): JsonArray {
-        return when (responseBody) {
-            is JsonArray -> responseBody
-            is JsonObject -> {
-                (responseBody["data"] as? JsonArray)
-                    ?: (responseBody["items"] as? JsonArray)
-                    ?: JsonArray(emptyList())
-            }
-
-            else -> JsonArray(emptyList())
-        }
-    }
-
-    private fun mergeRemoteContent(
-        remoteItems: List<InstructionItemDto>,
-        fallback: InfoContentDomain
-    ): InfoContentDomain {
-        val sanitizedItems = remoteItems.mapNotNull(::sanitizeItem)
-        if (sanitizedItems.isEmpty()) {
-            return fallback
-        }
-
-        val aboutItem = sanitizedItems.firstOrNull { isAboutInstruction(it.title) }
-        val aboutText = aboutItem?.content ?: fallback.aboutText
-
-        val howToSections = sanitizedItems
-            .filterNot { isAboutInstruction(it.title) }
-            .sortedBy { it.id ?: Int.MAX_VALUE }
-            .map {
-                InstructionSectionDomain(
-                    title = it.title,
-                    body = it.content,
-                    showStepNumbers = shouldShowStepNumbers(it.title)
-                )
-            }
-            .ifEmpty { fallback.howToSections }
-
-        return InfoContentDomain(
+        val mergedContent = InfoContentDomain(
             aboutText = aboutText,
             howToSections = howToSections
         )
+        cacheStore.saveContent(mergedContent)
+        return ApiResult.Success(mergedContent)
+    }
+
+    private suspend fun fetchAboutText(fallback: String): ApiResult<String> {
+        return when (
+            val result = safeApiCall(
+                apiCall = { publicApiClient.getAppDescription() },
+                onSuccess = { it.data?.full?.trim() }
+            )
+        ) {
+            is ApiResult.Success -> {
+                val text = result.data?.takeIf { it.isNotBlank() } ?: fallback
+                cacheStore.saveLastSyncAtMillis()
+                ApiResult.Success(text)
+            }
+            is ApiResult.HttpError -> {
+                cacheStore.saveLastSyncAtMillis()
+                ApiResult.Success(fallback)
+            }
+            is ApiResult.NetworkError -> result
+            is ApiResult.UnexpectedError -> result
+        }
+    }
+
+    private suspend fun fetchInstructionSections(
+        fallback: List<InstructionSectionDomain>
+    ): ApiResult<List<InstructionSectionDomain>> {
+        return when (
+            val result = safeApiCall(
+                apiCall = { publicApiClient.getInstructionItems() },
+                onSuccess = { it.data.orEmpty() }
+            )
+        ) {
+            is ApiResult.Success -> {
+                val sections = result.data
+                    .mapNotNull(::sanitizeItem)
+                    .sortedBy { it.position }
+                    .map { item ->
+                        InstructionSectionDomain(
+                            title = item.title,
+                            body = item.body,
+                            showStepNumbers = item.numbered
+                        )
+                    }
+                    .ifEmpty { fallback }
+                cacheStore.saveLastSyncAtMillis()
+                ApiResult.Success(sections)
+            }
+            is ApiResult.HttpError -> {
+                cacheStore.saveLastSyncAtMillis()
+                ApiResult.Success(fallback)
+            }
+            is ApiResult.NetworkError -> result
+            is ApiResult.UnexpectedError -> result
+        }
     }
 
     private fun sanitizeItem(item: InstructionItemDto): InstructionItemDto? {
         val title = item.title.trim()
-        val content = item.content.trim()
-        if (title.isBlank() || content.isBlank()) {
-            return null
-        }
-
-        return item.copy(
-            title = title,
-            content = content
-        )
+        val body = item.body.trim()
+        if (title.isBlank() || body.isBlank()) return null
+        return item.copy(title = title, body = body)
     }
 
-    private fun isAboutInstruction(title: String): Boolean {
-        val normalizedTitle = title.lowercase()
-        return normalizedTitle.contains("о приложении") || normalizedTitle.contains("about")
-    }
-
-    private fun shouldShowStepNumbers(title: String): Boolean {
-        val normalizedTitle = title.lowercase()
-        return !normalizedTitle.contains("навигац") && !normalizedTitle.contains("navigation")
+    private suspend fun shouldRefresh(): Boolean {
+        if (!cacheStore.isCacheVersionValid()) return true
+        val lastSyncAt = cacheStore.getLastSyncAtMillis()
+        if (lastSyncAt <= 0L) return true
+        return System.currentTimeMillis() - lastSyncAt >= SYNC_INTERVAL_MS
     }
 
     private companion object {
-        private const val SYNC_INTERVAL_MS = 15 * 60 * 1000L
-        private const val HTTP_CODE_UNAUTHORIZED = 401
-        private const val HTTP_CODE_FORBIDDEN = 403
+        private const val SYNC_INTERVAL_MS = 5 * 60 * 1000L
     }
 }

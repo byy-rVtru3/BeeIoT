@@ -5,9 +5,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class InstructionItemDto(
-    val id: Int? = null,
+    val id: String? = null,
     val title: String = "",
-    val content: String = "",
-    @SerialName("created_at")
-    val createdAt: Long? = null
+    val body: String = "",
+    val numbered: Boolean = false,
+    val position: Int = 0,
+    @SerialName("updated_at")
+    val updatedAt: String? = null
 )
