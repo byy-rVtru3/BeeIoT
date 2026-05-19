@@ -3,6 +3,7 @@ package com.app.mobile.data.content
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.app.mobile.domain.models.info.InfoContentDomain
@@ -38,11 +39,17 @@ class InfoContentCacheStore(
         return preferences[LAST_SYNC_AT_KEY] ?: 0L
     }
 
+    suspend fun isCacheVersionValid(): Boolean {
+        val preferences = dataStore.data.first()
+        return preferences[CACHE_VERSION_KEY] == CURRENT_CACHE_VERSION
+    }
+
     suspend fun saveContent(content: InfoContentDomain, syncedAtMillis: Long = System.currentTimeMillis()) {
         dataStore.edit { preferences ->
             preferences[ABOUT_TEXT_KEY] = content.aboutText
             preferences[HOW_TO_SECTIONS_KEY] = encodeSections(content.howToSections)
             preferences[LAST_SYNC_AT_KEY] = syncedAtMillis
+            preferences[CACHE_VERSION_KEY] = CURRENT_CACHE_VERSION
         }
     }
 
@@ -86,6 +93,8 @@ class InfoContentCacheStore(
     )
 
     private companion object {
+        private const val CURRENT_CACHE_VERSION = 2
+        private val CACHE_VERSION_KEY = intPreferencesKey("info_content_cache_version")
         private val ABOUT_TEXT_KEY = stringPreferencesKey("info_content_about_text")
         private val HOW_TO_SECTIONS_KEY = stringPreferencesKey("info_content_how_to_sections")
         private val LAST_SYNC_AT_KEY = longPreferencesKey("info_content_last_sync_at")
