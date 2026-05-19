@@ -43,6 +43,7 @@ func (a *Analyzer) Start() {
 }
 
 func (a *Analyzer) analyzeNoise() {
+	a.logger.Info().Msg("noise analyzer: starting run")
 	ct := time.Now()
 	computingStartTime := a.createStartDayTime(ct.Year(), ct.Month(), ct.Day())
 	hives, err := a.db.GetHives(a.ctx, "", nil)
@@ -50,8 +51,10 @@ func (a *Analyzer) analyzeNoise() {
 		a.logger.Error().Err(err).Msg("failed to get hives")
 		return
 	}
+	a.logger.Info().Int("total_hives", len(hives)).Msg("noise analyzer: hives loaded")
 	for _, hive := range hives {
 		if hive.HubID == nil {
+			a.logger.Debug().Int("hiveId", hive.Id).Str("hive", hive.NameHive).Msg("skip hive without hub")
 			continue
 		}
 		SchumeikoDataMap, err := a.db.GetNoiseSinceDay(a.ctx, *hive.HubID, computingStartTime)
@@ -59,11 +62,13 @@ func (a *Analyzer) analyzeNoise() {
 			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Msg("failed to get noise since time map")
 			continue
 		}
+		a.logger.Info().Int("hiveId", hive.Id).Str("hive", hive.NameHive).Int("days", len(SchumeikoDataMap)).Msg("analyzing noise")
 		a.analyzeDay(SchumeikoDataMap, hive, computingStartTime)
 		if err := a.db.UpdateHiveNoiseCheck(a.ctx, hive.Id, computingStartTime); err != nil {
 			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Msg("failed to update hive noise check")
 		}
 	}
+	a.logger.Info().Msg("noise analyzer: run finished")
 }
 
 func (a *Analyzer) createStartDayTime(year int, month time.Month, day int) time.Time {

@@ -42,13 +42,16 @@ func (a *Analyzer) Start() {
 }
 
 func (a *Analyzer) analyzeTemperature() {
+	a.logger.Info().Msg("temperature analyzer: starting run")
 	hives, err := a.db.GetHives(a.ctx, "", nil)
 	if err != nil {
 		a.logger.Error().Err(err).Msg("failed to get hives")
 		return
 	}
+	a.logger.Info().Int("total_hives", len(hives)).Msg("temperature analyzer: hives loaded")
 	for _, hive := range hives {
 		if hive.HubID == nil {
+			a.logger.Debug().Int("hiveId", hive.Id).Str("hive", hive.NameHive).Msg("skip hive without hub")
 			continue
 		}
 		data, err := a.db.GetTemperaturesSinceTimeById(a.ctx, *hive.HubID, hive.DateTemperature)
@@ -56,11 +59,13 @@ func (a *Analyzer) analyzeTemperature() {
 			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Msg("failed to get temperature")
 			continue
 		}
+		a.logger.Info().Int("hiveId", hive.Id).Str("hive", hive.NameHive).Int("samples", len(data)).Msg("analyzing temperature")
 		a.temperatureAnalysis(data, hive)
 		if errUpd := a.db.UpdateHiveTemperatureCheck(a.ctx, hive.Id, time.Now()); errUpd != nil {
 			a.logger.Warn().Err(errUpd).Int("hiveId", hive.Id).Msg("failed to update hive temperature check")
 		}
 	}
+	a.logger.Info().Msg("temperature analyzer: run finished")
 }
 
 const temperatureNormal = 34.0
