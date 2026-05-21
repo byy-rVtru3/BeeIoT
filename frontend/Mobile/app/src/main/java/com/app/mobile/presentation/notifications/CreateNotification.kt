@@ -51,7 +51,7 @@ fun createNotification(
 	val builder = NotificationCompat.Builder(context, channelId)
 		.setContentTitle(title)
 		.setContentText(body)
-		.setSmallIcon(R.drawable.ic_logo) // TODO Нужно переделать иконку
+		.setSmallIcon(R.drawable.ic_logo)
 		.setStyle(NotificationCompat.BigTextStyle().bigText(body))
 		.setPriority(priority)
 		.setCategory(category)
@@ -95,7 +95,7 @@ fun updateSummaryNotification(
 			.setContentTitle(summaryNotificationText)
 			.setPriority(priority)
 			.setCategory(category)
-			.setSmallIcon(R.drawable.ic_logo)
+			.setSmallIcon(R.drawable.ic_notification)
 			.setVisibility(visibility)
 			.setGroup(groupKey)
 			.setGroupSummary(true)

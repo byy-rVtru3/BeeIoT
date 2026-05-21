@@ -9,5 +9,5 @@ data class TaskItemDto(
     @SerialName("hive_name") val hiveName: String,
     val title: String,
     val description: String? = null,
-    @SerialName("created_at") val createdAt: String
+    @SerialName("created_at") val createdAt: Long
 )

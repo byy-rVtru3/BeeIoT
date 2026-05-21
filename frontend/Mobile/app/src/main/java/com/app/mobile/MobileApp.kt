@@ -1,6 +1,8 @@
 package com.app.mobile
 
 import android.app.Application
+import android.util.Log
+import com.google.firebase.messaging.FirebaseMessaging
 import com.app.mobile.di.jsonModule
 import com.app.mobile.di.mainModule
 import com.app.mobile.di.networkModules
@@ -38,6 +40,7 @@ import com.app.mobile.di.screens.workDetailModule
 import com.app.mobile.di.screens.workEditorModule
 import com.app.mobile.di.screens.workListModule
 import com.app.mobile.di.sessionModule
+import com.app.mobile.presentation.notifications.NotificationChannelsInitializer
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -50,7 +53,7 @@ class MobileApp : Application() {
 	override fun onCreate() {
 		super.onCreate()
 
-		startKoin {
+		val koinApp = startKoin {
 			androidLogger()
 			androidContext(this@MobileApp)
 
@@ -94,5 +97,14 @@ class MobileApp : Application() {
 				firebaseModule
 			)
 		}
+
+		// Каналы уведомлений нужно создавать при каждом старте процесса,
+		// в том числе когда процесс поднят FCM в фоне для доставки пуша.
+		koinApp.koin.get<NotificationChannelsInitializer>().createChannels()
+
+		// TODO: временный лог FCM-токена для тестирования пушей — убрать перед релизом
+		FirebaseMessaging.getInstance().token
+			.addOnSuccessListener { token -> Log.d("FCM_TOKEN", token) }
+			.addOnFailureListener { e -> Log.e("FCM_TOKEN", "Не удалось получить токен", e) }
 	}
 }

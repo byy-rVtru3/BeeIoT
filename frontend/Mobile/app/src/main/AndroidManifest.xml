@@ -30,7 +30,7 @@
 				<action android:name="android.intent.action.MAIN"/>
 				<category android:name="android.intent.category.LAUNCHER"/>
 
-				<action android:name="ru.shiftlab.cftshift.ACTION_NOTIFICATION_CLICK"/>
+				<action android:name="com.app.mobile.ACTION_NOTIFICATION_CLICK"/>
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
 		</activity>
@@ -41,7 +41,7 @@
 
 		<meta-data
 			android:name="com.google.firebase.messaging.default_notification_icon"
-			android:resource="@drawable/ic_logo"/>
+			android:resource="@drawable/ic_notification"/>
 
 		<meta-data
 			android:name="com.google.firebase.messaging.default_notification_color"
