@@ -80,6 +80,9 @@ import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditor
 import com.app.mobile.presentation.ui.screens.works.list.WorksListRoute
 import com.app.mobile.presentation.ui.screens.works.list.WorksListScreen
 import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListViewModel
+import com.app.mobile.presentation.ui.screens.notifications.NotificationsRoute
+import com.app.mobile.presentation.ui.screens.notifications.NotificationsScreen
+import com.app.mobile.presentation.ui.screens.notifications.viewmodel.NotificationsViewModel
 import org.koin.androidx.compose.koinViewModel
 
 
@@ -101,7 +104,8 @@ fun AppNavigation(
                 onHiveClick = { navController.navigate(HiveRoute(it)) },
                 onQueenClick = { navController.navigate(QueenRoute(it)) },
                 onHubClick = { navController.navigate(HubRoute(it)) },
-                onWorkClick = { workId, hiveId -> navController.navigate(WorkDetailRoute(workId, hiveId)) }
+                onWorkClick = { workId, hiveId -> navController.navigate(WorkDetailRoute(workId, hiveId)) },
+                onNotificationsClick = { navController.navigate(NotificationsRoute) }
             )
         }
 
@@ -144,7 +148,9 @@ fun AppNavigation(
                 onAccountInfoClick = { navController.navigate(AccountInfoRoute) },
                 onAboutAppClick = { navController.navigate(AboutAppRoute) },
                 onHowToUseClick = { navController.navigate(HowToUseRoute) },
-                onLogoutClick = { navController.navigate(AuthorizationRoute) })
+                onLogoutClick = { navController.navigate(AuthorizationRoute) },
+                onNotificationHistoryClick = { navController.navigate(NotificationsRoute) }
+            )
         }
 
         animatedComposable<AccountInfoRoute> {
@@ -190,7 +196,7 @@ fun AppNavigation(
                 hubViewModel,
                 onHubListClick = { navController.popBackStack() },
                 onHubEditClick = { hubId -> navController.navigate(HubEditorRoute(hubId)) },
-                onNotificationsClick = { TODO("NotificationsRoute") },
+                onNotificationsClick = { navController.navigate(NotificationsRoute) },
                 onSensorChartClick = { hubId, sensorType, hubName, currentValue ->
                     navController.navigate(SensorChartRoute(hubId, sensorType, hubName, currentValue))
                 }
@@ -226,7 +232,7 @@ fun AppNavigation(
                 onWorkDetailClick = { workId, hiveName ->
                     navController.navigate(WorkDetailRoute(workId, hiveName))
                 },
-                onNotificationsClick = { TODO("NotificationsRoute") },
+                onNotificationsClick = { navController.navigate(NotificationsRoute) },
                 onTemperatureClick = { hubId, hubName, currentValue ->
                     navController.navigate(SensorChartRoute(hubId, "temperature", hubName, currentValue))
                 },
@@ -325,6 +331,14 @@ fun AppNavigation(
             val worksEditorViewModel: WorksEditorViewModel = koinViewModel()
             WorksEditorScreen(
                 worksEditorViewModel,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        animatedComposable<NotificationsRoute> {
+            val notificationsViewModel: NotificationsViewModel = koinViewModel()
+            NotificationsScreen(
+                viewModel = notificationsViewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }

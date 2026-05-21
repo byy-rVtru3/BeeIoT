@@ -192,4 +192,12 @@
 	<string name="home_section_hubs">Мои хабы:</string>
 	<string name="home_section_works">Мои работы:</string>
 
+	<!-- Notification History Screen -->
+	<string name="notification_history">История уведомлений</string>
+	<string name="notification_history_empty">Уведомлений пока нет</string>
+	<string name="notification_history_empty_desc">Здесь будут отображаться уведомления с пасеки</string>
+	<string name="notification_clear">Очистить</string>
+	<string name="notification_type_regular">Обычное</string>
+	<string name="notification_type_critical">Важное</string>
+
 </resources>

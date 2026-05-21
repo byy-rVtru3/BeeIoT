@@ -14,6 +14,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -48,7 +49,8 @@ fun SettingsScreen(
 	onAccountInfoClick: () -> Unit,
 	onLogoutClick: () -> Unit,
 	onAboutAppClick: () -> Unit,
-	onHowToUseClick: () -> Unit
+	onHowToUseClick: () -> Unit,
+	onNotificationHistoryClick: () -> Unit
 ) {
 	val settingsUiState by settingsViewModel.uiState.collectAsStateWithLifecycle()
 	val snackBarHostState = remember { SnackbarHostState() }
@@ -71,6 +73,8 @@ fun SettingsScreen(
 				context.startActivity(intent)
 			}
 
+			is SettingsEvent.NavigateToNotificationHistory -> onNotificationHistoryClick()
+
 			is SettingsEvent.ShowSnackBar -> {
 				snackBarHostState.showSnackbar(
 					message = event.message,
@@ -88,7 +92,8 @@ fun SettingsScreen(
 				onHowToUseClick = settingsViewModel::onHowToUseClick,
 				onLogoutClick = settingsViewModel::onLogoutClick,
 				onToggleTheme = settingsViewModel::onToggleTheme,
-				onNotificationsClick = settingsViewModel::onNotificationsClick
+				onNotificationsClick = settingsViewModel::onNotificationsClick,
+				onNotificationHistoryClick = settingsViewModel::onNotificationHistoryClick
 			)
 
 			SettingsContent(
@@ -146,6 +151,7 @@ private fun SettingsContent(
 				SettingsGroup {
 					AccountInfoButton(actions.onAccountInfoClick)
 					NotificationsButton(actions.onNotificationsClick)
+					NotificationHistoryButton(actions.onNotificationHistoryClick)
                     ThemeToggleButton(
 						isDarkTheme = isDarkTheme,
 						onToggleTheme = actions.onToggleTheme
@@ -215,6 +221,15 @@ private fun NotificationsButton(onNotificationsClick: () -> Unit) {
 }
 
 @Composable
+private fun NotificationHistoryButton(onNotificationHistoryClick: () -> Unit) {
+	SettingsButton(
+		onClick = onNotificationHistoryClick,
+		text = stringResource(R.string.notification_history),
+		icon = Icons.Outlined.NotificationsActive
+	)
+}
+
+@Composable
 private fun AboutAppButton(onAboutAppClick: () -> Unit) {
 	SettingsButton(
 		onClick = onAboutAppClick,
@@ -252,7 +267,8 @@ fun SettingsContentPreview() {
 			onHowToUseClick = {},
 			onLogoutClick = {},
 			onToggleTheme = {},
-			onNotificationsClick = {}
+			onNotificationsClick = {},
+			onNotificationHistoryClick = {}
 		)
 		SettingsContent(
 			actions = actions,

@@ -7,4 +7,5 @@ data class SettingsActions(
     val onHowToUseClick: () -> Unit,
     val onToggleTheme: () -> Unit,
     val onNotificationsClick: () -> Unit,
+    val onNotificationHistoryClick: () -> Unit,
 )

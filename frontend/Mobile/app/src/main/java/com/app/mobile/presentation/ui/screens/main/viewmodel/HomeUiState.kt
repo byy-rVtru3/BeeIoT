@@ -14,6 +14,7 @@ sealed interface HomeUiState {
         val hubs: List<HubDomain>,
         val works: List<WorkDomain>,
         val isRefreshing: Boolean = false,
-        val showNotificationPrompt: Boolean = false
+        val showNotificationPrompt: Boolean = false,
+        val notificationCount: Int = 0
     ) : HomeUiState
 }

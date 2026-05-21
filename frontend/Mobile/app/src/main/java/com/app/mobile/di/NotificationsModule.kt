@@ -8,15 +8,22 @@ import com.app.mobile.data.datastore.DeviceIdDataSource
 import com.app.mobile.data.datastore.DeviceIdDataSourceImpl
 import com.app.mobile.data.datastore.FcmTokenDataSource
 import com.app.mobile.data.datastore.FcmTokenDataSourceImpl
+import com.app.mobile.data.datastore.NotificationHistoryDataSource
+import com.app.mobile.data.datastore.NotificationHistoryDataSourceImpl
 import com.app.mobile.data.repository.notifications.DeviceIdRepositoryImpl
+import com.app.mobile.data.repository.notifications.NotificationHistoryRepositoryImpl
 import com.app.mobile.data.repository.notifications.PermissionRepositoryImpl
 import com.app.mobile.data.repository.notifications.PushTokenRepositoryImpl
 import com.app.mobile.domain.repository.notifications.DeviceIdRepository
+import com.app.mobile.domain.repository.notifications.NotificationHistoryRepository
 import com.app.mobile.domain.repository.notifications.PermissionRepository
 import com.app.mobile.domain.repository.notifications.PushTokenRepository
 import com.app.mobile.domain.repository.notifications.TokenRetryScheduler
 import com.app.mobile.domain.scenario.RegisterPushTokenScenario
 import com.app.mobile.domain.usecase.notifications.CheckIfNotificationPromptShownUseCase
+import com.app.mobile.domain.usecase.notifications.ClearNotificationHistoryUseCase
+import com.app.mobile.domain.usecase.notifications.GetNotificationHistoryUseCase
+import com.app.mobile.domain.usecase.notifications.SaveNotificationUseCase
 import com.app.mobile.domain.usecase.notifications.SendPushTokenUseCase
 import com.app.mobile.domain.usecase.notifications.SetNotificationPromptShownUseCase
 import com.app.mobile.presentation.notifications.NotificationChannelsInitializer
@@ -34,10 +41,16 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings_manager")
+private val Context.notificationHistoryDataStore: DataStore<Preferences> by preferencesDataStore(name = "notification_history")
+
 val notificationsModule = module {
 
 	single<DataStore<Preferences>>(named("SettingsStore")) {
 		androidContext().settingsDataStore
+	}
+
+	single<DataStore<Preferences>>(named("NotificationHistoryStore")) {
+		androidContext().notificationHistoryDataStore
 	}
 
 	factoryOf(::FcmTokenDataSourceImpl) bind FcmTokenDataSource::class
@@ -62,11 +75,25 @@ val notificationsModule = module {
 		dataStore = get(named("SettingsStore"))
 	) } bind PermissionRepository::class
 
+	single {
+		NotificationHistoryDataSourceImpl(
+			dataStore = get(named("NotificationHistoryStore")),
+			json = get()
+		)
+	} bind NotificationHistoryDataSource::class
+
+	singleOf(::NotificationHistoryRepositoryImpl) bind NotificationHistoryRepository::class
+
+	factoryOf(::GetNotificationHistoryUseCase)
+	factoryOf(::SaveNotificationUseCase)
+	factoryOf(::ClearNotificationHistoryUseCase)
+
 	factory {
 		PushController(
 			dispatcher = Dispatchers.Main,
 			registerPushTokenScenario = get(),
-			notificationView = get()
+			notificationView = get(),
+			saveNotificationUseCase = get()
 		)
 	}
 

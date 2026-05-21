@@ -8,6 +8,7 @@ import com.app.mobile.domain.usecase.hives.hub.GetHubsUseCase
 import com.app.mobile.domain.usecase.hives.queen.GetQueensUseCase
 import com.app.mobile.domain.usecase.hives.works.GetWorksUseCase
 import com.app.mobile.domain.usecase.notifications.CheckIfNotificationPromptShownUseCase
+import com.app.mobile.domain.usecase.notifications.GetNotificationHistoryUseCase
 import com.app.mobile.domain.usecase.notifications.SendPushTokenUseCase
 import com.app.mobile.domain.usecase.notifications.SetNotificationPromptShownUseCase
 import com.app.mobile.presentation.ui.components.BaseViewModel
@@ -21,8 +22,22 @@ class HomeViewModel(
 	private val getWorksUseCase: GetWorksUseCase,
 	private val checkIfNotificationPromptShownUseCase: CheckIfNotificationPromptShownUseCase,
 	private val setNotificationPromptShownUseCase: SetNotificationPromptShownUseCase,
-	private val sendPushTokenUseCase: SendPushTokenUseCase
+	private val sendPushTokenUseCase: SendPushTokenUseCase,
+	private val getNotificationHistoryUseCase: GetNotificationHistoryUseCase
 ) : BaseViewModel<HomeUiState, HomeEvent>(HomeUiState.Loading) {
+
+	init {
+		observeNotificationCount()
+	}
+
+	private fun observeNotificationCount() {
+		launch {
+			getNotificationHistoryUseCase().collect { list ->
+				val content = currentState as? HomeUiState.Content ?: return@collect
+				updateState { content.copy(notificationCount = list.size) }
+			}
+		}
+	}
 
 	override fun handleError(exception: Throwable) {
 		updateState { HomeUiState.Error(exception.message ?: "Неизвестная ошибка") }
@@ -65,7 +80,8 @@ class HomeViewModel(
 					.flatten()
 					.sortedByDescending { it.dateTime }
 
-				updateState { HomeUiState.Content(hives, queens, hubs, allWorks) }
+				val notificationCount = (currentState as? HomeUiState.Content)?.notificationCount ?: 0
+				updateState { HomeUiState.Content(hives, queens, hubs, allWorks, notificationCount = notificationCount) }
 				val shouldShowPrompt = !checkIfNotificationPromptShownUseCase()
 				val contentState = currentState as? HomeUiState.Content ?: return@launch
 				if (shouldShowPrompt) {
@@ -95,6 +111,10 @@ class HomeViewModel(
 
 	fun onWorkClick(workId: String, hiveId: String) {
 		sendEvent(HomeEvent.NavigateToWork(workId, hiveId))
+	}
+
+	fun onNotificationsClick() {
+		sendEvent(HomeEvent.NavigateToNotifications)
 	}
 
 	fun onAcceptNotificationPrompt() {

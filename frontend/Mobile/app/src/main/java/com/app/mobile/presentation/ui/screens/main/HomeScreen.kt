@@ -21,8 +21,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -37,6 +40,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -66,7 +71,8 @@ fun HomeScreen(
     onHiveClick: (String) -> Unit,
     onQueenClick: (String) -> Unit,
     onHubClick: (String) -> Unit,
-    onWorkClick: (String, String) -> Unit
+    onWorkClick: (String, String) -> Unit,
+    onNotificationsClick: () -> Unit
 ) {
     val state by homeViewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing = (state as? HomeUiState.Content)?.isRefreshing ?: false
@@ -87,10 +93,11 @@ fun HomeScreen(
 
     ObserveAsEvents(homeViewModel.event) { event ->
         when (event) {
-            is HomeEvent.NavigateToHive  -> onHiveClick(event.hiveName)
-            is HomeEvent.NavigateToQueen -> onQueenClick(event.queenName)
-            is HomeEvent.NavigateToHub   -> onHubClick(event.hubId)
-            is HomeEvent.NavigateToWork  -> onWorkClick(event.workId, event.hiveId)
+            is HomeEvent.NavigateToHive          -> onHiveClick(event.hiveName)
+            is HomeEvent.NavigateToQueen         -> onQueenClick(event.queenName)
+            is HomeEvent.NavigateToHub           -> onHubClick(event.hubId)
+            is HomeEvent.NavigateToWork          -> onWorkClick(event.workId, event.hiveId)
+            is HomeEvent.NavigateToNotifications -> onNotificationsClick()
         }
     }
 
@@ -114,7 +121,7 @@ fun HomeScreen(
         when (val s = state) {
             is HomeUiState.Loading -> FullScreenProgressIndicator()
             is HomeUiState.Error   -> ErrorMessage(message = s.message, onRetry = homeViewModel::onRetry)
-            is HomeUiState.Content -> HomeContent(content = s, homeViewModel = homeViewModel)
+            is HomeUiState.Content -> HomeContent(content = s, homeViewModel = homeViewModel, onNotificationsClick = homeViewModel::onNotificationsClick)
         }
     }
 }
@@ -122,12 +129,17 @@ fun HomeScreen(
 @Composable
 private fun HomeContent(
     content: HomeUiState.Content,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    onNotificationsClick: () -> Unit
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceVariant,
-
-        topBar = { HomeTopBar() }
+        topBar = {
+            HomeTopBar(
+                notificationCount = content.notificationCount,
+                onNotificationsClick = onNotificationsClick
+            )
+        }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -186,7 +198,10 @@ private fun HomeContent(
 }
 
 @Composable
-private fun HomeTopBar() {
+private fun HomeTopBar(
+    notificationCount: Int,
+    onNotificationsClick: () -> Unit
+) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
         modifier = Modifier
@@ -204,6 +219,7 @@ private fun HomeTopBar() {
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
+                .padding(horizontal = Dimens.TopBarHorizontalPadding)
                 .height(Dimens.TopBarHeight)
         ) {
             Text(
@@ -211,6 +227,29 @@ private fun HomeTopBar() {
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
+            IconButton(
+                onClick = onNotificationsClick,
+                modifier = Modifier.align(Alignment.CenterEnd)
+            ) {
+                BadgedBox(
+                    badge = {
+                        if (notificationCount > 0) {
+                            Badge {
+                                Text(
+                                    text = if (notificationCount > 99) "99+" else notificationCount.toString(),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Notifications,
+                        contentDescription = stringResource(R.string.notification_history),
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
         }
     }
 }

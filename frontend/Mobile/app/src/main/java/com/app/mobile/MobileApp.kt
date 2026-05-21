@@ -35,6 +35,7 @@ import com.app.mobile.di.screens.queenListModule
 import com.app.mobile.di.screens.queenModule
 import com.app.mobile.di.screens.registrationModule
 import com.app.mobile.di.screens.sensorChartModule
+import com.app.mobile.di.screens.notificationsListModule
 import com.app.mobile.di.screens.settingsModule
 import com.app.mobile.di.screens.workDetailModule
 import com.app.mobile.di.screens.workEditorModule
@@ -91,6 +92,7 @@ class MobileApp : Application() {
 				workEditorModule,
 				workListModule,
 				homeModule,
+				notificationsListModule,
 				notificationsModule,
 				themeModule,
 				mainModule,

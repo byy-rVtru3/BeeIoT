@@ -73,6 +73,12 @@ class SettingsViewModel(
 		}
 	}
 
+	fun onNotificationHistoryClick() {
+		if (currentState is SettingsUiState.Content) {
+			sendEvent(SettingsEvent.NavigateToNotificationHistory)
+		}
+	}
+
 	private fun observeTheme() {
 		launch {
 			themeManager.themeState.collect { themeState ->
