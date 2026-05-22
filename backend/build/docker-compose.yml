@@ -116,6 +116,7 @@ services:
       - "80:80"
     depends_on:
       - go-server
+      - web-admin
     networks:
       - app-net
     restart: unless-stopped
