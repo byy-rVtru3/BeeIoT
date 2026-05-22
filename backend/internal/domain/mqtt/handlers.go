@@ -214,11 +214,29 @@ func (m *Client) publishJSON(client mqtt.Client, topic string, qos byte, retaine
 }
 
 const (
-	batteryLowThreshold   = 20
-	signalLowThreshold    = 10
-	noiseHighThreshold    = 50
+	batteryLowThreshold = 20
+	signalLowThreshold  = 10
+	// noiseHighThreshold — в дБ SPL. Фоновый шум здоровой пчелиной семьи
+	// сам по себе 60–75 дБ, поэтому пороги в районе 50–60 дБ давали бы
+	// постоянный спам. Реальная аномалия (роение, проникновение в улей,
+	// массовое возбуждение) — это уже 80+ дБ; на нём и поднимаем алерт.
+	noiseHighThreshold    = 80
 	defaultSamplingPeriod = 5 // seconds
 )
+
+// transientSensorErrors — теги в status.errors[], которые означают
+// «не удалось снять одно измерение», а не отказ устройства. Прошивка
+// агрессивно отбрасывает мусорные семплы INMP441 и может вернуть -1 для
+// шума на каждом втором цикле, а это не повод дёргать пользователя
+// уведомлением. Их фильтруем в checkErrors перед отправкой пуша.
+//
+// Сами теги init/connect/register/mqtt-ошибок (например noise_init_error,
+// modem_power_on_failed, mqtt_connect_failed) остаются критическими —
+// они в этот список не попадают.
+var transientSensorErrors = map[string]struct{}{
+	"noise_read_error":       {},
+	"temperature_read_error": {},
+}
 
 func (m *Client) handlingStatusData(data mqttTypes.DeviceStatus, sensorId string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -259,10 +277,18 @@ func (m *Client) handlingStatusData(data mqttTypes.DeviceStatus, sensorId string
 
 	// Если status не требует ни одной из проверок — не дёргаем БД зря.
 	// Значение -1 означает «нет данных» (например, у нас нет монитора заряда),
-	// такие поля не считаем критичными и алерт по ним не шлём.
+	// такие поля не считаем критичными и алерт по ним не шлём. Аналогично,
+	// чисто транзиентные сенсорные ошибки (*_read_error) в errors[] не
+	// считаются критическими — они отфильтровываются в checkErrors.
 	batteryCritical := data.BatteryLevel != -1 && data.BatteryLevel < batteryLowThreshold
 	signalCritical := data.SignalStrength != -1 && data.SignalStrength < signalLowThreshold
-	errorsCritical := len(data.Errors) > 0
+	errorsCritical := false
+	for _, e := range data.Errors {
+		if _, transient := transientSensorErrors[e]; !transient {
+			errorsCritical = true
+			break
+		}
+	}
 	if !batteryCritical && !signalCritical && !errorsCritical {
 		return
 	}
@@ -354,7 +380,18 @@ func (m *Client) checkSignalStrength(ctx context.Context, sensorId, email, hive 
 }
 
 func (m *Client) checkErrors(ctx context.Context, sensorId, email, hive string, data mqttTypes.DeviceStatus) error {
-	if len(data.Errors) == 0 {
+	// Отфильтровываем транзиентные ошибки чтения сенсора — они приходят
+	// почти с каждым status-пакетом и не значат, что устройство умерло.
+	// Алертим только если осталось что-то ещё (init_error, mqtt_connect_failed
+	// и т.д.).
+	critical := make([]string, 0, len(data.Errors))
+	for _, e := range data.Errors {
+		if _, transient := transientSensorErrors[e]; transient {
+			continue
+		}
+		critical = append(critical, e)
+	}
+	if len(critical) == 0 {
 		return nil
 	}
 	tokens, err := m.db.GetFirebaseToken(ctx, email)
@@ -364,11 +401,11 @@ func (m *Client) checkErrors(ctx context.Context, sensorId, email, hive string, 
 	if m.notification == nil {
 		return nil
 	}
-	m.logger.Info().Str("sensor", sensorId).Strs("errors", data.Errors).Str("email", email).Msg("Sending device errors notification")
+	m.logger.Info().Str("sensor", sensorId).Strs("errors", critical).Str("email", email).Msg("Sending device errors notification")
 	badToken, err := m.notification.SendNotification(ctx, notification.Data{
 		Title: fmt.Sprintf("Ошибки датчика в улье %s", hive),
 		Body: fmt.Sprintf("Датчик сообщил об ошибках: %s. Пожалуйста, проверьте состояние датчика.",
-			strings.Join(data.Errors, ", ")),
+			strings.Join(critical, ", ")),
 		Data:      map[string]string{"hive": hive},
 		Tokens:    tokens,
 		Important: true,
