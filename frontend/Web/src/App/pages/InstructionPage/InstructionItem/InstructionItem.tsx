@@ -15,7 +15,8 @@ import IconExpand from '@/App/components/icon/IconExpand';
 import IconTrash from '@/App/components/icon/IconTrash';
 
 type InstructionItemData = {
-  id: number;
+  // id у бэка — UUID (строка), см. types/instructionType.ts.
+  id: string;
   title: string;
   body: string;
   open: boolean;
@@ -27,10 +28,10 @@ type InstructionItemProps = {
   item: InstructionItemData;
   index: number;
   total: number;
-  onUpdate: (id: number, patch: Partial<InstructionItemData>) => void;
-  onDelete: (id: number) => void;
-  onMove: (id: number, dir: number) => void;
-  onToggle: (id: number) => void;
+  onUpdate: (id: string, patch: Partial<InstructionItemData>) => void;
+  onDelete: (id: string) => void;
+  onMove: (id: string, dir: number) => void;
+  onToggle: (id: string) => void;
   isDragging: boolean;
   isOver: boolean;
   dragPos: DragPosition;

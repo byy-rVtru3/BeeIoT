@@ -3,7 +3,8 @@ import type { UseMutationOptions } from '@tanstack/react-query';
 
 import { deleteInstruction } from '@/api/instructions';
 
-type DeleteInstructionOptions = UseMutationOptions<void, unknown, number>;
+// id у бэка — UUID-строка (см. types/instructionType.ts).
+type DeleteInstructionOptions = UseMutationOptions<void, unknown, string>;
 
 export const useDeleteInstructionMutation = (options?: DeleteInstructionOptions) => {
   const queryClient = useQueryClient();

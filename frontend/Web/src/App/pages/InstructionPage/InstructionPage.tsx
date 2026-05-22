@@ -29,13 +29,13 @@ type SnackbarState = null | {
 
 const instructionSchema = z.object({
   title: z.string().min(1, 'Введите заголовок').max(100, 'Максимум 100 символов'),
-  content: z.string().min(1, 'Введите текст').max(1000, 'Максимум 1000 символов'),
+  body: z.string().min(1, 'Введите текст').max(1000, 'Максимум 1000 символов'),
 });
 
 type InstructionFormData = z.infer<typeof instructionSchema>;
 
 const InstructionPage = () => {
-  const [openIds, setOpenIds] = insUseState<Set<number>>(new Set());
+  const [openIds, setOpenIds] = insUseState<Set<string>>(new Set());
   const [snack, setSnack] = insUseState<SnackbarState>(null);
 
   const { data, isLoading, isError } = useInstructionsQuery();
@@ -68,7 +68,7 @@ const InstructionPage = () => {
     resolver: zodResolver(instructionSchema),
     defaultValues: {
       title: '',
-      content: '',
+      body: '',
     },
     mode: 'onChange',
   });
@@ -76,13 +76,13 @@ const InstructionPage = () => {
   const items: InstructionItemData[] = (data ?? []).map((item) => ({
     id: item.id,
     title: item.title,
-    body: item.content,
+    body: item.body,
     open: openIds.has(item.id),
   }));
 
   const updateItem = () => undefined;
 
-  const toggleItem = (id: number) =>
+  const toggleItem = (id: string) =>
     setOpenIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -93,7 +93,7 @@ const InstructionPage = () => {
       return next;
     });
 
-  const deleteItem = (id: number) => {
+  const deleteItem = (id: string) => {
     if (!confirm('Удалить этот пункт?')) return;
     setOpenIds((prev) => {
       const next = new Set(prev);
@@ -110,7 +110,7 @@ const InstructionPage = () => {
   const handleCreate = handleSubmit((values) => {
     createMutation.mutate({
       title: values.title,
-      content: values.content,
+      body: values.body,
     });
   });
 
@@ -165,7 +165,7 @@ const InstructionPage = () => {
               )}
             />
             <Controller
-              name="content"
+              name="body"
               control={control}
               render={({ field }) => (
                 <InsTextField
@@ -175,8 +175,8 @@ const InstructionPage = () => {
                   minRows={3}
                   maxRows={8}
                   placeholder="Текст инструкции"
-                  error={Boolean(errors.content)}
-                  helperText={errors.content?.message ?? ' '}
+                  error={Boolean(errors.body)}
+                  helperText={errors.body?.message ?? ' '}
                   slotProps={{
                     htmlInput: {
                       maxLength: 1000,

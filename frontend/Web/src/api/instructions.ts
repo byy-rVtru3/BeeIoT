@@ -2,25 +2,32 @@ import { api } from '@/config/api';
 import type { ApiResponse } from '@/types/authType';
 import type {
   CreateInstructionRequest,
-  CreateInstructionResponse,
   InstructionItem,
 } from '@/types/instructionType';
 
-// GET /instructions/list
+// Серверные роуты для админ-панели — backend/internal/http/router.go:120-126.
+// Чтение списка инструкций есть и публично (`/instruction/items`), но из-под
+// админки имеет смысл идти через admin-префикс — он защищён CheckAdmin и
+// при потере прав мы сразу увидим 401/403, а не молча тянем чужой контент.
+const INSTRUCTION_ITEMS_BASE = '/admin/instruction/items';
+
+// GET /api/admin/instruction/items/
 export const fetchInstructions = async (signal?: AbortSignal): Promise<InstructionItem[]> => {
-  const response = await api.get<ApiResponse<InstructionItem[]>>('/instructions/list', { signal });
+  const response = await api.get<ApiResponse<InstructionItem[]>>(`${INSTRUCTION_ITEMS_BASE}/`, {
+    signal,
+  });
   return response.data.data;
 };
 
-// POST /instructions/create
+// POST /api/admin/instruction/items/
 export const createInstruction = async (
   data: CreateInstructionRequest
-): Promise<CreateInstructionResponse> => {
-  const response = await api.post<CreateInstructionResponse>('/instructions/create', data);
-  return response.data;
+): Promise<InstructionItem> => {
+  const response = await api.post<ApiResponse<InstructionItem>>(`${INSTRUCTION_ITEMS_BASE}/`, data);
+  return response.data.data;
 };
 
-// DELETE /instructions/{id}
-export const deleteInstruction = async (id: number): Promise<void> => {
-  await api.delete(`/instructions/${id}`);
+// DELETE /api/admin/instruction/items/{id}
+export const deleteInstruction = async (id: string): Promise<void> => {
+  await api.delete(`${INSTRUCTION_ITEMS_BASE}/${id}`);
 };
