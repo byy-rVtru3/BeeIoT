@@ -1,4 +1,4 @@
-.PHONY: run run_build load_test load_test_build unit_test client_test logs stop clean help admin unadmin list_admins
+.PHONY: run run_build load_test load_test_build unit_test client_test logs stop clean help admin unadmin list_admins notify_demo
 
 # Загрузка переменных окружения из .env
 ifneq (,$(wildcard .env))
@@ -73,5 +73,11 @@ unadmin: ## Снять админку с пользователя: make unadmin 
 list_admins: ## Показать всех админов
 	@$(DOCKER_COMPOSE) exec -T db psql -U $(DB_USER) -d $(DB_NAME) -c \
 		"SELECT email, name FROM users WHERE is_admin = true;"
+
+notify_demo: ## Демо-рассылка push-уведомлений о температуре всем пользователям (требует запущенный стек)
+	@echo "$(GREEN)==>$(NC) Building notify_demo image..."
+	@docker build -f $(BUILD_DIR)/NotifyDockerfile -t beeiot-notify-demo .
+	@echo "$(GREEN)==>$(NC) Running notify_demo against the live stack..."
+	@docker run --rm --network build_app-net --env-file .env beeiot-notify-demo
 
 all: run ## Запустить все
