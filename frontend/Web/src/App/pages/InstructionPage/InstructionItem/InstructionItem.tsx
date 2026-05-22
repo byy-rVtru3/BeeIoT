@@ -1,6 +1,8 @@
 import {
   Box as InsBox,
+  Checkbox as InsCheckbox,
   Collapse,
+  FormControlLabel as InsFormControlLabel,
   IconButton as InsIconButton,
   TextField as InsTextField,
   Tooltip as InsTooltip,
@@ -15,11 +17,13 @@ import IconExpand from '@/App/components/icon/IconExpand';
 import IconTrash from '@/App/components/icon/IconTrash';
 
 type InstructionItemData = {
-  // id у бэка — UUID (строка), см. types/instructionType.ts.
   id: string;
   title: string;
   body: string;
+  numbered: boolean;
+  position: number;
   open: boolean;
+  isNew?: boolean;
 };
 
 type DragPosition = 'before' | 'after' | null;
@@ -271,8 +275,38 @@ const InstructionItem = ({
           }}
         >
           <InsBox sx={{ pt: 2 }}>
-            <InsBox sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
-              <InsTypography sx={{ fontSize: 13, fontWeight: 600 }}>Заголовок пункта</InsTypography>
+            <InsBox
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 2,
+                mb: 0.75,
+              }}
+            >
+              <InsBox sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <InsTypography sx={{ fontSize: 13, fontWeight: 600 }}>
+                  Заголовок пункта
+                </InsTypography>
+                <InsFormControlLabel
+                  control={
+                    <InsCheckbox
+                      size="small"
+                      checked={item.numbered}
+                      onChange={(event) => onUpdate(item.id, { numbered: event.target.checked })}
+                      disabled={readOnly}
+                    />
+                  }
+                  label="Нумерованный список"
+                  sx={{
+                    m: 0,
+                    '& .MuiFormControlLabel-label': {
+                      fontSize: 12,
+                      color: 'rgba(0,0,0,0.6)',
+                    },
+                  }}
+                />
+              </InsBox>
               <InsTypography
                 sx={{
                   fontSize: 11,

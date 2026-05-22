@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseMutationOptions } from '@tanstack/react-query';
 
-import { createInstruction } from '@/api/instructions';
-import type { CreateInstructionRequest, CreateInstructionResponse } from '@/types/instructionType';
+import { createInstructionItem } from '@/api/instructions';
+import type { CreateInstructionItemRequest, InstructionItem } from '@/types/instructionType';
 
 type CreateInstructionOptions = UseMutationOptions<
-  CreateInstructionResponse,
+  InstructionItem,
   unknown,
-  CreateInstructionRequest
+  CreateInstructionItemRequest
 >;
 
 export const useCreateInstructionMutation = (options?: CreateInstructionOptions) => {
@@ -15,10 +15,10 @@ export const useCreateInstructionMutation = (options?: CreateInstructionOptions)
   const { onSuccess, ...restOptions } = options ?? {};
 
   return useMutation({
-    mutationFn: (data) => createInstruction(data),
+    mutationFn: (data) => createInstructionItem(data),
     ...restOptions,
     onSuccess: async (data, variables, onMutateResult, context) => {
-      await queryClient.invalidateQueries({ queryKey: ['instructions'] });
+      await queryClient.invalidateQueries({ queryKey: ['instruction-items', 'admin'] });
       await onSuccess?.(data, variables, onMutateResult, context);
     },
   });

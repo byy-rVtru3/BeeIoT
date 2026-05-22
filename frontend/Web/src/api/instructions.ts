@@ -1,33 +1,62 @@
 import { api } from '@/config/api';
 import type { ApiResponse } from '@/types/authType';
 import type {
-  CreateInstructionRequest,
+  CreateInstructionItemRequest,
   InstructionItem,
+  ReorderInstructionItemsRequest,
+  UpdateInstructionItemRequest,
 } from '@/types/instructionType';
 
-// Серверные роуты для админ-панели — backend/internal/http/router.go:120-126.
-// Чтение списка инструкций есть и публично (`/instruction/items`), но из-под
-// админки имеет смысл идти через admin-префикс — он защищён CheckAdmin и
-// при потере прав мы сразу увидим 401/403, а не молча тянем чужой контент.
-const INSTRUCTION_ITEMS_BASE = '/admin/instruction/items';
-
-// GET /api/admin/instruction/items/
-export const fetchInstructions = async (signal?: AbortSignal): Promise<InstructionItem[]> => {
-  const response = await api.get<ApiResponse<InstructionItem[]>>(`${INSTRUCTION_ITEMS_BASE}/`, {
+// GET /instruction/items
+export const fetchInstructionItems = async (signal?: AbortSignal): Promise<InstructionItem[]> => {
+  const response = await api.get<ApiResponse<InstructionItem[]>>('/instruction/items', {
     signal,
   });
   return response.data.data;
 };
 
-// POST /api/admin/instruction/items/
-export const createInstruction = async (
-  data: CreateInstructionRequest
-): Promise<InstructionItem> => {
-  const response = await api.post<ApiResponse<InstructionItem>>(`${INSTRUCTION_ITEMS_BASE}/`, data);
+// GET /admin/instruction/items/
+export const fetchAdminInstructionItems = async (
+  signal?: AbortSignal
+): Promise<InstructionItem[]> => {
+  const response = await api.get<ApiResponse<InstructionItem[]>>('/admin/instruction/items/', {
+    signal,
+  });
   return response.data.data;
 };
 
-// DELETE /api/admin/instruction/items/{id}
-export const deleteInstruction = async (id: string): Promise<void> => {
-  await api.delete(`${INSTRUCTION_ITEMS_BASE}/${id}`);
+// POST /admin/instruction/items/
+export const createInstructionItem = async (
+  data: CreateInstructionItemRequest
+): Promise<InstructionItem> => {
+  const response = await api.post<ApiResponse<InstructionItem>>('/admin/instruction/items/', data);
+  return response.data.data;
+};
+
+// PUT /admin/instruction/items/{id}
+export const updateInstructionItem = async (
+  id: string,
+  data: UpdateInstructionItemRequest
+): Promise<InstructionItem> => {
+  const response = await api.put<ApiResponse<InstructionItem>>(
+    `/admin/instruction/items/${id}`,
+    data
+  );
+  return response.data.data;
+};
+
+// DELETE /admin/instruction/items/{id}
+export const deleteInstructionItem = async (id: string): Promise<void> => {
+  await api.delete(`/admin/instruction/items/${id}`);
+};
+
+// PUT /admin/instruction/items/reorder
+export const reorderInstructionItems = async (
+  data: ReorderInstructionItemsRequest
+): Promise<InstructionItem[]> => {
+  const response = await api.put<ApiResponse<InstructionItem[]>>(
+    '/admin/instruction/items/reorder',
+    data
+  );
+  return response.data.data;
 };

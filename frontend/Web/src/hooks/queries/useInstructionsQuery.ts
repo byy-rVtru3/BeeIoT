@@ -1,11 +1,11 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
 
-import { fetchInstructions } from '@/api/instructions';
+import { fetchAdminInstructionItems } from '@/api/instructions';
 
 export const instructionsQueryOptions = () =>
   queryOptions({
-    queryKey: ['instructions'],
-    queryFn: ({ signal }) => fetchInstructions(signal),
+    queryKey: ['instruction-items', 'admin'],
+    queryFn: ({ signal }) => fetchAdminInstructionItems(signal),
   });
 
 export const useInstructionsQuery = () => useQuery(instructionsQueryOptions());

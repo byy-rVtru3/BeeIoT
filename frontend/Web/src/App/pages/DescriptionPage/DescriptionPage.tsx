@@ -1,8 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert as DescAlert, Box as DescBox, Paper as DescPaper, Snackbar } from '@mui/material';
-import { useState as descUseState } from 'react';
+import { useEffect, useRef, useState as descUseState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
+
+import FullScreenLoader from '@/components/FullScreenLoader/FullScreenLoader';
+import { useUpdateAppDescriptionMutation } from '@/hooks/mutations/useUpdateAppDescriptionMutation';
+import { useAppDescriptionQuery } from '@/hooks/queries/useAppDescriptionQuery';
+import type { AppDescription } from '@/types/appDescriptionType';
 
 import PageHeader, { type PageHeaderStatus } from '../../components/PageHeader';
 
@@ -21,17 +26,24 @@ type SnackbarState = null | {
   text: string;
 };
 
-const DEFAULT_DESCRIPTION: DescriptionData = {
-  title: 'BeeIoT — мониторинг ульев',
-  short: 'Контролируйте здоровье пасеки в реальном времени.',
-  full: `BeeIoT — это система IoT-мониторинга пчелиных ульев. Подключите хаб с датчиками и получайте телеметрию по температуре, шуму и весу улья прямо в телефон.
+const EMPTY_DESCRIPTION: DescriptionData = {
+  title: '',
+  short: '',
+  full: '',
+};
 
-Ведите учёт маток, фиксируйте выполненные работы, получайте уведомления о критических событиях. Всё, что нужно пасечнику, — в одном приложении.`,
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String((error as { message?: string }).message ?? fallback);
+  }
+  return fallback;
 };
 
 const DescriptionPage = () => {
-  const [saving, setSaving] = descUseState(false);
   const [snack, setSnack] = descUseState<SnackbarState>(null);
+  const lastLoadedRef = useRef<AppDescription | null | undefined>(undefined);
+
+  const { data, isLoading, isError } = useAppDescriptionQuery();
 
   const {
     control,
@@ -40,28 +52,60 @@ const DescriptionPage = () => {
     formState: { errors, isDirty },
   } = useForm<DescriptionData>({
     resolver: zodResolver(descriptionSchema),
-    defaultValues: DEFAULT_DESCRIPTION,
+    defaultValues: EMPTY_DESCRIPTION,
     mode: 'onBlur',
   });
+
+  const updateMutation = useUpdateAppDescriptionMutation({
+    onSuccess: (next) => {
+      reset({ title: next.title, short: next.short, full: next.full });
+      setSnack({ severity: 'success', text: 'Описание сохранено' });
+    },
+    onError: (error) => {
+      setSnack({
+        severity: 'error',
+        text: getErrorMessage(error, 'Не удалось сохранить описание'),
+      });
+    },
+  });
+
+  useEffect(() => {
+    if (data === undefined || isDirty || lastLoadedRef.current === data) {
+      return;
+    }
+
+    const next = data ?? EMPTY_DESCRIPTION;
+    reset({ title: next.title, short: next.short, full: next.full });
+    lastLoadedRef.current = data;
+  }, [data, isDirty, reset]);
 
   const titleValue = useWatch({ control, name: 'title' });
   const shortValue = useWatch({ control, name: 'short' });
   const fullValue = useWatch({ control, name: 'full' });
 
-  const handleSave = handleSubmit((data) => {
-    setSaving(true);
-    setTimeout(() => {
-      reset(data);
-      setSaving(false);
-      setSnack({ severity: 'success', text: 'Описание сохранено' });
-    }, 600);
-  });
+  const handleSave = handleSubmit((formData) => updateMutation.mutate(formData));
 
-  const status: PageHeaderStatus = {
-    label: 'Опубликовано',
-    bg: 'rgba(34,139,34,0.12)',
-    fg: 'rgb(28,108,28)',
-  };
+  const saving = updateMutation.isPending;
+
+  const hasDescription = Boolean(data);
+  const notFound = data === null;
+  const isReady = data !== undefined;
+
+  const status: PageHeaderStatus = hasDescription
+    ? {
+        label: 'Опубликовано',
+        bg: 'rgba(34,139,34,0.12)',
+        fg: 'rgb(28,108,28)',
+      }
+    : {
+        label: 'Черновик',
+        bg: 'rgba(255,159,67,0.16)',
+        fg: 'rgb(183,96,0)',
+      };
+
+  if (isLoading && !isReady) {
+    return <FullScreenLoader />;
+  }
 
   return (
     <DescBox>
@@ -85,6 +129,16 @@ const DescriptionPage = () => {
         }}
       >
         <DescBox sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {notFound ? (
+            <DescAlert severity="info" variant="outlined" sx={{ borderRadius: 2 }}>
+              Описание еще не задано. Заполните поля и нажмите «Сохранить».
+            </DescAlert>
+          ) : null}
+          {isError ? (
+            <DescAlert severity="error" variant="outlined" sx={{ borderRadius: 2 }}>
+              Не удалось загрузить описание. Проверьте соединение и попробуйте еще раз.
+            </DescAlert>
+          ) : null}
           <Controller
             name="title"
             control={control}

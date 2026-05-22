@@ -2,7 +2,6 @@ import {
   Box as DescBox,
   TextField as DescTextField,
   Typography as DescTypography,
-  type InputBaseComponentProps,
 } from '@mui/material';
 import { forwardRef, type ElementType, type InputHTMLAttributes } from 'react';
 import { IMaskInput, type IMaskInputProps } from 'react-imask';
@@ -18,8 +17,8 @@ type FieldBlockProps = {
   maxLength?: number;
   placeholder?: string;
   errorText?: string;
-  mask?: IMaskInputProps<HTMLInputElement>['mask'];
-  unmask?: IMaskInputProps<HTMLInputElement>['unmask'];
+  mask?: IMaskInputProps['mask'];
+  unmask?: IMaskInputProps['unmask'];
   inputMode?: InputHTMLAttributes<HTMLInputElement>['inputMode'];
 };
 
@@ -85,7 +84,7 @@ const FieldBlock = ({
         input: {
           ...(mask
             ? {
-                inputComponent: MaskedInput as unknown as ElementType<InputBaseComponentProps>,
+                inputComponent: MaskedInput as ElementType,
                 inputProps: {
                   mask,
                   unmask,

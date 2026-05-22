@@ -1,118 +1,320 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Alert as InsAlert,
   Box as InsBox,
   Button as InsButton,
   Paper as InsPaper,
   Snackbar as InsSnackbar,
-  TextField as InsTextField,
   Typography as InsTypography,
 } from '@mui/material';
-import { useState as insUseState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { useQueryClient } from '@tanstack/react-query';
+import type { DragEvent } from 'react';
+import { useEffect, useRef, useState as insUseState } from 'react';
 
+import IconDrag from '@/App/components/icon/IconDrag';
 import IconPlus from '@/App/components/icon/IconPlus';
+import {
+  createInstructionItem,
+  deleteInstructionItem,
+  reorderInstructionItems,
+  updateInstructionItem,
+} from '@/api/instructions';
 import FullScreenLoader from '@/components/FullScreenLoader/FullScreenLoader';
-import { useCreateInstructionMutation } from '@/hooks/mutations/useCreateInstructionMutation';
-import { useDeleteInstructionMutation } from '@/hooks/mutations/useDeleteInstructionMutation';
 import { useInstructionsQuery } from '@/hooks/queries/useInstructionsQuery';
+import type { InstructionItem as InstructionApiItem } from '@/types/instructionType';
 
 import PageHeader, { type PageHeaderStatus } from '../../components/PageHeader';
 
-import InstructionItem, { type InstructionItemData } from './InstructionItem';
+import InstructionItem, { type DragPosition, type InstructionItemData } from './InstructionItem';
 
 type SnackbarState = null | {
   severity: 'success' | 'error' | 'info' | 'warning';
   text: string;
 };
 
-const instructionSchema = z.object({
-  title: z.string().min(1, 'Введите заголовок').max(100, 'Максимум 100 символов'),
-  body: z.string().min(1, 'Введите текст').max(1000, 'Максимум 1000 символов'),
-});
+type InstructionSnapshot = Pick<InstructionItemData, 'id' | 'title' | 'body' | 'numbered'>;
 
-type InstructionFormData = z.infer<typeof instructionSchema>;
+type DragOverInfo = {
+  id: string | null;
+  pos: DragPosition;
+};
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String((error as { message?: string }).message ?? fallback);
+  }
+  return fallback;
+};
+
+const toSnapshot = (items: InstructionItemData[]): InstructionSnapshot[] =>
+  items.map(({ id, title, body, numbered }) => ({ id, title, body, numbered }));
+
+const normalizePositions = (items: InstructionItemData[]): InstructionItemData[] =>
+  items.map((item, index) => ({ ...item, position: index + 1 }));
+
+const mapServerItems = (
+  items: InstructionApiItem[],
+  openMap: Map<string, boolean>
+): InstructionItemData[] =>
+  items
+    .slice()
+    .sort((a, b) => a.position - b.position)
+    .map((item) => ({
+      id: item.id,
+      title: item.title,
+      body: item.body,
+      numbered: item.numbered,
+      position: item.position,
+      open: openMap.get(item.id) ?? false,
+    }));
+
+const createTempId = () => `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 const InstructionPage = () => {
-  const [openIds, setOpenIds] = insUseState<Set<string>>(new Set());
   const [snack, setSnack] = insUseState<SnackbarState>(null);
+  const [items, setItems] = insUseState<InstructionItemData[]>([]);
+  const [initialItems, setInitialItems] = insUseState<InstructionSnapshot[]>([]);
+  const [deletedIds, setDeletedIds] = insUseState<string[]>([]);
+  const [saving, setSaving] = insUseState(false);
+  const [draggingId, setDraggingId] = insUseState<string | null>(null);
+  const [overInfo, setOverInfo] = insUseState<DragOverInfo>({ id: null, pos: null });
 
-  const { data, isLoading, isError } = useInstructionsQuery();
+  const listEndRef = useRef<HTMLDivElement | null>(null);
+  const itemsRef = useRef<InstructionItemData[]>([]);
+  const dirtyRef = useRef(false);
+  const lastDataUpdatedAtRef = useRef(0);
+  const queryClient = useQueryClient();
 
-  const createMutation = useCreateInstructionMutation({
-    onSuccess: () => {
-      reset();
-      setSnack({ severity: 'success', text: 'Пункт добавлен' });
-    },
-    onError: () => {
-      setSnack({ severity: 'error', text: 'Не удалось добавить пункт' });
-    },
-  });
+  const { data, dataUpdatedAt, isLoading, isError } = useInstructionsQuery();
 
-  const deleteMutation = useDeleteInstructionMutation({
-    onSuccess: () => {
-      setSnack({ severity: 'success', text: 'Пункт удалён' });
-    },
-    onError: () => {
-      setSnack({ severity: 'error', text: 'Не удалось удалить пункт' });
-    },
-  });
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors, isValid },
-  } = useForm<InstructionFormData>({
-    resolver: zodResolver(instructionSchema),
-    defaultValues: {
+  const dirty =
+    deletedIds.length > 0 || JSON.stringify(toSnapshot(items)) !== JSON.stringify(initialItems);
+
+  useEffect(() => {
+    dirtyRef.current = dirty;
+  }, [dirty]);
+
+  useEffect(() => {
+    if (data === undefined) {
+      return;
+    }
+    if (dirtyRef.current) {
+      return;
+    }
+    if (dataUpdatedAt === lastDataUpdatedAtRef.current) {
+      return;
+    }
+
+    lastDataUpdatedAtRef.current = dataUpdatedAt;
+    const openMap = new Map(itemsRef.current.map((item) => [item.id, item.open]));
+    const nextItems = mapServerItems(data, openMap);
+
+    setItems(nextItems);
+    setInitialItems(toSnapshot(nextItems));
+    setDeletedIds([]);
+  }, [data, dataUpdatedAt]);
+
+  const expandAll = () => setItems((prev) => prev.map((item) => ({ ...item, open: true })));
+
+  const collapseAll = () => setItems((prev) => prev.map((item) => ({ ...item, open: false })));
+
+  const addItem = () => {
+    const nextItem: InstructionItemData = {
+      id: createTempId(),
       title: '',
       body: '',
-    },
-    mode: 'onChange',
-  });
+      numbered: true,
+      position: items.length + 1,
+      open: true,
+      isNew: true,
+    };
 
-  const items: InstructionItemData[] = (data ?? []).map((item) => ({
-    id: item.id,
-    title: item.title,
-    body: item.body,
-    open: openIds.has(item.id),
-  }));
-
-  const updateItem = () => undefined;
-
-  const toggleItem = (id: string) =>
-    setOpenIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-
-  const deleteItem = (id: string) => {
-    if (!confirm('Удалить этот пункт?')) return;
-    setOpenIds((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
-    deleteMutation.mutate(id);
+    setItems((prev) => normalizePositions([...prev, nextItem]));
+    setTimeout(() => listEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
-  const expandAll = () => setOpenIds(new Set((data ?? []).map((item) => item.id)));
+  const updateItem = (id: string, patch: Partial<InstructionItemData>) => {
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  };
 
-  const collapseAll = () => setOpenIds(new Set());
+  const toggleItem = (id: string) => {
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, open: !item.open } : item)));
+  };
 
-  const handleCreate = handleSubmit((values) => {
-    createMutation.mutate({
-      title: values.title,
-      body: values.body,
+  const moveItem = (id: string, dir: number) => {
+    setItems((prev) => {
+      const index = prev.findIndex((item) => item.id === id);
+      if (index < 0) return prev;
+
+      const targetIndex = index + dir;
+      if (targetIndex < 0 || targetIndex >= prev.length) return prev;
+
+      const next = [...prev];
+      const [moved] = next.splice(index, 1);
+      next.splice(targetIndex, 0, moved);
+
+      return normalizePositions(next);
     });
-  });
+  };
+
+  const deleteItem = (id: string) => {
+    const target = items.find((item) => item.id === id);
+    if (!target) return;
+    if (!confirm('Удалить этот пункт?')) return;
+
+    setItems((prev) => normalizePositions(prev.filter((item) => item.id !== id)));
+
+    if (!target.isNew) {
+      setDeletedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    }
+  };
+
+  const handleDragStart = (event: DragEvent<HTMLDivElement>, id: string) => {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', id);
+    setDraggingId(id);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingId(null);
+    setOverInfo({ id: null, pos: null });
+  };
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>, id: string) => {
+    event.preventDefault();
+    const rect = event.currentTarget.getBoundingClientRect();
+    const pos: DragPosition = event.clientY - rect.top < rect.height / 2 ? 'before' : 'after';
+
+    setOverInfo({ id, pos });
+  };
+
+  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    const related = event.relatedTarget as Node | null;
+    if (related && event.currentTarget.contains(related)) return;
+
+    setOverInfo({ id: null, pos: null });
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>, id: string) => {
+    event.preventDefault();
+    const sourceId = draggingId ?? event.dataTransfer.getData('text/plain');
+    if (!sourceId || sourceId === id) {
+      handleDragEnd();
+      return;
+    }
+
+    setItems((prev) => {
+      const sourceIndex = prev.findIndex((item) => item.id === sourceId);
+      const targetIndex = prev.findIndex((item) => item.id === id);
+      if (sourceIndex < 0 || targetIndex < 0) return prev;
+
+      const next = [...prev];
+      const [moved] = next.splice(sourceIndex, 1);
+      const withoutMoved = next;
+      const targetIndexInNext = withoutMoved.findIndex((item) => item.id === id);
+
+      const position = overInfo.id === id ? overInfo.pos : 'after';
+      const insertIndex = position === 'before' ? targetIndexInNext : targetIndexInNext + 1;
+
+      withoutMoved.splice(insertIndex, 0, moved);
+      return normalizePositions(withoutMoved);
+    });
+
+    handleDragEnd();
+  };
+
+  const handleSave = async () => {
+    if (!dirty) return;
+
+    const trimmedItems = items.map((item) => ({
+      ...item,
+      title: item.title.trim(),
+      body: item.body.trim(),
+    }));
+
+    if (trimmedItems.some((item) => !item.title || !item.body)) {
+      setSnack({ severity: 'error', text: 'Заполните заголовок и текст всех пунктов' });
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const newItems = trimmedItems.filter((item) => item.isNew);
+      const createdItems = await Promise.all(
+        newItems.map((item) =>
+          createInstructionItem({
+            title: item.title,
+            body: item.body,
+            numbered: item.numbered,
+            position: item.position,
+          })
+        )
+      );
+
+      let createdIndex = 0;
+      const withIds = trimmedItems.map((item) => {
+        if (!item.isNew) return item;
+        const created = createdItems[createdIndex++];
+
+        return {
+          ...item,
+          id: created.id,
+          numbered: created.numbered,
+          position: created.position,
+          isNew: false,
+        };
+      });
+
+      const initialMap = new Map(initialItems.map((item) => [item.id, item]));
+      const updateTargets = withIds.filter((item) => {
+        if (item.isNew || deletedIds.includes(item.id)) return false;
+        const initial = initialMap.get(item.id);
+        return (
+          !initial ||
+          initial.title !== item.title ||
+          initial.body !== item.body ||
+          initial.numbered !== item.numbered
+        );
+      });
+
+      await Promise.all(
+        updateTargets.map((item) =>
+          updateInstructionItem(item.id, {
+            title: item.title,
+            body: item.body,
+            numbered: item.numbered,
+          })
+        )
+      );
+
+      await Promise.all(deletedIds.map((id) => deleteInstructionItem(id)));
+
+      await reorderInstructionItems({ order: withIds.map((item) => item.id) });
+
+      const normalized = normalizePositions(withIds).map((item) => ({
+        ...item,
+        isNew: false,
+      }));
+
+      setItems(normalized);
+      setInitialItems(toSnapshot(normalized));
+      setDeletedIds([]);
+      setSnack({ severity: 'success', text: 'Изменения сохранены' });
+
+      await queryClient.invalidateQueries({ queryKey: ['instruction-items', 'admin'] });
+    } catch (error) {
+      setSnack({
+        severity: 'error',
+        text: getErrorMessage(error, 'Не удалось сохранить изменения'),
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const status: PageHeaderStatus = {
     label: `${items.length} ${pluralize(items.length, ['пункт', 'пункта', 'пунктов'])}`,
@@ -120,7 +322,7 @@ const InstructionPage = () => {
     fg: 'rgb(120,80,0)',
   };
 
-  if (isLoading) {
+  if (isLoading && data === undefined) {
     return <FullScreenLoader />;
   }
 
@@ -130,6 +332,9 @@ const InstructionPage = () => {
         title="Инструкция"
         subtitle="Аккордеон на экране «Как пользоваться приложением»"
         status={status}
+        onSave={handleSave}
+        saving={saving}
+        dirty={dirty}
       />
 
       <InsPaper
@@ -142,68 +347,38 @@ const InstructionPage = () => {
           boxShadow: 'none',
         }}
       >
-        <InsBox component="form" onSubmit={handleCreate} sx={{ mb: 3 }}>
-          <InsBox sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <InsTypography sx={{ fontSize: 14, fontWeight: 600 }}>Новый пункт</InsTypography>
-            <Controller
-              name="title"
-              control={control}
-              render={({ field }) => (
-                <InsTextField
-                  {...field}
-                  fullWidth
-                  size="small"
-                  placeholder="Заголовок инструкции"
-                  error={Boolean(errors.title)}
-                  helperText={errors.title?.message ?? ' '}
-                  slotProps={{
-                    htmlInput: {
-                      maxLength: 100,
-                    },
-                  }}
-                />
-              )}
-            />
-            <Controller
-              name="body"
-              control={control}
-              render={({ field }) => (
-                <InsTextField
-                  {...field}
-                  fullWidth
-                  multiline
-                  minRows={3}
-                  maxRows={8}
-                  placeholder="Текст инструкции"
-                  error={Boolean(errors.body)}
-                  helperText={errors.body?.message ?? ' '}
-                  slotProps={{
-                    htmlInput: {
-                      maxLength: 1000,
-                    },
-                  }}
-                />
-              )}
-            />
-            <InsBox sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <InsButton
-                type="submit"
-                variant="outlined"
-                startIcon={<IconPlus />}
-                disabled={!isValid || createMutation.isPending}
-                sx={ghostBtnSx}
-              >
-                {createMutation.isPending ? 'Добавление…' : 'Добавить пункт'}
-              </InsButton>
-            </InsBox>
-          </InsBox>
-        </InsBox>
-
         {isError ? (
           <InsAlert severity="error" sx={{ borderRadius: 2, mb: 2 }}>
             Не удалось загрузить список инструкций
           </InsAlert>
         ) : null}
+
+        <InsBox
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.25,
+            mb: 2,
+            color: 'rgba(0,0,0,0.55)',
+          }}
+        >
+          <InsBox
+            sx={{
+              width: 28,
+              height: 28,
+              borderRadius: '8px',
+              border: '1px dashed rgba(0,0,0,0.18)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <IconDrag />
+          </InsBox>
+          <InsTypography sx={{ fontSize: 12 }}>
+            Перетаскивайте за иконку, чтобы менять порядок
+          </InsTypography>
+        </InsBox>
 
         <InsBox
           sx={{
@@ -218,7 +393,16 @@ const InstructionPage = () => {
           <InsTypography sx={{ fontSize: 13, color: 'rgba(0,0,0,0.55)' }}>
             Список инструкций
           </InsTypography>
-          <InsBox sx={{ display: 'flex', gap: 1 }}>
+          <InsBox sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <InsButton
+              variant="outlined"
+              size="small"
+              onClick={addItem}
+              startIcon={<IconPlus />}
+              sx={ghostBtnSx}
+            >
+              Добавить пункт
+            </InsButton>
             <InsButton variant="outlined" size="small" onClick={expandAll} sx={ghostBtnSx}>
               Раскрыть все
             </InsButton>
@@ -237,19 +421,19 @@ const InstructionPage = () => {
               total={items.length}
               onUpdate={updateItem}
               onDelete={deleteItem}
-              onMove={() => null}
+              onMove={moveItem}
               onToggle={toggleItem}
-              isDragging={false}
-              isOver={false}
-              dragPos={null}
-              onDragStart={() => null}
-              onDragEnd={() => null}
-              onDragOver={() => null}
-              onDragLeave={() => null}
-              onDrop={() => null}
-              readOnly
+              isDragging={draggingId === item.id}
+              isOver={overInfo.id === item.id}
+              dragPos={overInfo.id === item.id ? overInfo.pos : null}
+              onDragStart={(event) => handleDragStart(event, item.id)}
+              onDragEnd={handleDragEnd}
+              onDragOver={(event) => handleDragOver(event, item.id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(event) => handleDrop(event, item.id)}
             />
           ))}
+
           {items.length === 0 ? (
             <InsBox
               sx={{
@@ -261,11 +445,22 @@ const InstructionPage = () => {
               }}
             >
               <InsTypography sx={{ fontSize: 14, mb: 1 }}>Нет ни одного пункта</InsTypography>
-              <InsTypography sx={{ fontSize: 12 }}>
+              <InsTypography sx={{ fontSize: 12, mb: 2 }}>
                 Добавьте первый пункт инструкции, чтобы начать
               </InsTypography>
+              <InsButton
+                variant="outlined"
+                size="small"
+                onClick={addItem}
+                startIcon={<IconPlus />}
+                sx={ghostBtnSx}
+              >
+                Добавить пункт
+              </InsButton>
             </InsBox>
           ) : null}
+
+          <InsBox ref={listEndRef} />
         </InsBox>
       </InsPaper>
 

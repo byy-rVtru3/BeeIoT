@@ -1,9 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseMutationOptions } from '@tanstack/react-query';
 
-import { deleteInstruction } from '@/api/instructions';
+import { deleteInstructionItem } from '@/api/instructions';
 
-// id у бэка — UUID-строка (см. types/instructionType.ts).
 type DeleteInstructionOptions = UseMutationOptions<void, unknown, string>;
 
 export const useDeleteInstructionMutation = (options?: DeleteInstructionOptions) => {
@@ -11,10 +10,10 @@ export const useDeleteInstructionMutation = (options?: DeleteInstructionOptions)
   const { onSuccess, ...restOptions } = options ?? {};
 
   return useMutation({
-    mutationFn: (id) => deleteInstruction(id),
+    mutationFn: (id) => deleteInstructionItem(id),
     ...restOptions,
     onSuccess: async (data, variables, onMutateResult, context) => {
-      await queryClient.invalidateQueries({ queryKey: ['instructions'] });
+      await queryClient.invalidateQueries({ queryKey: ['instruction-items', 'admin'] });
       await onSuccess?.(data, variables, onMutateResult, context);
     },
   });

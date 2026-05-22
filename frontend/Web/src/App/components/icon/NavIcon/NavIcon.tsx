@@ -14,8 +14,8 @@ const NavIcon = ({ name }: NavIconProps) => {
     fill: 'none',
     stroke,
     strokeWidth: sw,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
   };
 
   switch (name) {
