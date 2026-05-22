@@ -218,7 +218,31 @@ const (
 	signalLowThreshold    = 10
 	noiseHighThreshold    = 50
 	defaultSamplingPeriod = 5 // seconds
+
+	// alertCooldown — минимальный интервал между двумя одинаковыми пушами
+	// (battery / signal / errors / noise) по одному и тому же ключу.
+	// Без него каждый MQTT-пакет (раз в 5 с) триггерит новый пуш, потому что
+	// прошивка шлёт одни и те же значения подряд, а у нас нет состояния
+	// "уже сообщили".
+	alertCooldown = 1 * time.Hour
 )
+
+// acquireAlertLock пробует занять Redis-лок на отправку алерта типа kind
+// для конкретной сущности subject (sensorId / hive). Возвращает true, если
+// пуш надо слать, и false если такой же алерт уже отправлялся в течение
+// последнего alertCooldown. На ошибку Redis возвращает её — вызывающий
+// сам решает, продолжать ли (на случай если Redis временно недоступен).
+func (m *Client) acquireAlertLock(ctx context.Context, kind, subject string) (bool, error) {
+	ok, err := m.inMemDb.TryAcquireAlertLock(ctx, kind+":"+subject, alertCooldown)
+	if err != nil {
+		m.logger.Warn().Err(err).Str("kind", kind).Str("subject", subject).Msg("alert lock check failed")
+		return false, err
+	}
+	if !ok {
+		m.logger.Debug().Str("kind", kind).Str("subject", subject).Msg("alert deduplicated (cooldown still active)")
+	}
+	return ok, nil
+}
 
 func (m *Client) handlingStatusData(data mqttTypes.DeviceStatus, sensorId string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -258,9 +282,12 @@ func (m *Client) handlingStatusData(data mqttTypes.DeviceStatus, sensorId string
 	}
 
 	// Если status не требует ни одной из проверок — не дёргаем БД зря.
-	if data.BatteryLevel >= batteryLowThreshold &&
-		data.SignalStrength >= signalLowThreshold &&
-		len(data.Errors) == 0 {
+	// Значение -1 означает «нет данных» (например, у нас нет монитора заряда),
+	// такие поля не считаем критичными и алерт по ним не шлём.
+	batteryCritical := data.BatteryLevel != -1 && data.BatteryLevel < batteryLowThreshold
+	signalCritical := data.SignalStrength != -1 && data.SignalStrength < signalLowThreshold
+	errorsCritical := len(data.Errors) > 0
+	if !batteryCritical && !signalCritical && !errorsCritical {
 		return
 	}
 
@@ -287,8 +314,13 @@ func (m *Client) handlingStatusData(data mqttTypes.DeviceStatus, sensorId string
 }
 
 func (m *Client) checkBatteryLevel(ctx context.Context, sensorId, email, hive string, data mqttTypes.DeviceStatus) error {
-	if data.BatteryLevel >= batteryLowThreshold {
+	// -1 = у датчика нет монитора заряда. Заряд мы не меряем — игнорируем,
+	// иначе на каждый status-пакет улетает пуш «низкий заряд (-1%)».
+	if data.BatteryLevel == -1 || data.BatteryLevel >= batteryLowThreshold {
 		return nil
+	}
+	if ok, err := m.acquireAlertLock(ctx, "battery", sensorId); err != nil || !ok {
+		return err
 	}
 	tokens, err := m.db.GetFirebaseToken(ctx, email)
 	if err != nil {
@@ -317,8 +349,13 @@ func (m *Client) checkBatteryLevel(ctx context.Context, sensorId, email, hive st
 }
 
 func (m *Client) checkSignalStrength(ctx context.Context, sensorId, email, hive string, data mqttTypes.DeviceStatus) error {
-	if data.SignalStrength >= signalLowThreshold {
+	// -1 = «нет данных о сигнале» (например, отдельная Wi-Fi-сборка прошивки).
+	// Не алертим на отсутствие данных, иначе на каждом пакете прилетает пуш.
+	if data.SignalStrength == -1 || data.SignalStrength >= signalLowThreshold {
 		return nil
+	}
+	if ok, err := m.acquireAlertLock(ctx, "signal", sensorId); err != nil || !ok {
+		return err
 	}
 	tokens, err := m.db.GetFirebaseToken(ctx, email)
 	if err != nil {
@@ -350,6 +387,9 @@ func (m *Client) checkErrors(ctx context.Context, sensorId, email, hive string, 
 	if len(data.Errors) == 0 {
 		return nil
 	}
+	if ok, err := m.acquireAlertLock(ctx, "errors", sensorId); err != nil || !ok {
+		return err
+	}
 	tokens, err := m.db.GetFirebaseToken(ctx, email)
 	if err != nil {
 		return err
@@ -378,9 +418,15 @@ func (m *Client) checkErrors(ctx context.Context, sensorId, email, hive string, 
 }
 
 // checkNoiseLevel отправляет уведомление приложению, если уровень шума превышает noiseHighThreshold дБ.
+// Пуш дедуплицируется на alertCooldown по ключу шума+улей — иначе клиент
+// получал бы новое уведомление на каждый MQTT-пакет, потому что в улье
+// «громко» практически всегда (фоновый шум семьи 60-70 дБ).
 func (m *Client) checkNoiseLevel(ctx context.Context, email, hive string, data mqttTypes.DeviceData) error {
 	if data.Noise == -1 || data.Noise <= noiseHighThreshold {
 		return nil
+	}
+	if ok, err := m.acquireAlertLock(ctx, "noise", hive); err != nil || !ok {
+		return err
 	}
 	tokens, err := m.db.GetFirebaseToken(ctx, email)
 	if err != nil {

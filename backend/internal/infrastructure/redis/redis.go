@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -157,4 +158,16 @@ func (r *Redis) SetLastDeviceStatus(ctx context.Context, sensorID string, data s
 
 func (r *Redis) GetLastDeviceStatus(ctx context.Context, sensorID string) (string, error) {
 	return r.rds.Get(ctx, "device_status:"+sensorID).Result()
+}
+
+// TryAcquireAlertLock пытается атомарно занять «лок» для пуш-уведомления.
+// Возвращает true, если лок взят (значит можно слать пуш), и false, если ключ
+// уже существует — то есть пуш этого типа по этому ключу уже был отправлен
+// недавно и повторно слать не нужно. TTL задаёт время дедупликации.
+//
+// Используется в обработчиках MQTT-статуса/данных, чтобы один и тот же датчик
+// не спамил пользователя одинаковым пушем на каждое входящее сообщение
+// (каждые ~5 секунд по текущему конфигу прошивки).
+func (r *Redis) TryAcquireAlertLock(ctx context.Context, key string, ttl time.Duration) (bool, error) {
+	return r.rds.SetNX(ctx, "alert_lock:"+key, "1", ttl).Result()
 }

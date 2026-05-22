@@ -94,6 +94,10 @@ type InMemoryDB interface {
 	GetLastSensorData(ctx context.Context, sensorID string) (string, error)
 	SetLastDeviceStatus(ctx context.Context, sensorID string, data string) error
 	GetLastDeviceStatus(ctx context.Context, sensorID string) (string, error)
+	// TryAcquireAlertLock — атомарный SETNX-лок для дедупликации push-уведомлений.
+	// Возвращает true, если лок взят и пуш надо отправлять; false — если такой
+	// же алерт уже был отправлен недавно и его TTL ещё не истёк.
+	TryAcquireAlertLock(ctx context.Context, key string, ttl time.Duration) (bool, error)
 }
 
 type PasswordData = string

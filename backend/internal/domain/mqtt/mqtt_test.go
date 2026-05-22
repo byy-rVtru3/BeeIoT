@@ -62,6 +62,10 @@ func (m *MockInMemoryDB) GetLastDeviceStatus(_ context.Context, _ string) (strin
 	return "", nil
 }
 
+func (m *MockInMemoryDB) TryAcquireAlertLock(_ context.Context, _ string, _ time.Duration) (bool, error) {
+	return true, nil
+}
+
 type MockDB struct {
 	interfaces.DB
 	GetEmailHiveBySensorIDResultEmail string
