@@ -16,7 +16,7 @@ class FirebasePushService : FirebaseMessagingService() {
 
 	override fun onMessageReceived(remoteMessage: RemoteMessage) {
 		super.onMessageReceived(remoteMessage)
-		remoteMessage.data.let { pushController.onMessageReceived(it.toEntity()) }
+		pushController.onMessageReceived(remoteMessage.toEntity())
 	}
 
 	override fun onDestroy() {

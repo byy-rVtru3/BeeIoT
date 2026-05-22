@@ -163,7 +163,7 @@
     <string name="queen_stage_in_progress">В процессе</string>
 
 	<!--    Notifications-->
-	<string name="default_notification_channel_id">Важные события на пасеке</string>
+	<string name="default_notification_channel_id">critical_channel</string>
 	<string name="regular_channel">События</string>
 	<string name="critical_channel">Экстренные</string>
 	<string name="summary_notification_text">Напоминания</string>
