@@ -285,6 +285,16 @@ def run():
     с обычным sleep между итерациями (USB остаётся доступен).
     Если True — после первой итерации уходит в deepsleep.
     """
+    if getattr(config, "NOISE_DIAG_ON_BOOT", False):
+        _log("=== NOISE_DIAG_ON_BOOT — раз дампим сырой I2S и выходим ===")
+        try:
+            sensor = NoiseSensor()
+            sensor.diagnose()
+            sensor.deinit()
+        except Exception as e:
+            print("[MAIN] noise diagnose failed:", e)
+        return
+
     if config.DEEP_SLEEP_ENABLED:
         _log("=== BeeIoT wakeup (deepsleep mode) ===")
         _run_cycle()
