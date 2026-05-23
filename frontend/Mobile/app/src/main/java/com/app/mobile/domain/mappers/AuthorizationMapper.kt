@@ -1,7 +1,9 @@
 package com.app.mobile.domain.mappers
 
+import com.app.mobile.data.api.models.ApiResult
+import com.app.mobile.data.api.models.HttpCode
+import com.app.mobile.data.api.mappers.toErrorMessage
 import com.app.mobile.domain.models.authorization.AuthorizationModel
-import com.app.mobile.domain.models.authorization.AuthorizationRequestResult
 import com.app.mobile.presentation.models.account.AuthorizationModelUi
 import com.app.mobile.presentation.models.account.AuthorizationResultUi
 
@@ -10,25 +12,15 @@ fun AuthorizationModelUi.toDomain() = AuthorizationModel(
     password = password
 )
 
-fun AuthorizationRequestResult.toUiModel() = when(this) {
-    is AuthorizationRequestResult.Success -> AuthorizationResultUi.Success
+fun ApiResult<String>.toAuthorizationUiModel() = when (this) {
+    is ApiResult.Success -> AuthorizationResultUi.Success
 
-    is AuthorizationRequestResult.BadRequestError -> AuthorizationResultUi.Error(
-        "Некорректный запрос"
-    )
+    is ApiResult.HttpError -> when (code) {
+        HttpCode.NOT_FOUND -> AuthorizationResultUi.Error(
+            "Пользователь с таким email не зарегистрирован или неверный пароль"
+        )
+        else -> AuthorizationResultUi.Error(toErrorMessage())
+    }
 
-    is AuthorizationRequestResult.UserNotFoundError -> AuthorizationResultUi.Error(
-        "Пользователь с таким email не зарегистрирован или неверный пароль")
-
-    is AuthorizationRequestResult.ServerError -> AuthorizationResultUi.Error(
-        "Ошибка сервера"
-    )
-
-    is AuthorizationRequestResult.TimeoutError -> AuthorizationResultUi.Error(
-        "Превышено время ожидания"
-    )
-
-    is AuthorizationRequestResult.UnknownError -> AuthorizationResultUi.Error(
-        "Неизвестная ошибка"
-    )
+    else -> AuthorizationResultUi.Error(toErrorMessage())
 }

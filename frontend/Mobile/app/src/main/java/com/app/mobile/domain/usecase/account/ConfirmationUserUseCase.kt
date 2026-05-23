@@ -17,7 +17,8 @@ class ConfirmationUserUseCase(
                     confirmationModel
                 )
 
-                TypeConfirmation.RESET_PASSWORD -> repositoryApi.confirmationUserResetPassword(
+                TypeConfirmation.RESET_PASSWORD,
+                TypeConfirmation.CHANGE_PASSWORD -> repositoryApi.confirmationUserResetPassword(
                     confirmationModel
                 )
             }

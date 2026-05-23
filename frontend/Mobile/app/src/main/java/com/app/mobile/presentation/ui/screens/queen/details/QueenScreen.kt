@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +36,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -44,7 +47,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -62,18 +64,20 @@ import com.app.mobile.presentation.ui.components.TopBarAction
 import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenEvent
 import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenUiState
 import com.app.mobile.presentation.ui.screens.queen.details.viewmodel.QueenViewModel
+import com.app.mobile.ui.theme.Alpha
 import com.app.mobile.ui.theme.Dimens
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QueenScreen(
 	queenViewModel: QueenViewModel,
-	onEditClick: (queenId: String) -> Unit,
-	onHiveClick: (hiveId: String) -> Unit,
+	onEditClick: (queenName: String) -> Unit,
+	onHiveClick: (hiveName: String) -> Unit,
 	onBackClick: () -> Unit,
-	onDeleteClick: (queenId: String) -> Unit // Добавили колбэк удаления
 ) {
 	val queenUiState by queenViewModel.uiState.collectAsStateWithLifecycle()
 	val snackbarHostState = remember { SnackbarHostState() }
+	val isRefreshing = (queenUiState as? QueenUiState.Content)?.isRefreshing ?: false
 
 	LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
 		queenViewModel.getQueen()
@@ -81,8 +85,8 @@ fun QueenScreen(
 
 	ObserveAsEvents(queenViewModel.event) { event ->
 		when (event) {
-			is QueenEvent.NavigateToEditQueen -> onEditClick(event.queenId)
-			is QueenEvent.NavigateToHive      -> onHiveClick(event.hiveId)
+			is QueenEvent.NavigateToEditQueen -> onEditClick(event.queenName)
+			is QueenEvent.NavigateToHive      -> onHiveClick(event.hiveName)
 			is QueenEvent.NavigateBack        -> onBackClick()
 
 			is QueenEvent.ShowSnackBar        -> {
@@ -94,26 +98,34 @@ fun QueenScreen(
 		}
 	}
 
-	when (val state = queenUiState) {
-		is QueenUiState.Loading -> FullScreenProgressIndicator()
-		is QueenUiState.Error   -> ErrorMessage(state.message, onRetry = queenViewModel::resetError)
+	PullToRefreshBox(
+		isRefreshing = isRefreshing,
+		onRefresh = queenViewModel::refresh
+	) {
+		when (val state = queenUiState) {
+			is QueenUiState.Loading -> FullScreenProgressIndicator()
+			is QueenUiState.Error   -> ErrorMessage(state.message, onRetry = queenViewModel::resetError)
 
-		is QueenUiState.Content -> {
-			QueenContent(
-				queen = state.queen,
-				snackbarHostState,
-				onEditClick = { queenViewModel.onEditQueenClick() },
-				onHiveClick = { queenViewModel.onHiveClick() },
-				onDeleteClick = { onDeleteClick(state.queen.id) },
-				onBackClick = onBackClick
-			)
+			is QueenUiState.Content -> {
+				QueenContent(
+					queen = state.queen,
+					fromHiveName = state.fromHiveName,
+					snackbarHostState,
+					onEditClick = { queenViewModel.onEditQueenClick() },
+					onHiveClick = { queenViewModel.onHiveClick() },
+					onDeleteClick = queenViewModel::onDeleteClick,
+					onBackClick = onBackClick
+				)
+			}
 		}
 	}
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun QueenContent(
 	queen: QueenUiModel,
+	fromHiveName: String?,
 	snackbarHostState: SnackbarHostState,
 	onEditClick: () -> Unit,
 	onHiveClick: () -> Unit,
@@ -162,58 +174,52 @@ private fun QueenContent(
 						InfoCard(
 							title = stringResource(R.string.label_name),
 							value = queen.name,
-							modifier = Modifier.weight(1f)
+							modifier = Modifier.weight(1f).fillMaxWidth(0.48f)
 						)
-
-						val hiveName = queen.hive?.name ?: stringResource(R.string.no_hive)
-						val hiveModifier = if (queen.hive != null) {
-							Modifier
-								.weight(1f)
-								.clickable { onHiveClick() }
-						} else {
-							Modifier.weight(1f)
-						}
 
 						InfoCard(
 							title = stringResource(R.string.hive_format),
-							value = hiveName,
-							modifier = hiveModifier
+							value = fromHiveName ?: stringResource(R.string.no_hive),
+							modifier = if (fromHiveName != null)
+								Modifier.weight(1f).fillMaxWidth(0.48f).clickable { onHiveClick() }
+							else
+								Modifier.weight(1f).fillMaxWidth(0.48f)
 						)
 					}
 
-					// 2. Индикатор прогресса
-					QueenStatusSection(queen)
-				}
-				// 3. Заголовок раздела
-				SectionTitle(title = "График развития")
-			}
+                    // 2. Индикатор прогресса
+                    QueenStatusSection(queen)
+                }
+                // 3. Заголовок раздела
+                SectionTitle(title = stringResource(R.string.queen_timeline_title))
+            }
 
-			// --- СКРОЛЛЯЩИЙСЯ СПИСОК (Timeline) ---
-			if (queen.timeline.isNotEmpty()) {
-				LazyColumn(
-					modifier = Modifier.fillMaxWidth(),
-					contentPadding = PaddingValues(
-						start = Dimens.ScreenContentPadding,
-						end = Dimens.ScreenContentPadding,
-						bottom = Dimens.ScreenContentPadding + Dimens.FabSize + Dimens.ItemsSpacingLarge // Отступ под FAB
-					),
-					verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
-				) {
-					items(queen.timeline) { item ->
-						TimelineItemView(item)
-					}
-				}
-			} else {
-				Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-					Text(
-						text = "Нет данных о развитии",
-						style = MaterialTheme.typography.bodyMedium,
-						color = MaterialTheme.colorScheme.onSurfaceVariant
-					)
-				}
-			}
-		}
-	}
+            // --- СКРОЛЛЯЩИЙСЯ СПИСОК (Timeline) ---
+            if (queen.timeline.isNotEmpty()) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(
+                        start = Dimens.ScreenContentPadding,
+                        end = Dimens.ScreenContentPadding,
+                        bottom = Dimens.ScreenContentPadding + Dimens.FabSize + Dimens.ItemsSpacingLarge // Отступ под FAB
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal)
+                ) {
+                    items(queen.timeline) { item ->
+                        TimelineItemView(item)
+                    }
+                }
+            } else {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = stringResource(R.string.queen_timeline_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -245,7 +251,7 @@ private fun QueenStatusSection(queen: QueenUiModel) {
 				verticalAlignment = Alignment.CenterVertically
 			) {
 				Text(
-					text = currentStage?.title ?: "Старт",
+					text = currentStage?.title ?: stringResource(R.string.queen_stage_start),
 					style = MaterialTheme.typography.titleSmall,
 					color = MaterialTheme.colorScheme.onSurface
 				)
@@ -255,7 +261,6 @@ private fun QueenStatusSection(queen: QueenUiModel) {
 					color = MaterialTheme.colorScheme.onSurface
 				)
 			}
-
 			LinearProgressIndicator(
 				progress = { progress },
 				modifier = Modifier
@@ -265,13 +270,12 @@ private fun QueenStatusSection(queen: QueenUiModel) {
 				trackColor = MaterialTheme.colorScheme.surfaceVariant,
 				strokeCap = StrokeCap.Round,
 			)
-
 			Row(
 				modifier = Modifier.fillMaxWidth(),
 				horizontalArrangement = Arrangement.SpaceBetween
 			) {
 				Text(
-					text = if (progress >= 1f) "Завершено" else "В процессе",
+					text = if (progress >= 1f) stringResource(R.string.queen_stage_completed) else stringResource(R.string.queen_stage_in_progress),
 					style = MaterialTheme.typography.bodySmall,
 					color = MaterialTheme.colorScheme.onSurfaceVariant
 				)
@@ -296,38 +300,38 @@ private fun TimelineItemView(item: TimelineItem) {
 	val contentColor =
 		if (isToday) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
 
-	val iconTint = if (isToday) MaterialTheme.colorScheme.onPrimary
-	else if (isCompleted) MaterialTheme.colorScheme.primary
-	else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+    val iconTint = if (isToday) MaterialTheme.colorScheme.onPrimary
+    else if (isCompleted) MaterialTheme.colorScheme.primary
+    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = Alpha.Medium)
 
-	val iconBg = if (isToday) MaterialTheme.colorScheme.primary
-	else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    val iconBg = if (isToday) MaterialTheme.colorScheme.primary
+    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = Alpha.Medium)
 
-	Surface(
-		modifier = Modifier.fillMaxWidth(),
-		shape = RoundedCornerShape(Dimens.ItemCardRadius),
-		color = containerColor,
-		shadowElevation = if (isToday) 2.dp else 0.dp
-	) {
-		Row(
-			modifier = Modifier
-				.padding(Dimens.ItemCardPadding)
-				.fillMaxWidth(),
-			verticalAlignment = Alignment.CenterVertically
-		) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(Dimens.ItemCardRadius),
+        color = containerColor,
+        shadowElevation = if (isToday) Dimens.Size2 else Dimens.Null
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(Dimens.ItemCardPadding)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
 			Box(
-				modifier = Modifier
-					.size(40.dp)
-					.clip(CircleShape)
-					.background(iconBg),
-				contentAlignment = Alignment.Center
-			) {
-				Icon(
-					imageVector = getStageIcon(item.stageType),
-					contentDescription = null,
-					tint = iconTint
-				)
-			}
+                modifier = Modifier
+                    .size(Dimens.TimelineIconSize)
+                    .clip(CircleShape)
+                    .background(iconBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = getStageIcon(item.stageType),
+                    contentDescription = null,
+                    tint = iconTint
+                )
+            }
 
 			Spacer(modifier = Modifier.width(Dimens.ItemCardTextPadding))
 
@@ -350,27 +354,27 @@ private fun TimelineItemView(item: TimelineItem) {
 					)
 				}
 
-				if (item.description.isNotEmpty()) {
-					Spacer(modifier = Modifier.height(4.dp))
-					Text(
-						text = item.description,
-						style = MaterialTheme.typography.bodySmall,
-						color = contentColor
-					)
-				}
-			}
+                if (item.description.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(Dimens.TimelineItemSpacing))
+                    Text(
+                        text = item.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = contentColor
+                    )
+                }
+            }
 
-			if (isCompleted && !isToday) {
-				Spacer(modifier = Modifier.width(8.dp))
-				Icon(
-					imageVector = Icons.Default.Check,
-					contentDescription = "Completed",
-					tint = MaterialTheme.colorScheme.primary,
-					modifier = Modifier.size(16.dp)
-				)
-			}
-		}
-	}
+            if (isCompleted && !isToday) {
+                Spacer(modifier = Modifier.width(Dimens.ItemCardTextPadding))
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "Completed",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(Dimens.IconSizeSmall)
+                )
+            }
+        }
+    }
 }
 
 private fun getStageIcon(stageType: StageType): ImageVector {

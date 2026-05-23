@@ -32,10 +32,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -142,23 +143,22 @@ fun HiveEditorContent(
 			}
 
 //            // Секция Хабов (Grid)
-//            SelectionGridSection(
-//                title = stringResource(R.string.available_hubs),
-//                items = hiveEditorModel.hubs.map { it.id to it.name },
-//                selectedId = hiveEditorModel.connectedHubId,
-//                onItemSelected = actions.onAddHubClick,
-//                onCreateClick = actions.onCreateHubClick,
-//                iconVector = Icons.Rounded.Sensors // Иконка для хаба
-//            )
+            SelectionGridSection(
+                title = stringResource(R.string.available_hubs),
+                items = hiveEditorModel.hubs.map { it.id to it.name },
+                selectedId = hiveEditorModel.connectedHubId,
+                onItemSelected = actions.onAddHubClick,
+                onCreateClick = actions.onCreateHubClick,
+                iconVector = ImageVector.vectorResource(R.drawable.ic_sensors),
+            )
 
 			// Секция Маток (Grid)
 			SelectionGridSection(
 				title = stringResource(R.string.available_queens),
-				items = hiveEditorModel.queens.map { it.id to it.name },
-				selectedId = hiveEditorModel.connectedQueenId,
+				items = hiveEditorModel.queens.map { it.name to it.name },
+				selectedId = hiveEditorModel.connectedQueenName,
 				onItemSelected = actions.onAddQueenClick,
 				onCreateClick = actions.onCreateQueenClick,
-				// Тут можно добавить другую логику отображения, если нужно больше полей
 			)
 
 			Spacer(modifier = Modifier.weight(1f))
@@ -180,7 +180,7 @@ fun SelectionGridSection(
 	selectedId: String?,
 	onItemSelected: (String) -> Unit,
 	onCreateClick: () -> Unit,
-	iconVector: androidx.compose.ui.graphics.vector.ImageVector? = null
+	iconVector: ImageVector? = null
 ) {
 	Column(
 		modifier = Modifier.fillMaxWidth(),
@@ -223,53 +223,48 @@ fun SelectionGridSection(
 private fun ItemSelectionCard(
 	name: String,
 	isSelected: Boolean,
-	iconVector: androidx.compose.ui.graphics.vector.ImageVector?,
+	iconVector: ImageVector?,
 	onClick: () -> Unit,
 	modifier: Modifier = Modifier
 ) {
-	val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-	val borderWidth = if (isSelected) 2.dp else 0.dp
+    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+    val borderWidth = if (isSelected) Dimens.BorderWidthNormal else Dimens.Null
 
-	Surface(
-		onClick = onClick,
-		shape = RoundedCornerShape(Dimens.ItemCardRadius),
-		color = MaterialTheme.colorScheme.surface,
-		border = if (isSelected) BorderStroke(borderWidth, borderColor) else null,
-		modifier = modifier
-			.height(80.dp)     // Фиксированная высота как на макете
-			.widthIn(min = 100.dp) // Минимальная ширина
-	) {
-		Box(
-			modifier = Modifier.padding(Dimens.ItemCardPadding)
-		) {
-			// Название
-			Text(
-				text = name,
-				style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-				maxLines = 2,
-				overflow = TextOverflow.Ellipsis,
-				modifier = Modifier.align(Alignment.TopStart)
-			)
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(Dimens.ItemCardRadius),
+        color = MaterialTheme.colorScheme.surface,
+        border = if (isSelected) BorderStroke(borderWidth, borderColor) else null,
+        modifier = modifier
+            .height(Dimens.SelectionGridItemHeight)
+            .widthIn(min = Dimens.SelectionGridItemMinWidth)
+    ) {
+        Box(
+            modifier = Modifier.padding(Dimens.ItemCardPadding)
+        ) {
+            // Название
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.TopStart)
+            )
 
-			// Иконка (если есть, например для Хаба)
-			if (iconVector != null) {
-				Icon(
-					imageVector = iconVector,
-					contentDescription = null,
-					modifier = Modifier
-						.align(Alignment.CenterEnd)
-						.size(24.dp),
-					tint = MaterialTheme.colorScheme.onSurface
-				)
-			}
+            // Иконка (если есть, например для Хаба)
+            if (iconVector != null) {
+                Icon(
+                    imageVector = iconVector,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(Dimens.IconSizeMedium),
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
 
-			// Индикатор выбранности (опционально, если бордера мало)
-			/* if (isSelected) {
-			   Icon(...)
-			}
-			*/
-		}
-	}
+        }
+    }
 }
 
 @Composable
@@ -277,31 +272,31 @@ private fun AddItemCard(
 	onClick: () -> Unit,
 	modifier: Modifier = Modifier
 ) {
-	Surface(
-		onClick = onClick,
-		shape = RoundedCornerShape(Dimens.ItemCardRadius),
-		color = MaterialTheme.colorScheme.surface,
-		modifier = modifier
-			.height(80.dp)
-			.widthIn(min = 100.dp)
-	) {
-		Box(
-			contentAlignment = Alignment.Center,
-			modifier = Modifier.fillMaxSize()
-		) {
-			// Кружок с плюсиком
-			Surface(
-				shape = CircleShape,
-				border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-				color = MaterialTheme.colorScheme.surface
-			) {
-				Icon(
-					imageVector = Icons.Rounded.Add,
-					contentDescription = stringResource(R.string.add),
-					tint = MaterialTheme.colorScheme.primary,
-					modifier = Modifier.padding(4.dp)
-				)
-			}
-		}
-	}
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(Dimens.ItemCardRadius),
+        color = MaterialTheme.colorScheme.surface,
+        modifier = modifier
+            .height(Dimens.SelectionGridItemHeight)
+            .widthIn(min = Dimens.SelectionGridItemMinWidth)
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Кружок с плюсиком
+            Surface(
+                shape = CircleShape,
+                border = BorderStroke(Dimens.BorderWidthThin, MaterialTheme.colorScheme.primary),
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Add,
+                    contentDescription = stringResource(R.string.add),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(Dimens.TimelineItemSpacing)
+                )
+            }
+        }
+    }
 }

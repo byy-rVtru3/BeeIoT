@@ -1,30 +1,25 @@
 package com.app.mobile.presentation.ui.screens.works.list
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -33,15 +28,20 @@ import com.app.mobile.R
 import com.app.mobile.presentation.models.hive.WorkUi
 import com.app.mobile.presentation.ui.components.AppTopBar
 import com.app.mobile.presentation.ui.components.CustomFloatingActionButton
-import com.app.mobile.presentation.ui.components.DetailsItemCard
+import com.app.mobile.presentation.ui.components.EmptyStub
+import com.app.mobile.presentation.ui.components.SwipeToDeleteContainer
+import com.app.mobile.presentation.ui.components.WorkTileCard
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.ObserveAsEvents
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
 import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListEvent
 import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListUiState
 import com.app.mobile.presentation.ui.screens.works.list.viewmodel.WorksListViewModel
 import com.app.mobile.ui.theme.Dimens
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorksListScreen(
 	worksListViewModel: WorksListViewModel,
@@ -52,18 +52,13 @@ fun WorksListScreen(
 	val worksUiState by worksListViewModel.uiState.collectAsStateWithLifecycle()
 	val snackBarHostState = remember { SnackbarHostState() }
 
-
 	LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
 		worksListViewModel.loadWorks()
 	}
 
 	ObserveAsEvents(worksListViewModel.event) { event ->
 		when (event) {
-			is WorksListEvent.NavigateToWorkEditor -> onWorkClick(
-				event.workId,
-				event.hiveId
-			)
-
+			is WorksListEvent.NavigateToWorkDetail -> onWorkClick(event.workId, event.hiveId)
 			is WorksListEvent.NavigateToWorkCreate -> onCreateClick(event.hiveId)
 			is WorksListEvent.NavigateBack         -> onBackClick()
 
@@ -76,16 +71,24 @@ fun WorksListScreen(
 		}
 	}
 
-	when (val state = worksUiState) {
-		is WorksListUiState.Loading -> FullScreenProgressIndicator()
-		is WorksListUiState.Error   -> ErrorMessage(state.message, worksListViewModel::resetError)
-		is WorksListUiState.Content -> WorksListContent(
-			state.works,
-			worksListViewModel::onWorkClick,
-			snackBarHostState = snackBarHostState,
-			worksListViewModel::onCreateClick,
-			onNavigateBack = onBackClick
-		)
+	val isRefreshing = (worksUiState as? WorksListUiState.Content)?.isRefreshing ?: false
+
+	PullToRefreshBox(
+		isRefreshing = isRefreshing,
+		onRefresh = worksListViewModel::refresh
+	) {
+		when (val state = worksUiState) {
+			is WorksListUiState.Loading -> FullScreenProgressIndicator()
+			is WorksListUiState.Error   -> ErrorMessage(state.message, worksListViewModel::resetError)
+			is WorksListUiState.Content -> WorksListContent(
+				state.works,
+				worksListViewModel::onWorkClick,
+				worksListViewModel::onDeleteWork,
+				snackBarHostState = snackBarHostState,
+				worksListViewModel::onCreateClick,
+				onNavigateBack = onBackClick
+			)
+		}
 	}
 }
 
@@ -93,6 +96,7 @@ fun WorksListScreen(
 fun WorksListContent(
 	works: List<WorkUi>,
 	onWorkClick: (String) -> Unit,
+	onDeleteWork: (String) -> Unit,
 	snackBarHostState: SnackbarHostState,
 	onCreateClick: () -> Unit,
 	onNavigateBack: () -> Unit
@@ -105,6 +109,7 @@ fun WorksListContent(
 			)
 		},
 		snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+		containerColor = MaterialTheme.colorScheme.surfaceVariant,
 		contentWindowInsets = WindowInsets.safeDrawing,
 		floatingActionButton = {
 			CustomFloatingActionButton(
@@ -118,6 +123,7 @@ fun WorksListContent(
 			WorksList(
 				works = works,
 				onWorkClick = onWorkClick,
+				onDeleteWork = onDeleteWork,
 				modifier = Modifier.padding(innerPadding)
 			)
 		} else {
@@ -133,45 +139,37 @@ fun WorksListContent(
 private fun WorksList(
 	works: List<WorkUi>,
 	onWorkClick: (String) -> Unit,
+	onDeleteWork: (String) -> Unit,
 	modifier: Modifier = Modifier
 ) {
-	LazyColumn(
+	LazyVerticalGrid(
+		columns = GridCells.Fixed(2),
 		modifier = modifier
 			.fillMaxSize()
 			.padding(horizontal = Dimens.ScreenContentPadding),
 		verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
+		horizontalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
 		contentPadding = PaddingValues(
 			top = Dimens.ScreenContentPadding,
 			bottom = Dimens.ScreenContentPadding
 		)
 	) {
-		items(
+		itemsIndexed(
 			items = works,
-			key = { it.id }
-		) { work ->
-			DetailsItemCard(
-				title = work.title,
-				description = work.text,
-				footer = work.dateTime,
-				modifier = Modifier
-					.fillMaxWidth()
-					.clip(MaterialTheme.shapes.medium)
-					.clickable { onWorkClick(work.id) }
-			)
+			key = { _, work -> work.id }
+		) { index, work ->
+			val isLeftColumn = index % 2 == 0
+			SwipeToDeleteContainer(
+				onSwipeToStart = if (isLeftColumn) { { onDeleteWork(work.id) } } else null,
+				onSwipeToEnd = if (!isLeftColumn) { { onDeleteWork(work.id) } } else null,
+				modifier = Modifier.animateItem()
+			) {
+				WorkTileCard(
+					title = work.title,
+					dateTime = work.dateTime,
+					onClick = { onWorkClick(work.id) }
+				)
+			}
 		}
-	}
-}
-
-@Composable
-private fun EmptyStub(text: String, modifier: Modifier = Modifier) {
-	Box(
-		modifier = modifier.fillMaxSize(),
-		contentAlignment = Alignment.Center
-	) {
-		Text(
-			text = text,
-			style = MaterialTheme.typography.bodyLarge,
-			color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-		)
 	}
 }

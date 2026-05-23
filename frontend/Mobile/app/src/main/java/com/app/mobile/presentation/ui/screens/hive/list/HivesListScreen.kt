@@ -1,40 +1,37 @@
 package com.app.mobile.presentation.ui.screens.hive.list
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.mobile.R
 import com.app.mobile.presentation.models.hive.HivePreview
-import com.app.mobile.presentation.ui.components.CustomFloatingActionButton
+import com.app.mobile.presentation.ui.components.EmptyStub
 import com.app.mobile.presentation.ui.components.ErrorMessage
 import com.app.mobile.presentation.ui.components.FullScreenProgressIndicator
 import com.app.mobile.presentation.ui.components.HiveItemCard
 import com.app.mobile.presentation.ui.components.ObserveAsEvents
-import com.app.mobile.presentation.ui.components.SelectorTopBar
+import com.app.mobile.presentation.ui.components.SwipeToDeleteContainer
+import com.app.mobile.presentation.ui.components.TabbedScreenScaffold
 import com.app.mobile.presentation.ui.screens.hive.list.models.HivesListActions
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListEvent
 import com.app.mobile.presentation.ui.screens.hive.list.vewmodel.HivesListUiState
@@ -59,7 +56,7 @@ fun HivesListScreen(
 	ObserveAsEvents(hivesListViewModel.event) { event ->
 		when (event) {
 			is HivesListEvent.NavigateToHive -> {
-				onHiveClick(event.hiveId)
+				onHiveClick(event.hiveName)
 			}
 
 			is HivesListEvent.NavigateToCreateHive -> {
@@ -83,107 +80,99 @@ fun HivesListScreen(
 			onRetry = hivesListViewModel::onRetry
 		)
 
-		is HivesListUiState.Empty   -> EmptyHivesListScreen(
-			selectedTab = selectedTab,
-			onTabSelected = hivesListViewModel::onTabSelected,
-			onCreateHiveClick = hivesListViewModel::onCreateHiveClick
-		)
-
 		is HivesListUiState.Content -> {
 			val actions = HivesListActions(
 				onHiveClick = hivesListViewModel::onHiveClick,
-				onCreateHiveClick = hivesListViewModel::onCreateHiveClick
+				onCreateHiveClick = hivesListViewModel::onCreateHiveClick,
+				onDeleteHive = hivesListViewModel::onDeleteHive,
+				onArchiveHive = hivesListViewModel::onArchiveHive,
+				onUnarchiveHive = hivesListViewModel::onUnarchiveHive
 			)
 			HivesListContent(
-				state.hives,
-				snackbarHostState,
-				actions,
+				activeHives = state.activeHives,
+				archivedHives = state.archivedHives,
+				isRefreshing = state.isRefreshing,
+				onRefresh = hivesListViewModel::refresh,
+				snackbarHostState = snackbarHostState,
+				actions = actions,
 				selectedTab = selectedTab,
 				onTabSelected = hivesListViewModel::onTabSelected
 			)
 		}
 	}
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HivesListContent(
-	hives: List<HivePreview>,
+	activeHives: List<HivePreview>,
+	archivedHives: List<HivePreview>,
+	isRefreshing: Boolean,
+	onRefresh: () -> Unit,
 	snackbarHostState: SnackbarHostState,
 	actions: HivesListActions,
 	selectedTab: Int,
 	onTabSelected: (Int) -> Unit
 ) {
-	val tabs = listOf(stringResource(R.string.active_hives), stringResource(R.string.archive))
+    val tabs = listOf(stringResource(R.string.active_hives), stringResource(R.string.archive))
 
-	Scaffold(
-		topBar = {
-			SelectorTopBar(
-				tabs = tabs,
-				selectedTabIndex = selectedTab,
-				onTabSelected = onTabSelected
-			)
-		},
-		snackbarHost = { SnackbarHost(snackbarHostState) },
-		containerColor = MaterialTheme.colorScheme.surfaceVariant,
-		contentWindowInsets = WindowInsets.safeDrawing,
-		floatingActionButton = {
-			if (selectedTab == 0) {
-				CustomFloatingActionButton(
-					onClick = actions.onCreateHiveClick,
-					icon = Icons.Filled.Add,
-					contentDescription = stringResource(R.string.add_hive)
-				)
-			}
-		}
-	) { innerPadding ->
-		when (selectedTab) {
-			0 -> {
-				if (hives.isNotEmpty()) {
-					HivesList(
-						hives = hives,
-						actions = actions,
-						modifier = Modifier.padding(innerPadding)
-					)
-				} else {
-					EmptyStub(
-						text = stringResource(R.string.empty_hives_list_screen),
-						modifier = Modifier.padding(innerPadding)
-					)
-				}
-			}
-
-			1 -> {
-				EmptyStub(
-					text = stringResource(R.string.empty_archive_list_screen),
-					modifier = Modifier.padding(innerPadding)
-				)
-			}
-		}
-	}
+    TabbedScreenScaffold(
+        tabs = tabs,
+        selectedTabIndex = selectedTab,
+        onTabSelected = onTabSelected,
+        showFabOnTab = 0,
+        fabIcon = Icons.Filled.Add,
+        fabContentDescription = stringResource(R.string.add_hive),
+        onFabClick = actions.onCreateHiveClick
+    ) { innerPadding ->
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            when (selectedTab) {
+                0 -> {
+                    if (activeHives.isNotEmpty()) {
+                        ActiveHivesList(
+                            hives = activeHives,
+                            actions = actions,
+                            modifier = innerPadding
+                        )
+                    } else {
+                        EmptyStub(
+                            text = stringResource(R.string.empty_hives_list_screen),
+                            modifier = innerPadding
+                        )
+                    }
+                }
+                1 -> {
+                    if (archivedHives.isNotEmpty()) {
+                        ArchivedHivesList(
+                            hives = archivedHives,
+                            actions = actions,
+                            modifier = innerPadding
+                        )
+                    } else {
+                        EmptyStub(
+                            text = stringResource(R.string.empty_archive_list_screen),
+                            modifier = innerPadding
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
-private fun EmptyStub(text: String, modifier: Modifier = Modifier) {
-	Box(
-		modifier = modifier.fillMaxSize(),
-		contentAlignment = Alignment.Center
-	) {
-		Text(
-			text = text,
-			style = MaterialTheme.typography.bodyLarge,
-			color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-		)
-	}
-}
-
-@Composable
-private fun HivesList(
+private fun ActiveHivesList(
 	hives: List<HivePreview>,
 	actions: HivesListActions,
 	modifier: Modifier = Modifier
 ) {
+	val archiveIcon = ImageVector.vectorResource(R.drawable.ic_archive)
+	val trashIcon = ImageVector.vectorResource(R.drawable.ic_trash)
+
 	LazyColumn(
 		modifier = modifier
 			.fillMaxSize()
@@ -194,8 +183,48 @@ private fun HivesList(
 			bottom = Dimens.ScreenContentPadding
 		)
 	) {
-		items(hives) { hive ->
-			HiveItem(hive, actions.onHiveClick)
+		items(hives, key = { it.name }) { hive ->
+			SwipeToDeleteContainer(
+				onSwipeToEnd = { actions.onArchiveHive(hive.name) },
+				onSwipeToStart = { actions.onDeleteHive(hive.name) },
+				endIcon = archiveIcon,
+				startIcon = trashIcon,
+				endColor = Color(0xFFE65100),
+				modifier = Modifier.animateItem()
+			) {
+				HiveItem(hive, actions.onHiveClick)
+			}
+		}
+	}
+}
+
+@Composable
+private fun ArchivedHivesList(
+	hives: List<HivePreview>,
+	actions: HivesListActions,
+	modifier: Modifier = Modifier
+) {
+	val returnIcon = ImageVector.vectorResource(R.drawable.ic_return)
+
+	LazyColumn(
+		modifier = modifier
+			.fillMaxSize()
+			.padding(horizontal = Dimens.ScreenContentPadding),
+		verticalArrangement = Arrangement.spacedBy(Dimens.ItemSpacingNormal),
+		contentPadding = PaddingValues(
+			top = Dimens.ScreenContentPadding,
+			bottom = Dimens.ScreenContentPadding
+		)
+	) {
+		items(hives, key = { it.name }) { hive ->
+			SwipeToDeleteContainer(
+				onSwipeToEnd = { actions.onUnarchiveHive(hive.name) },
+				endIcon = returnIcon,
+				endColor = Color(0xFF2E7D32),
+				modifier = Modifier.animateItem()
+			) {
+				HiveItem(hive, actions.onHiveClick)
+			}
 		}
 	}
 }
@@ -205,61 +234,8 @@ private fun HivesList(
 private fun HiveItem(hive: HivePreview, onHiveClick: (String) -> Unit) {
 	HiveItemCard(
 		name = hive.name,
-		// TODO: Добавьте поле lastConnection в модель HivePreview
 		lastConnection = "2024.04.12",
-
-		// TODO: Добавьте поле isConnected (Boolean) в модель HivePreview
-		isSignalActive = true, // Если true - иконка черная, false - серая
-
-		onClick = { onHiveClick(hive.id) }
+		isSignalActive = true,
+		onClick = { onHiveClick(hive.name) }
 	)
-}
-
-@Composable
-private fun EmptyHivesListScreen(
-	selectedTab: Int,
-	onTabSelected: (Int) -> Unit,
-	onCreateHiveClick: () -> Unit
-) {
-	val tabs = listOf(stringResource(R.string.active_hives), stringResource(R.string.archive))
-
-	Scaffold(
-		topBar = {
-			SelectorTopBar(
-				tabs = tabs,
-				selectedTabIndex = selectedTab,
-				onTabSelected = onTabSelected
-			)
-		},
-		containerColor = MaterialTheme.colorScheme.surfaceVariant,
-		floatingActionButton = {
-			if (selectedTab == 0) {
-				CustomFloatingActionButton(
-					onClick = onCreateHiveClick,
-					icon = Icons.Filled.Add,
-					contentDescription = stringResource(R.string.add_hive)
-				)
-			}
-		}
-	) { padding ->
-		Box(
-			modifier = Modifier
-				.fillMaxSize()
-				.padding(padding),
-			contentAlignment = Alignment.Center
-		) {
-			val emptyText = if (selectedTab == 0) {
-				stringResource(R.string.empty_hives_list_screen)
-			} else {
-				stringResource(R.string.empty_archive_list_screen)
-
-			}
-			Text(
-				text = emptyText,
-				style = MaterialTheme.typography.bodyLarge,
-				color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-				textAlign = androidx.compose.ui.text.style.TextAlign.Center
-			)
-		}
-	}
 }

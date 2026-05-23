@@ -1,8 +1,8 @@
 package com.app.mobile.domain.usecase.hives.hub
 
-import com.app.mobile.domain.repository.HubLocalRepository
+import com.app.mobile.domain.repository.datasource.HivesDataSource
 
-class AddHiveToHubUseCase(private val hubLocalRepository: HubLocalRepository) {
-    suspend operator fun invoke(hubId: String, hiveId: String) =
-        hubLocalRepository.addHiveToHub(hubId, hiveId)
+class AddHiveToHubUseCase(private val hivesDataSource: HivesDataSource) {
+    suspend operator fun invoke(hiveName: String, hubId: String) =
+        hivesDataSource.linkHubToHive(hiveName, hubId)
 }

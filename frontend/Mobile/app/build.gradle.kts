@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.google.devtools.ksp)
+    alias(libs.plugins.gms.google.services)
 }
 
 configurations.all {
@@ -70,9 +70,6 @@ android {
         }
     }
 
-    ksp {
-        arg("room.schemaLocation", "$projectDir/schemas")
-    }
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -82,15 +79,16 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
+    //worker
+    implementation(libs.androidx.work.runtime)
+
+    //Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.messaging)
 
     //DataStore
     implementation(libs.androidx.datastore.preferences)
-
-    //Room: Библиотека для работы с базой данных SQLite.
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    implementation(libs.androidx.room.compiler)
-    ksp(libs.androidx.room.compiler)
 
     // Koin: Библиотека для внедрения зависимостей (Dependency Injection).
     implementation(platform(libs.koin.bom))
@@ -119,11 +117,21 @@ dependencies {
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.androidx.material.icons.extended.android)
 
+    // Charts: Vico
+    implementation(libs.vico.compose.m3)
+
+    // ML Kit: Google Code Scanner (QR / barcodes)
+    implementation(libs.play.services.code.scanner)
+
     // Инструменты для отладки и тестирования (Debug & Test).
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.androidx.ui.tooling.preview)
     testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

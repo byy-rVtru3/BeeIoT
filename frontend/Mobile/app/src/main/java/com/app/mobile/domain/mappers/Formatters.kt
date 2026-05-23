@@ -9,8 +9,9 @@ const val FORMATTED_DATE_TIME = "dd.MM.yyyy HH:mm:ss"
 
 
 fun typeConfirmationFormatter(type: TypeConfirmationUi) = when (type) {
-    TypeConfirmationUi.REGISTRATION -> TypeConfirmation.REGISTRATION
-    TypeConfirmationUi.RESET_PASSWORD -> TypeConfirmation.RESET_PASSWORD
+    TypeConfirmationUi.REGISTRATION    -> TypeConfirmation.REGISTRATION
+    TypeConfirmationUi.RESET_PASSWORD  -> TypeConfirmation.RESET_PASSWORD
+    TypeConfirmationUi.CHANGE_PASSWORD -> TypeConfirmation.CHANGE_PASSWORD
 }
 
 fun localDateTimeFormatter(dateTime: LocalDateTime): String {

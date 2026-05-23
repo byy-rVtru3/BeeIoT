@@ -13,31 +13,27 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
-class SessionManager(context: Context) {
-    private val dataStore: DataStore<Preferences> = context.dataStore
-    private val userIdKey = intPreferencesKey("current_user_id")
+class SessionManager(private val dataStore: DataStore<Preferences>) {
 
-    val currentUserId: Flow<Int?> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
+	private val userIdKey = intPreferencesKey("current_user_id")
 
-        }.map { it[userIdKey] }
+	val currentUserId: Flow<Int?> = dataStore.data
+		.catch { exception ->
+			if (exception is IOException) {
+				emit(emptyPreferences())
+			} else {
+				throw exception
+			}
 
-    suspend fun saveCurrentUser(userId: Int) {
-        dataStore.edit { it[userIdKey] = userId }
-    }
+		}.map { it[userIdKey] }
 
-    suspend fun getCurrentUserId(): Int? = dataStore.data.first()[userIdKey]
+	suspend fun saveCurrentUser(userId: Int) {
+		dataStore.edit { it[userIdKey] = userId }
+	}
 
-    suspend fun clearSession() {
-        dataStore.edit { it.clear() }
-    }
+	suspend fun getCurrentUserId(): Int? = dataStore.data.first()[userIdKey]
 
-    companion object {
-        private val Context.dataStore by preferencesDataStore("session_manager")
-    }
+	suspend fun clearSession() {
+		dataStore.edit { it.clear() }
+	}
 }

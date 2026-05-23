@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+.claude/plans/
+
+# Firebase service account key — секрет, не коммитить
+creds.json

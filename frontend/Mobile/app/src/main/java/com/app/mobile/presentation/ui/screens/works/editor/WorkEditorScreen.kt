@@ -38,6 +38,7 @@ import com.app.mobile.presentation.ui.screens.works.editor.models.WorksEditorAct
 import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorEvent
 import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorUiState
 import com.app.mobile.presentation.ui.screens.works.editor.viewmodel.WorksEditorViewModel
+import com.app.mobile.ui.theme.Alpha
 import com.app.mobile.ui.theme.Dimens
 
 @Composable
@@ -106,11 +107,20 @@ fun WorksEditorContent(
 			modifier = Modifier
 				.fillMaxSize()
 				.padding(padding)
+				.padding(Dimens.ScreenContentPadding)
 		) {
 			CustomTextField(
 				value = work.title,
 				onValueChange = actions.onTitleChange,
-				placeholder = stringResource(R.string.work_title_placeholder) // "Название работы"
+				placeholder = stringResource(R.string.work_title_placeholder)
+			)
+
+			Spacer(modifier = Modifier.height(Dimens.ItemsSpacingLarge))
+
+			Text(
+				text = stringResource(R.string.work_hive_format, work.hiveId),
+				style = MaterialTheme.typography.bodyMedium,
+				color = MaterialTheme.colorScheme.onSurfaceVariant
 			)
 
 			Spacer(modifier = Modifier.height(Dimens.ItemsSpacingLarge))
@@ -127,7 +137,7 @@ fun WorksEditorContent(
 			WorkBodyTextField(
 				value = work.text,
 				onValueChange = actions.onTextChange,
-				placeholder = "Lorem Ipsum"
+				placeholder = stringResource(R.string.work_text_placeholder)
 			)
 
 			Spacer(modifier = Modifier.weight(1f))
@@ -187,7 +197,7 @@ private fun WorkBodyTextField(
 					Text(
 						text = placeholder,
 						style = MaterialTheme.typography.bodyMedium,
-						color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+						color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.Medium)
 					)
 				}
 				innerTextField()

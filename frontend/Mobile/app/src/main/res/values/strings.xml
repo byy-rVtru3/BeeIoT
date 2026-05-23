@@ -22,6 +22,14 @@
     <string name="account">Аккаунт</string>
     <string name="about">О приложении</string>
     <string name="app_info">BeeIoT — это мобильное приложение, предназначенное для пчеловодов любого уровня. Оно помогает организовать работу на пасеке, отслеживать состояние ульев и пчелиных семей, планировать мероприятия и вести журнал операций без необходимости подключения к интернету.\n\nПриложение создаёт единое цифровое пространство для управления пасекой, собирая и систематизируя данные о каждом улье.</string>
+    <string name="how_to_use_app">Как пользоваться приложением</string>
+    <string name="how_to_use_title">Как пользоваться</string>
+    <string name="how_to_use_section_title_1">Регистрация и вход</string>
+    <string name="how_to_use_section_body_1">1) При первом запуске откроется экран авторизации.\n2) Нажмите \"Зарегистрироваться\" и введите имя, email и пароль (минимум 8 символов, буквы и цифры).\n3) На email придет код подтверждения из 6 цифр - введите его на экране подтверждения.\n4) После подтверждения выполните вход с email и паролем.\n5) Токен авторизации сохраняется локально; повторный вход не требуется до явного выхода.</string>
+    <string name="how_to_use_section_title_2">Навигация</string>
+    <string name="how_to_use_section_body_2">В нижней части экрана расположена панель навигации:\n- Главная - сводный экран (раздел в разработке).\n- Датчики - мониторинг показаний.\n- Матки - список маток с прогресс-баром развития.\n- Ульи - список ульев пасеки.\n- Настройки - управление аккаунтом и выход.</string>
+    <string name="how_to_use_section_title_3">Управление ульями</string>
+    <string name="how_to_use_section_body_3">1) Откройте раздел \"Ульи\". Нажмите кнопку \"+\" для создания нового улья.\n2) В редакторе укажите название улья и при необходимости привяжите матку и хаб (здесь же можно создать новые).\n3) Нажмите \"Сохранить\" - улей появится в списке.\n4) Нажмите на карточку улья, чтобы открыть детали: привязанная матка и хаб, список работ, данные датчиков.\n5) Для редактирования нажмите \"Редактировать\" (иконка карандаша) в правом верхнем углу.\n6) Для удаления нажмите иконку корзины в правом верхнем углу.</string>
     <string name="confirm">Подтвердить</string>
     <string name="enter_code">Код подтверждения</string>
     <string name="logo_description">Логотип пчела</string>
@@ -34,14 +42,18 @@
 
     <string name="hive_name">Название улья</string>
     <string name="add">Добавить</string>
+    <string name="ok">ОК</string>
     <string name="cancel">Отмена</string>
     <string name="empty_hives_list_screen">Пока нету ульев, чтобы добавить улей нажмите на кнопку "Добавить улей"</string>
     <string name="empty_queens_list_screen">Пока нету маток, чтобы добавить матку нажмите на кнопку "Добавить матку"</string>
 
     <string name="empty_archive_list_screen">В архиве пока пусто</string>
+    <string name="swipe_to_archive">Архивировать</string>
+    <string name="swipe_to_unarchive">Вернуть из архива</string>
     <string name="hive_last_connection_format">Последняя связь\n%1$s</string>
     <string name="hive">Улей</string>
     <string name="no_hive">Нет улья</string>
+    <string name="queen_start_date_format">Дата подсадки: %1$s</string>
 
     <string name="hive_format">Улей:</string>
     <string name="empty_works_list">Список работ пуст</string>
@@ -64,6 +76,43 @@
     <string name="error_name_too_long">Имя слишком длинное (максимум 50 символов)</string>
     <string name="password_requirements">Пароль должен быть длиной 8 и более символов, состоящий из букв, цифр и других символов</string>
 
+    <!-- Strings used in HubsListScreen -->
+    <string name="my_hubs">Мои хабы</string>
+    <string name="add_hub">Добавить хаб</string>
+    <string name="empty_hubs_list_screen">Пока нету хабов, чтобы добавить хаб нажмите на кнопку \"Добавить хаб\"</string>
+
+    <!-- Strings used in HubScreen -->
+    <string name="hub">Хаб</string>
+    <string name="hub_edit_title">Редактирование хаба</string>
+    <string name="hub_add_title">Добавление хаба</string>
+    <string name="hub_name_label">Название хаба</string>
+    <string name="hub_name_placeholder">Введите название хаба</string>
+    <string name="hub_id_label">ID хаба</string>
+    <string name="hub_id_placeholder">Введите ID хаба</string>
+    <string name="hub_id_scan_qr">Отсканировать QR-код</string>
+    <string name="hub_qr_invalid">Не удалось распознать QR-код хаба</string>
+    <string name="hub_qr_scanner_unavailable">Не удалось запустить сканер QR-кода</string>
+    <string name="section_latest_readings">Последние показания с хаба</string>
+    <string name="label_temperature">Температура:</string>
+    <string name="label_noise">Шум:</string>
+    <string name="label_weight">Вес:</string>
+    <string name="sensor_temperature_format">%1$.2f°C</string>
+    <string name="sensor_noise_format">%1$.2f дБ</string>
+    <string name="sensor_weight_format">%1$.2f кг</string>
+    <string name="chart_title_temperature">Температура улья</string>
+    <string name="chart_title_noise">Шум в улье</string>
+    <string name="chart_title_weight">Вес улья</string>
+    <string name="chart_no_data">Нет данных для отображения</string>
+    <string name="chart_current_temperature">Температура сейчас:</string>
+    <string name="chart_current_noise">Шум сейчас:</string>
+    <string name="chart_current_weight">Вес сейчас:</string>
+    <string name="chart_period_temperature">Температура за период с:</string>
+    <string name="chart_period_noise">Шум за период с:</string>
+    <string name="chart_period_weight">Вес за период с:</string>
+    <string name="label_ip_address">IP адрес:</string>
+    <string name="label_port">Порт:</string>
+    <string name="edit">Редактировать</string>
+
     <!-- Strings used in HiveScreen -->
     <string name="section_main_info">Основная информация</string>
     <string name="label_name">Название:</string>
@@ -82,21 +131,73 @@
     <string name="available_hubs">Доступные хабы:</string>
     <string name="available_queens">Доступные матки:</string>
     <string name="save">Сохранить</string>
+    <string name="add_weight_record">Внести показание</string>
+    <string name="add_weight_title">Внести показание веса</string>
+    <string name="weight_value_label">Значение веса</string>
+    <string name="weight_value_placeholder">Введите вес (кг)</string>
+    <string name="weight_date_time_label">Дата и время</string>
+    <string name="weight_added_success">Показание успешно добавлено</string>
 
     <!-- Strings for QueenEditorScreen -->
     <string name="queen_edit_title">Добавление матки</string>
     <string name="queen_name_label">Имя матки</string>
     <string name="queen_name_placeholder">Введите имя матки</string>
     <string name="birth_date_label">Дата рождения</string>
-    <string name="ok">ОК</string>
     <string name="available_hives">Доступные ульи</string>
 
     <!-- Works (Работы) -->
-
     <string name="add_work_title">Добавление работы</string>
     <string name="edit_work_title">Редактирование работы</string>
+    <string name="work_detail_title">Работа по улью</string>
+    <string name="work_title_label">Название работы:</string>
     <string name="work_title_placeholder">Название работы</string>
     <string name="work_text_label">Текст работы:</string>
+    <string name="work_text_placeholder">Опишите выполненную работу</string>
+    <string name="work_hive_format">Улей: %1$s</string>
 
+    <!-- Queen Timeline (График развития матки) -->
+    <string name="queen_timeline_title">График развития</string>
+    <string name="queen_timeline_empty">Нет данных о развитии</string>
+    <string name="queen_stage_start">Старт</string>
+    <string name="queen_stage_completed">Завершено</string>
+    <string name="queen_stage_in_progress">В процессе</string>
+
+	<!--    Notifications-->
+	<string name="default_notification_channel_id">critical_channel</string>
+	<string name="regular_channel">События</string>
+	<string name="critical_channel">Экстренные</string>
+	<string name="summary_notification_text">Напоминания</string>
+	<string name="turn_on_notifications">Включить уведомления</string>
+	<string name="notifications_title">Будьте в курсе событий!</string>
+	<string name="notifications_description">Разрешите уведомления, чтобы вовремя узнавать о важных событиях на пасеке: изменениях веса улья, падении температуры или необходимости осмотра маток.</string>
+	<string name="turn_off_notifications">Позже</string>
+
+	<!-- Account edit dialogs -->
+	<string name="dialog_change_name_title">Изменить имя</string>
+	<string name="dialog_change_email_title">Изменить email</string>
+	<string name="dialog_change_password_title">Изменить пароль</string>
+	<string name="dialog_new_name_placeholder">Введите новое имя</string>
+	<string name="dialog_new_email_placeholder">Введите новый email</string>
+	<string name="dialog_new_password_placeholder">Введите новый пароль</string>
+	<string name="dialog_change_button">Изменить</string>
+	<string name="password_masked">••••••••</string>
+
+	<!-- Theme -->
+	<string name="switch_to_dark_theme">Переключить на тёмную тему</string>
+	<string name="switch_to_light_theme">Переключить на дневную тему</string>
+
+	<!-- Home Screen -->
+	<string name="home_section_hives">Мои ульи:</string>
+	<string name="home_section_queens">Мои матки:</string>
+	<string name="home_section_hubs">Мои хабы:</string>
+	<string name="home_section_works">Мои работы:</string>
+
+	<!-- Notification History Screen -->
+	<string name="notification_history">История уведомлений</string>
+	<string name="notification_history_empty">Уведомлений пока нет</string>
+	<string name="notification_history_empty_desc">Здесь будут отображаться уведомления с пасеки</string>
+	<string name="notification_clear">Очистить</string>
+	<string name="notification_type_regular">Обычное</string>
+	<string name="notification_type_critical">Важное</string>
 
 </resources>

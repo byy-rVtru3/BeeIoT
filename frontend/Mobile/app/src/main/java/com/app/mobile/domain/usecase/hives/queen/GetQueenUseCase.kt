@@ -1,9 +1,7 @@
 package com.app.mobile.domain.usecase.hives.queen
 
-import com.app.mobile.domain.models.hives.queen.QueenDomain
-import com.app.mobile.domain.repository.QueenLocalRepository
+import com.app.mobile.domain.repository.datasource.QueenDataSource
 
-class GetQueenUseCase(private val queenLocalRepository: QueenLocalRepository) {
-    suspend operator fun invoke(queenId: String): QueenDomain? =
-        queenLocalRepository.getQueenById(queenId)
+class GetQueenUseCase(private val queenDataSource: QueenDataSource) {
+    suspend operator fun invoke(name: String) = queenDataSource.getQueen(name)
 }

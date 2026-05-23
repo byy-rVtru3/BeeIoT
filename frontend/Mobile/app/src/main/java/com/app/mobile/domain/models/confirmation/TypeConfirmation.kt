@@ -2,5 +2,6 @@ package com.app.mobile.domain.models.confirmation
 
 enum class TypeConfirmation {
     REGISTRATION,
-    RESET_PASSWORD
+    RESET_PASSWORD,
+    CHANGE_PASSWORD
 }

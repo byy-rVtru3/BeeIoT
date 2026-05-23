@@ -1,14 +1,16 @@
 package com.app.mobile.presentation.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -28,17 +30,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import com.app.mobile.R
 import com.app.mobile.presentation.models.queen.QueenPreviewModel
+import com.app.mobile.presentation.ui.animations.MotionSpecs
 import com.app.mobile.ui.theme.Dimens
+import com.app.mobile.ui.theme.Alpha
 
 
-val IconActive = Color.Black
-val IconInactive = Color.LightGray
+val IconInactiveAlpha = 0.35f
+
+@Composable
+fun iconActiveColor() = MaterialTheme.colorScheme.onSurface
+
+@Composable
+fun iconInactiveColor() = MaterialTheme.colorScheme.onSurface.copy(alpha = IconInactiveAlpha)
 
 @Composable
 fun SelectableCardContainer(
@@ -49,16 +59,22 @@ fun SelectableCardContainer(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
-
     val borderColor by animateColorAsState(
         targetValue = if (isPressed) MaterialTheme.colorScheme.outline else Color.Transparent,
-        animationSpec = tween(durationMillis = 150),
-        label = "border_color_anim"
+        animationSpec = MotionSpecs.CardPressColor,
+        label = "border_color"
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.97f else 1f,
+        animationSpec = MotionSpecs.CardPress,
+        label = "card_scale"
     )
 
     Surface(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer { scaleX = scale; scaleY = scale },
         shape = RoundedCornerShape(Dimens.ItemCardRadius),
         color = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
@@ -111,9 +127,92 @@ fun HiveItemCard(
                     imageVector = ImageVector.vectorResource(R.drawable.ic_sensors),
                     contentDescription = null,
                     modifier = Modifier.size(Dimens.HiveItemCardIconSize),
-                    tint = if (isSignalActive) IconActive else IconInactive
+                    tint = if (isSignalActive) iconActiveColor() else iconInactiveColor()
                 )
             }
+        }
+    }
+}
+
+
+@Composable
+fun HubItemCard(
+    name: String,
+    lastConnection: String,
+    isSignalActive: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    SelectableCardContainer(
+        onClick = onClick,
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(Dimens.ItemCardPadding)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(Dimens.HiveItemPadding)
+        ) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.hive_last_connection_format, lastConnection),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_sensors),
+                    contentDescription = null,
+                    modifier = Modifier.size(Dimens.HiveItemCardIconSize),
+                    tint = if (isSignalActive) iconActiveColor() else iconInactiveColor()
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun HubTileCard(
+    name: String,
+    isSignalActive: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    SelectableCardContainer(
+        onClick = onClick,
+        modifier = modifier.height(Dimens.Size120)
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(Dimens.ItemCardPadding)
+                .fillMaxSize()
+        ) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.TopStart)
+            )
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.ic_sensors),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(Dimens.HiveItemCardIconSize),
+                tint = if (isSignalActive) iconActiveColor() else iconInactiveColor()
+            )
         }
     }
 }
@@ -138,16 +237,12 @@ fun InfoCard(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -192,21 +287,21 @@ fun QueenCard(
                         Text(
                             text = queen.name,
                             style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = stringResource(R.string.hive_format) + " ${queen.hiveName}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
                             Text(
                                 text = queen.stage.title,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -219,12 +314,17 @@ fun QueenCard(
                         Text(
                             text = queen.name,
                             style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
                         Text(
                             text = queen.stage.title,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -247,12 +347,17 @@ fun QueenCard(
                     Text(
                         text = queen.stage.remainingDays,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = queen.stage.description,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
                 }
             }
@@ -262,16 +367,55 @@ fun QueenCard(
 
 
 @Composable
+fun WorkTileCard(
+    title: String,
+    dateTime: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    SelectableCardContainer(
+        onClick = onClick,
+        modifier = modifier.height(Dimens.Size120)
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(Dimens.ItemCardPadding)
+                .fillMaxSize()
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.TopStart)
+            )
+            Text(
+                text = dateTime,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.Disabled),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.BottomStart)
+            )
+        }
+    }
+}
+
+
+@Composable
 fun DetailsItemCard(
     title: String,
     description: String,
     footer: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
 ) {
     Surface(
         shape = RoundedCornerShape(Dimens.ItemCardRadius),
         color = MaterialTheme.colorScheme.surface,
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
     ) {
         Column(
             modifier = Modifier
@@ -307,7 +451,7 @@ fun DetailsItemCard(
             Text(
                 text = footer,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = Alpha.Disabled),
             )
         }
     }

@@ -2,7 +2,7 @@ package com.app.mobile.presentation.ui.screens.authorization.viewmodel
 
 import android.util.Log
 import com.app.mobile.domain.mappers.toDomain
-import com.app.mobile.domain.mappers.toUiModel
+import com.app.mobile.domain.mappers.toAuthorizationUiModel
 import com.app.mobile.domain.usecase.account.AuthorizationAccountUseCase
 import com.app.mobile.presentation.models.account.AuthorizationModelUi
 import com.app.mobile.presentation.models.account.AuthorizationResultUi
@@ -40,7 +40,7 @@ class AuthorizationViewModel(
 			)
 
 			launch {
-				when (val result = authorizationAccountUseCase(model.toDomain()).toUiModel()) {
+				when (val result = authorizationAccountUseCase(model.toDomain()).toAuthorizationUiModel()) {
 					is AuthorizationResultUi.Success -> {
 						sendEvent(
 							AuthorizationEvent.NavigateToMainScreen

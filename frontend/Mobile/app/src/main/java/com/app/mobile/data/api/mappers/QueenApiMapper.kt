@@ -6,12 +6,16 @@ import com.app.mobile.data.api.models.queen.EggPhaseDto
 import com.app.mobile.data.api.models.queen.LarvaPhaseDto
 import com.app.mobile.data.api.models.queen.PupaPhaseDto
 import com.app.mobile.data.api.models.queen.QueenCalendarDto
+import com.app.mobile.data.api.models.queen.QueenDetailsDto
+import com.app.mobile.data.api.models.queen.QueenListItemDto
 import com.app.mobile.data.api.models.queen.QueenPhaseDto
 import com.app.mobile.domain.models.DateRange
 import com.app.mobile.domain.models.hives.queen.AdultStage
 import com.app.mobile.domain.models.hives.queen.EggStage
 import com.app.mobile.domain.models.hives.queen.LarvaStage
 import com.app.mobile.domain.models.hives.queen.PupaStage
+import com.app.mobile.domain.models.hives.queen.QueenDomain
+import com.app.mobile.domain.models.hives.queen.QueenDomainPreview
 import com.app.mobile.domain.models.hives.queen.QueenLifecycle
 import com.app.mobile.domain.models.hives.queen.QueenRequestModel
 
@@ -25,6 +29,16 @@ fun QueenCalendarDto.toDomain() = QueenLifecycle(
     larva = this.larvaPhase.toDomain(),
     pupa = this.pupaPhase.toDomain(),
     adult = this.queenPhase.toDomain()
+)
+
+fun QueenDetailsDto.toDomain() = QueenDomain(
+    name = this.name,
+    stages = this.calendar.toDomain()
+)
+
+fun QueenListItemDto.toDomain() = QueenDomainPreview(
+    name = this.name,
+    startDate = this.startDate.toLocalDate()
 )
 
 private fun EggPhaseDto.toDomain() = EggStage(

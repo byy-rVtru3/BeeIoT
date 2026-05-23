@@ -1,7 +1,7 @@
 package com.app.mobile.domain.usecase.hives.works
 
-import com.app.mobile.domain.repository.WorkLocalRepository
+import com.app.mobile.domain.repository.WorkRepository
 
-class GetWorksUseCase(private val workRepository: WorkLocalRepository) {
-    suspend operator fun invoke(hiveId: String) = workRepository.getWorks(hiveId)
+class GetWorksUseCase(private val workRepository: WorkRepository) {
+    suspend operator fun invoke(hiveName: String) = workRepository.getWorks(hiveName)
 }

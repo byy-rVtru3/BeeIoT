@@ -2,7 +2,6 @@ package com.app.mobile.di
 
 import com.app.mobile.data.api.interceptor.AuthInterceptor
 import com.app.mobile.data.repository.AuthRepository
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -13,7 +12,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.concurrent.TimeUnit
 
-private const val BASE_URL = "http://84.237.53.140/api/"
+private const val BASE_URL = "http://62.109.16.63/api/"
 private const val CONNECT_TIMEOUT = 10L
 private const val WRITE_TIMEOUT = 10L
 private const val READ_TIMEOUT = 10L
@@ -38,11 +37,7 @@ val networkModule = module {
 
     single<AuthInterceptor> {
         val authRepository: AuthRepository = get()
-        AuthInterceptor {
-            runBlocking {
-                authRepository.getToken()
-            }
-        }
+        AuthInterceptor { authRepository.getToken() }
     }
 
     factory(publicClient) {

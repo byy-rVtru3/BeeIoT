@@ -75,9 +75,7 @@ data class MockUserData(
 
 fun MockUserData.toDomain() = UserDomain(
     name = name,
-    email = email,
-    password = password,
-    jwtToken = jwtToken
+    email = email
 )
 
 @Serializable

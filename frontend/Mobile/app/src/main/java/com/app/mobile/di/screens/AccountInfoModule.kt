@@ -2,6 +2,9 @@ package com.app.mobile.di.screens
 
 import com.app.mobile.domain.usecase.account.DeleteAccountUseCase
 import com.app.mobile.domain.usecase.account.GetAccountInfoUseCase
+import com.app.mobile.domain.usecase.account.UpdateEmailUseCase
+import com.app.mobile.domain.usecase.account.UpdateNameUseCase
+import com.app.mobile.domain.usecase.account.UpdatePasswordUseCase
 import com.app.mobile.presentation.ui.screens.accountinfo.viewmodel.AccountInfoViewModel
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModelOf
@@ -11,6 +14,9 @@ val accountInfoModule = module {
 
     factoryOf(::GetAccountInfoUseCase)
     factoryOf(::DeleteAccountUseCase)
+    factoryOf(::UpdateNameUseCase)
+    factoryOf(::UpdateEmailUseCase)
+    factoryOf(::UpdatePasswordUseCase)
 
     viewModelOf(::AccountInfoViewModel)
 }

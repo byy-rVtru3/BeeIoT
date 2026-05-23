@@ -10,6 +10,7 @@ object Dimens {
     val Size2 = 2.dp
     val Size4 = 4.dp
     val Size8 = 8.dp
+    val Size10 = 10.dp
     val Size12 = 12.dp
     val Size16 = 16.dp
     val Size20 = 20.dp
@@ -145,7 +146,24 @@ object Dimens {
     val HiveItemCardIconSize = Size36
     val HiveItemPadding = Size4
 
-    val SectionTitleLeftPadding=Size4
+    val SectionTitleLeftPadding = Size4
+
+    // --- Icon Sizes ---
+    val IconSizeSmall = Size16
+    val IconSizeMedium = Size24
+    val IconSizeLarge = Size40
+
+    // --- Timeline & Cards ---
+    val TimelineIconSize = Size40
+    val TimelineItemSpacing = Size4
+
+    // --- Selection Grid ---
+    val SelectionGridItemHeight = Size80
+    val SelectionGridItemMinWidth = Size100
+
+    // --- Home Screen Cards ---
+    val HiveCardWidth = 180.dp
+    val HiveCardHeight = 80.dp
+    val HubCardWidth = 150.dp
+    val HubCardHeight = Size60
 }
-
-
