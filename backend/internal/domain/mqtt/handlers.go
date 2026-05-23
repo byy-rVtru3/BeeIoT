@@ -3,8 +3,10 @@ package mqtt
 import (
 	"BeeIOT/internal/domain/models/httpType"
 	"BeeIOT/internal/domain/models/mqttTypes"
+	"BeeIOT/internal/domain/notification"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -28,6 +30,13 @@ func (m *Client) handleDeviceData(_ mqtt.Client, msg mqtt.Message) {
 		return
 	}
 
+	m.logger.Info().
+		Str("sensor", sensorId).
+		Float64("temperature", data.Temperature).
+		Float64("noise", data.Noise).
+		Float64("weight", data.Weight).
+		Msg("Received device data")
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -44,43 +53,111 @@ func (m *Client) handleDeviceData(_ mqtt.Client, msg mqtt.Message) {
 		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to update timestamp")
 		return
 	}
-	email, hiveName, err := m.db.GetEmailHiveBySensorID(ctx, sensorId)
+	// Cache last sensor data for quick retrieval, preserving weight from existing cache
+	cachePayload := msg.Payload()
+	if existing, err := m.inMemDb.GetLastSensorData(ctx, sensorId); err == nil {
+		var cached mqttTypes.DeviceData
+		if json.Unmarshal([]byte(existing), &cached) == nil && cached.WeightTime != 0 {
+			// Прошивка не шлёт вес — сохраняем его из кеша
+			data.Weight = cached.Weight
+			data.WeightTime = cached.WeightTime
+			if b, err := json.Marshal(data); err == nil {
+				cachePayload = b
+			}
+		}
+	}
+	if err := m.inMemDb.SetLastSensorData(ctx, sensorId, string(cachePayload)); err != nil {
+		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to cache last sensor data")
+	}
+	email, hiveName, hubSensor, err := m.resolveSensorOwner(ctx, sensorId)
 	if err != nil {
-		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to get hive name")
+		m.logger.Error().Err(err).Str("topic", topic).Str("sensor", sensorId).Msg("Failed to resolve sensor owner")
 		return
 	}
-	if err := m.addNoise(ctx, email, hiveName, data); err != nil {
+
+	// Если улей найден — отправляем пуш про высокий шум (если порог превышен).
+	if hiveName != "" {
+		if err := m.checkNoiseLevel(ctx, email, hiveName, data); err != nil {
+			m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to check noise level")
+		}
+	}
+
+	// Телеметрию пишем в БД по hub-сенсору (а не sensor_id датчика).
+	if hubSensor == "" {
+		m.logger.Warn().Str("topic", topic).Str("sensor", sensorId).Msg("No hub for sensor, skipping telemetry storage")
+		return
+	}
+	if err := m.addNoise(ctx, email, hubSensor, data); err != nil {
 		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to add noise")
 	}
-	if err := m.addTemperature(ctx, email, hiveName, data); err != nil {
+	if err := m.addTemperature(ctx, email, hubSensor, data); err != nil {
 		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to add temperature")
+	}
+	if err := m.addWeight(ctx, email, hubSensor, data); err != nil {
+		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to add weight")
 	}
 }
 
-func (m *Client) addNoise(ctx context.Context, email, hiveName string, data mqttTypes.DeviceData) error {
+// resolveSensorOwner находит email пользователя, имя улья и идентификатор hub-сенсора
+// для хранения телеметрии. Сначала пробует через таблицу sensors (привязка датчика к улью),
+// потом через hubs (датчик как hub). hiveName может быть пустым, если датчик нигде не привязан к улью.
+func (m *Client) resolveSensorOwner(ctx context.Context, sensorId string) (email, hiveName, hubSensor string, err error) {
+	// 1) Датчик привязан к улью через sensors-таблицу
+	if e, h, lookupErr := m.db.GetEmailHiveBySensorID(ctx, sensorId); lookupErr == nil {
+		// Находим hub привязанный к улью (для записи телеметрии).
+		hs, hubErr := m.db.GetHubSensorByHive(ctx, e, h)
+		if hubErr != nil {
+			m.logger.Warn().Err(hubErr).Str("sensor", sensorId).Str("hive", h).Msg("Hive has no hub")
+			hs = ""
+		}
+		return e, h, hs, nil
+	}
+	// 2) Fallback: датчик зарегистрирован как hub, ищем привязанный к нему улей.
+	if e, h, lookupErr := m.db.GetEmailHiveByHubSensor(ctx, sensorId); lookupErr == nil {
+		return e, h, sensorId, nil
+	}
+	// 3) Fallback fallback: датчик есть в hubs, но не привязан к улью — только email.
+	e, lookupErr := m.db.GetEmailByHubSensor(ctx, sensorId)
+	if lookupErr != nil {
+		return "", "", "", lookupErr
+	}
+	return e, "", sensorId, nil
+}
+
+func (m *Client) addNoise(ctx context.Context, email, hubSensor string, data mqttTypes.DeviceData) error {
 	if data.Noise == -1 {
 		return nil
 	}
-	err := m.db.NewNoise(ctx, httpType.NoiseLevel{
+	return m.db.NewNoise(ctx, httpType.NoiseLevel{
 		Level: data.Noise,
 		Time:  time.Unix(data.NoiseTime, 0),
 		Email: email,
-		Hive:  hiveName,
+		Hub:   hubSensor,
 	})
-	return err
 }
 
-func (m *Client) addTemperature(ctx context.Context, email, hiveName string, data mqttTypes.DeviceData) error {
+func (m *Client) addTemperature(ctx context.Context, email, hubSensor string, data mqttTypes.DeviceData) error {
 	if data.Temperature == -1 {
 		return nil
 	}
-	err := m.db.NewTemperature(ctx, httpType.Temperature{
+	return m.db.NewTemperature(ctx, httpType.Temperature{
 		Temperature: data.Temperature,
 		Time:        time.Unix(data.TemperatureTime, 0),
 		Email:       email,
-		Hive:        hiveName,
+		Hub:         hubSensor,
 	})
-	return err
+}
+
+func (m *Client) addWeight(ctx context.Context, email, hubSensor string, data mqttTypes.DeviceData) error {
+	if data.Weight == -1 || data.WeightTime == 0 {
+		return nil
+	}
+	return m.db.NewHiveWeight(ctx, httpType.HubWeight{
+		Weight: data.Weight,
+		Time:   time.Unix(data.WeightTime, 0),
+		Email:  email,
+		Hub:    hubSensor,
+	})
 }
 
 // handleDeviceStatus обработчик топика /device/{id}/status
@@ -98,6 +175,12 @@ func (m *Client) handleDeviceStatus(_ mqtt.Client, msg mqtt.Message) {
 		m.logger.Error().Err(err).Str("topic", topic).Msg("Failed to unmarshal payload")
 		return
 	}
+
+	// Cache device status for health check responses
+	if err := m.inMemDb.SetLastDeviceStatus(context.Background(), sensorId, string(msg.Payload())); err != nil {
+		m.logger.Warn().Err(err).Str("sensor", sensorId).Msg("Failed to cache device status")
+	}
+
 	m.handlingStatusData(DeviceStatus, sensorId)
 }
 
@@ -133,7 +216,27 @@ func (m *Client) publishJSON(client mqtt.Client, topic string, qos byte, retaine
 const (
 	batteryLowThreshold = 20
 	signalLowThreshold  = 10
+	// noiseHighThreshold — в дБ SPL. Фоновый шум здоровой пчелиной семьи
+	// сам по себе 60–75 дБ, поэтому пороги в районе 50–60 дБ давали бы
+	// постоянный спам. Реальная аномалия (роение, проникновение в улей,
+	// массовое возбуждение) — это уже 80+ дБ; на нём и поднимаем алерт.
+	noiseHighThreshold    = 80
+	defaultSamplingPeriod = 5 // seconds
 )
+
+// transientSensorErrors — теги в status.errors[], которые означают
+// «не удалось снять одно измерение», а не отказ устройства. Прошивка
+// агрессивно отбрасывает мусорные семплы INMP441 и может вернуть -1 для
+// шума на каждом втором цикле, а это не повод дёргать пользователя
+// уведомлением. Их фильтруем в checkErrors перед отправкой пуша.
+//
+// Сами теги init/connect/register/mqtt-ошибок (например noise_init_error,
+// modem_power_on_failed, mqtt_connect_failed) остаются критическими —
+// они в этот список не попадают.
+var transientSensorErrors = map[string]struct{}{
+	"noise_read_error":       {},
+	"temperature_read_error": {},
+}
 
 func (m *Client) handlingStatusData(data mqttTypes.DeviceStatus, sensorId string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -149,72 +252,203 @@ func (m *Client) handlingStatusData(data mqttTypes.DeviceStatus, sensorId string
 			m.logger.Error().Err(err).Str("sensor", sensorId).Msg("Failed to set sensor")
 			return
 		}
+		// Новый датчик — отправляем начальный конфиг с интервалом defaultSamplingPeriod сек
+		go func() {
+			cfg := mqttTypes.DeviceConfig{
+				SamplingNoise: defaultSamplingPeriod,
+				SamplingTemp:  defaultSamplingPeriod,
+				Restart:       false,
+				Health:        false,
+				Frequency:     defaultSamplingPeriod,
+				Delete:        false,
+			}
+			if sendErr := m.SendConfig(sensorId, cfg); sendErr != nil {
+				m.logger.Warn().Err(sendErr).Str("sensor", sensorId).Msg("Failed to send initial config to new sensor")
+			} else {
+				m.logger.Info().Str("sensor", sensorId).Int("sampling_period_s", defaultSamplingPeriod).Msg("Sent initial config to new sensor")
+			}
+		}()
 	}
 
 	if err = m.inMemDb.UpdateSensorTimestamp(ctx, sensorId, data.Timestamp); err != nil {
 		m.logger.Error().Err(err).Str("sensor", sensorId).Msg("Failed to update timestamp")
 		return
 	}
-	if err = m.checkBatteryLevel(ctx, sensorId, data); err != nil {
+
+	// Если status не требует ни одной из проверок — не дёргаем БД зря.
+	// Значение -1 означает «нет данных» (например, у нас нет монитора заряда),
+	// такие поля не считаем критичными и алерт по ним не шлём. Аналогично,
+	// чисто транзиентные сенсорные ошибки (*_read_error) в errors[] не
+	// считаются критическими — они отфильтровываются в checkErrors.
+	batteryCritical := data.BatteryLevel != -1 && data.BatteryLevel < batteryLowThreshold
+	signalCritical := data.SignalStrength != -1 && data.SignalStrength < signalLowThreshold
+	errorsCritical := false
+	for _, e := range data.Errors {
+		if _, transient := transientSensorErrors[e]; !transient {
+			errorsCritical = true
+			break
+		}
+	}
+	if !batteryCritical && !signalCritical && !errorsCritical {
+		return
+	}
+
+	email, hive, _, err := m.resolveSensorOwner(ctx, sensorId)
+	if err != nil {
+		m.logger.Warn().Err(err).Str("sensor", sensorId).Msg("Failed to resolve sensor owner for status notifications")
+		return
+	}
+	if hive == "" {
+		// Датчик не привязан ни к одному улью — отправлять пуш некуда (нет контекста).
+		m.logger.Warn().Str("sensor", sensorId).Msg("Sensor is not linked to any hive, skipping status notifications")
+		return
+	}
+
+	if err = m.checkBatteryLevel(ctx, sensorId, email, hive, data); err != nil {
 		m.logger.Error().Err(err).Str("sensor", sensorId).Msg("Failed to check battery level")
 	}
-	if err = m.checkSignalStrength(ctx, sensorId, data); err != nil {
+	if err = m.checkSignalStrength(ctx, sensorId, email, hive, data); err != nil {
 		m.logger.Error().Err(err).Str("sensor", sensorId).Msg("Failed to check signal level")
 	}
-	if err = m.checkErrors(ctx, sensorId, data); err != nil {
+	if err = m.checkErrors(ctx, sensorId, email, hive, data); err != nil {
 		m.logger.Error().Err(err).Str("sensor", sensorId).Msg("Failed to check error")
 	}
 }
 
-func (m *Client) checkBatteryLevel(ctx context.Context, sensorId string, data mqttTypes.DeviceStatus) error {
-	if data.BatteryLevel >= batteryLowThreshold {
+func (m *Client) checkBatteryLevel(ctx context.Context, sensorId, email, hive string, data mqttTypes.DeviceStatus) error {
+	// -1 = у датчика нет монитора заряда. Заряд мы не меряем — игнорируем,
+	// иначе на каждый status-пакет улетает пуш «низкий заряд (-1%)».
+	if data.BatteryLevel == -1 || data.BatteryLevel >= batteryLowThreshold {
 		return nil
 	}
-	email, hive, err := m.db.GetEmailHiveBySensorID(ctx, sensorId)
+	tokens, err := m.db.GetFirebaseToken(ctx, email)
 	if err != nil {
 		return err
 	}
-	err = m.inMemDb.SetNotification(ctx, email, httpType.NotificationData{
-		Text:     fmt.Sprintf("Низкий уровень заряда батареи (%d%%) в улье %s", data.BatteryLevel, hive),
-		NameHive: hive,
-		Date:     data.Timestamp,
+	if m.notification == nil {
+		return nil
+	}
+	m.logger.Info().Str("sensor", sensorId).Int("battery", data.BatteryLevel).Str("email", email).Msg("Sending low battery notification")
+	badToken, err := m.notification.SendNotification(ctx, notification.Data{
+		Title:     fmt.Sprintf("Низкий уровень заряда батареи (%d%%) в улье", data.BatteryLevel),
+		Body:      "Пожалуйста, замените батарею в ближайшее время, чтобы обеспечить бесперебойную работу датчика.",
+		Data:      map[string]string{"hive": hive},
+		Tokens:    tokens,
+		Important: true,
 	})
-	return err
+	switch {
+	case errors.Is(err, notification.ErrInvalidTokens):
+		err = m.db.DeleteFirebaseToken(ctx, email, badToken)
+		return err
+	case err != nil:
+		return fmt.Errorf("failed to send notification: %w", err)
+	}
+	m.logger.Info().Str("sensor", sensorId).Msg("Low battery notification sent successfully")
+	return nil
 }
 
-func (m *Client) checkSignalStrength(ctx context.Context, sensorId string, data mqttTypes.DeviceStatus) error {
-	if data.SignalStrength >= signalLowThreshold {
+func (m *Client) checkSignalStrength(ctx context.Context, sensorId, email, hive string, data mqttTypes.DeviceStatus) error {
+	// -1 = «нет данных о сигнале» (например, отдельная Wi-Fi-сборка прошивки).
+	// Не алертим на отсутствие данных, иначе на каждом пакете прилетает пуш.
+	if data.SignalStrength == -1 || data.SignalStrength >= signalLowThreshold {
 		return nil
 	}
-	email, hive, err := m.db.GetEmailHiveBySensorID(ctx, sensorId)
+	tokens, err := m.db.GetFirebaseToken(ctx, email)
 	if err != nil {
 		return err
 	}
-	err = m.inMemDb.SetNotification(ctx, email, httpType.NotificationData{
-		Text:     fmt.Sprintf("Низкий уровень сигнала (%d%%) в улье %s", data.SignalStrength, hive),
-		NameHive: hive,
-		Date:     data.Timestamp,
+	if m.notification == nil {
+		return nil
+	}
+	m.logger.Info().Str("sensor", sensorId).Int("signal", data.SignalStrength).Str("email", email).Msg("Sending low signal notification")
+	badToken, err := m.notification.SendNotification(ctx, notification.Data{
+		Title:     fmt.Sprintf("Низкий уровень сигнала (%d%%) в улье", data.SignalStrength),
+		Body:      "Пожалуйста, проверьте расположение датчика и убедитесь, что он находится в зоне стабильного сигнала.",
+		Data:      map[string]string{"hive": hive},
+		Tokens:    tokens,
+		Important: true,
 	})
-	return err
+	switch {
+	case errors.Is(err, notification.ErrInvalidTokens):
+		err = m.db.DeleteFirebaseToken(ctx, email, badToken)
+		return err
+	case err != nil:
+		return fmt.Errorf("failed to send notification: %w", err)
+	}
+	m.logger.Info().Str("sensor", sensorId).Msg("Low signal notification sent successfully")
+	return nil
 }
 
-func (m *Client) checkErrors(ctx context.Context, sensorId string, data mqttTypes.DeviceStatus) error {
-	if len(data.Errors) == 0 {
-		return nil
-	}
-	email, hive, err := m.db.GetEmailHiveBySensorID(ctx, sensorId)
-	if err != nil {
-		return err
-	}
-	for _, errorMsg := range data.Errors {
-		err = m.inMemDb.SetNotification(ctx, email, httpType.NotificationData{
-			Text:     fmt.Sprintf("Ошибка от датчика в улье %s: %s", hive, errorMsg),
-			NameHive: hive,
-			Date:     data.Timestamp,
-		})
-		if err != nil {
-			return err
+func (m *Client) checkErrors(ctx context.Context, sensorId, email, hive string, data mqttTypes.DeviceStatus) error {
+	// Отфильтровываем транзиентные ошибки чтения сенсора — они приходят
+	// почти с каждым status-пакетом и не значат, что устройство умерло.
+	// Алертим только если осталось что-то ещё (init_error, mqtt_connect_failed
+	// и т.д.).
+	critical := make([]string, 0, len(data.Errors))
+	for _, e := range data.Errors {
+		if _, transient := transientSensorErrors[e]; transient {
+			continue
 		}
+		critical = append(critical, e)
 	}
+	if len(critical) == 0 {
+		return nil
+	}
+	tokens, err := m.db.GetFirebaseToken(ctx, email)
+	if err != nil {
+		return err
+	}
+	if m.notification == nil {
+		return nil
+	}
+	m.logger.Info().Str("sensor", sensorId).Strs("errors", critical).Str("email", email).Msg("Sending device errors notification")
+	badToken, err := m.notification.SendNotification(ctx, notification.Data{
+		Title: fmt.Sprintf("Ошибки датчика в улье %s", hive),
+		Body: fmt.Sprintf("Датчик сообщил об ошибках: %s. Пожалуйста, проверьте состояние датчика.",
+			strings.Join(critical, ", ")),
+		Data:      map[string]string{"hive": hive},
+		Tokens:    tokens,
+		Important: true,
+	})
+	switch {
+	case errors.Is(err, notification.ErrInvalidTokens):
+		err = m.db.DeleteFirebaseToken(ctx, email, badToken)
+		return err
+	case err != nil:
+		return fmt.Errorf("failed to send notification: %w", err)
+	}
+	m.logger.Info().Str("sensor", sensorId).Msg("Device errors notification sent successfully")
+	return nil
+}
+
+// checkNoiseLevel отправляет уведомление приложению, если уровень шума превышает noiseHighThreshold дБ.
+func (m *Client) checkNoiseLevel(ctx context.Context, email, hive string, data mqttTypes.DeviceData) error {
+	if data.Noise == -1 || data.Noise <= noiseHighThreshold {
+		return nil
+	}
+	tokens, err := m.db.GetFirebaseToken(ctx, email)
+	if err != nil {
+		return err
+	}
+	if m.notification == nil {
+		return nil
+	}
+	m.logger.Info().Str("hive", hive).Float64("noise", data.Noise).Str("email", email).Msg("Sending high noise notification")
+	badToken, err := m.notification.SendNotification(ctx, notification.Data{
+		Title: fmt.Sprintf("Высокий уровень шума в улье %s", hive),
+		Body: fmt.Sprintf("Зафиксирован уровень шума %.1f дБ, превышающий допустимый порог (%d дБ). Пожалуйста, проверьте состояние улья.",
+			data.Noise, noiseHighThreshold),
+		Data:      map[string]string{"hive": hive},
+		Tokens:    tokens,
+		Important: true,
+	})
+	switch {
+	case errors.Is(err, notification.ErrInvalidTokens):
+		err = m.db.DeleteFirebaseToken(ctx, email, badToken)
+		return err
+	case err != nil:
+		return fmt.Errorf("failed to send noise notification: %w", err)
+	}
+	m.logger.Info().Str("hive", hive).Msg("High noise notification sent successfully")
 	return nil
 }

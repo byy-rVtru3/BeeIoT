@@ -1,8 +1,41 @@
 CREATE TABLE users (
                        id SERIAL PRIMARY KEY,
                        email TEXT UNIQUE NOT NULL,
-                       name     TEXT,
-                       password TEXT NOT NULL
+                       name TEXT,
+                       password TEXT NOT NULL,
+                       is_admin BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE firebase (
+                          id SERIAL PRIMARY KEY,
+                          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                          token TEXT,
+                          device TEXT,
+                          UNIQUE (user_id, device)
+);
+
+CREATE TABLE sensors (
+                         id SERIAL PRIMARY KEY,
+                         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                         sensor_id TEXT NOT NULL,
+                         active BOOLEAN DEFAULT FALSE,
+                         UNIQUE (user_id, sensor_id)
+);
+
+CREATE TABLE hubs (
+                       id SERIAL PRIMARY KEY,
+                       email TEXT NOT NULL,
+                       name TEXT NOT NULL,
+                       sensor TEXT NOT NULL,
+                       UNIQUE (email, sensor)
+);
+
+CREATE TABLE queens (
+                        id SERIAL PRIMARY KEY,
+                        email TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        start_date DATE NOT NULL,
+                        UNIQUE (email, name)
 );
 
 CREATE TABLE hives (
@@ -11,30 +44,66 @@ CREATE TABLE hives (
                        name TEXT NOT NULL,
                        temperature_check TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                        noise_check TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                       sensor_id   TEXT UNIQUE,
-                       status      BOOLEAN DEFAULT TRUE
+                       sensor_id INTEGER REFERENCES sensors(id),
+                       hub_id INTEGER REFERENCES hubs(id),
+                       queen_id INTEGER REFERENCES queens(id),
+                       status BOOLEAN DEFAULT TRUE
 );
+CREATE INDEX ON hives (user_id);
+
+CREATE TABLE tasks (
+                       id TEXT PRIMARY KEY,
+                       email TEXT NOT NULL,
+                       hive_name TEXT NOT NULL,
+                       title TEXT NOT NULL,
+                       description TEXT,
+                       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX ON tasks (email);
+CREATE INDEX ON tasks (email, hive_name);
 
 CREATE TABLE temperature (
-    id SERIAL PRIMARY KEY,
-    hive_id INTEGER REFERENCES hives(id) ON DELETE CASCADE,
-    level FLOAT NOT NULL,
-    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (hive_id, recorded_at)
+                             id SERIAL PRIMARY KEY,
+                             hub_id INTEGER REFERENCES hubs(id) ON DELETE CASCADE,
+                             level FLOAT NOT NULL,
+                             recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                             UNIQUE (hub_id, recorded_at)
 );
 
 CREATE TABLE weight (
-    id SERIAL PRIMARY KEY,
-    hive_id INTEGER REFERENCES hives(id) ON DELETE CASCADE,
-    level FLOAT NOT NULL,
-    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (hive_id, recorded_at)
+                        id SERIAL PRIMARY KEY,
+                        hub_id INTEGER REFERENCES hubs(id) ON DELETE CASCADE,
+                        level FLOAT NOT NULL,
+                        recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE (hub_id, recorded_at)
 );
 
 CREATE TABLE noise (
-    id SERIAL PRIMARY KEY,
-    hive_id INTEGER REFERENCES hives(id) ON DELETE CASCADE,
-    level FLOAT NOT NULL,
-    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (hive_id, recorded_at)
+                       id SERIAL PRIMARY KEY,
+                       hub_id INTEGER REFERENCES hubs(id) ON DELETE CASCADE,
+                       level FLOAT NOT NULL,
+                       recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                       UNIQUE (hub_id, recorded_at)
 );
+
+CREATE TABLE app_description (
+                       id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+                       title VARCHAR(80) NOT NULL,
+                       short VARCHAR(160) NOT NULL,
+                       "full" TEXT NOT NULL,
+                       updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                       updated_by VARCHAR(255)
+);
+
+CREATE TABLE instruction_items (
+                       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                       title VARCHAR(100) NOT NULL,
+                       body TEXT NOT NULL,
+                       numbered BOOLEAN NOT NULL DEFAULT false,
+                       position INT NOT NULL,
+                       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX instruction_items_position_idx
+                       ON instruction_items(position);

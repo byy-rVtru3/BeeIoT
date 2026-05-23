@@ -12,18 +12,19 @@ import (
 )
 
 type MiddleWares struct {
+	db      interfaces.DB
 	inMemDb interfaces.InMemoryDB
 	jwt     *jwtToken.JWTToken
 	logger  zerolog.Logger
 }
 
-func NewMiddleWares(inMem interfaces.InMemoryDB, logger zerolog.Logger) (*MiddleWares, error) {
+func NewMiddleWares(db interfaces.DB, inMem interfaces.InMemoryDB, logger zerolog.Logger) (*MiddleWares, error) {
 	token, err := jwtToken.NewJWTToken()
 	if err != nil {
 		logger.Error().Err(err).Msg("error creating token")
 		return nil, err
 	}
-	return &MiddleWares{jwt: token, inMemDb: inMem, logger: logger}, nil
+	return &MiddleWares{db: db, jwt: token, inMemDb: inMem, logger: logger}, nil
 }
 
 func (m *MiddleWares) CheckAuth(next http.Handler) http.Handler {
@@ -76,5 +77,29 @@ func (m *MiddleWares) CheckAuth(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
+	})
+}
+
+func (m *MiddleWares) CheckAdmin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		email, ok := r.Context().Value("email").(string)
+		if !ok || email == "" {
+			m.logger.Error().Msg("email is missing in context for admin check")
+			http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+			return
+		}
+
+		isAdmin, err := m.db.IsAdmin(r.Context(), email)
+		if err != nil {
+			m.logger.Error().Err(err).Str("email", email).Msg("failed to check admin status")
+			http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+			return
+		}
+		if !isAdmin {
+			m.logger.Warn().Str("email", email).Msg("non-admin attempt to access admin route")
+			http.Error(w, "Доступ запрещен", http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
 	})
 }

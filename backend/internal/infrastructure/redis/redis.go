@@ -142,3 +142,19 @@ func (r *Redis) DeleteSensor(ctx context.Context, sensorID string) error {
 	err := r.rds.HDel(ctx, "sensors", sensorID).Err()
 	return err
 }
+
+func (r *Redis) SetLastSensorData(ctx context.Context, sensorID string, data string) error {
+	return r.rds.Set(ctx, "sensor_data:"+sensorID, data, 0).Err()
+}
+
+func (r *Redis) GetLastSensorData(ctx context.Context, sensorID string) (string, error) {
+	return r.rds.Get(ctx, "sensor_data:"+sensorID).Result()
+}
+
+func (r *Redis) SetLastDeviceStatus(ctx context.Context, sensorID string, data string) error {
+	return r.rds.Set(ctx, "device_status:"+sensorID, data, 0).Err()
+}
+
+func (r *Redis) GetLastDeviceStatus(ctx context.Context, sensorID string) (string, error) {
+	return r.rds.Get(ctx, "device_status:"+sensorID).Result()
+}

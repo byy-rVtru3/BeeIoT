@@ -1,0 +1,10 @@
+FROM golang:1.25-alpine AS builder
+WORKDIR /app
+COPY . .
+RUN go mod download
+RUN go build -o /notify_demo ./cmd/notify_demo/main.go
+
+FROM alpine:3.19
+WORKDIR /app
+COPY --from=builder /notify_demo /app/notify_demo
+ENTRYPOINT ["/app/notify_demo"]

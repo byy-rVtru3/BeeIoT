@@ -66,3 +66,29 @@ func (db *Postgres) ChangeNameUser(ctx context.Context, email string, name strin
 	_, err := db.pull.Exec(ctx, text, name, email)
 	return err
 }
+
+func (db *Postgres) IsAdmin(ctx context.Context, email string) (bool, error) {
+	var isAdmin bool
+	text := `SELECT is_admin FROM users WHERE email=$1;`
+	err := db.pull.QueryRow(ctx, text, email).Scan(&isAdmin)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+	return isAdmin, nil
+}
+
+func (db *Postgres) GetUserByEmail(ctx context.Context, email string) (string, string, error) {
+	var emailResult, name string
+	text := `SELECT email, name FROM users WHERE email=$1;`
+	err := db.pull.QueryRow(ctx, text, email).Scan(&emailResult, &name)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", "", errors.New("user not found")
+		}
+		return "", "", err
+	}
+	return emailResult, name, nil
+}

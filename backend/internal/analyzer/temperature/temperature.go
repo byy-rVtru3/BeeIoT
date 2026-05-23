@@ -3,8 +3,9 @@ package temperature
 import (
 	"BeeIOT/internal/domain/interfaces"
 	"BeeIOT/internal/domain/models/dbTypes"
-	"BeeIOT/internal/domain/models/httpType"
+	"BeeIOT/internal/domain/notification"
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -12,22 +13,23 @@ import (
 )
 
 type Analyzer struct {
-	period  time.Duration
-	db      interfaces.DB
-	ctx     context.Context
-	inMemDb interfaces.InMemoryDB
-	logger  zerolog.Logger
+	period       time.Duration
+	db           interfaces.DB
+	ctx          context.Context
+	notification *notification.Notification
+	logger       zerolog.Logger
 }
 
-func NewAnalyzer(ctx context.Context, period time.Duration, db interfaces.DB, inMemDb interfaces.InMemoryDB) *Analyzer {
+func NewAnalyzer(ctx context.Context, period time.Duration, db interfaces.DB, notification *notification.Notification) *Analyzer {
 	logger := ctx.Value("logger").(zerolog.Logger)
-	return &Analyzer{period: period, db: db, ctx: ctx, inMemDb: inMemDb, logger: logger}
+	return &Analyzer{period: period, db: db, ctx: ctx, logger: logger, notification: notification}
 }
 
 func (a *Analyzer) Start() {
-	ticker := time.NewTicker(a.period)
-	defer ticker.Stop()
 	go func() {
+		a.analyzeTemperature()
+		ticker := time.NewTicker(a.period)
+		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
@@ -40,22 +42,30 @@ func (a *Analyzer) Start() {
 }
 
 func (a *Analyzer) analyzeTemperature() {
-	hives, err := a.db.GetHives(a.ctx, "")
+	a.logger.Info().Msg("temperature analyzer: starting run")
+	hives, err := a.db.GetHives(a.ctx, "", nil)
 	if err != nil {
 		a.logger.Error().Err(err).Msg("failed to get hives")
 		return
 	}
+	a.logger.Info().Int("total_hives", len(hives)).Msg("temperature analyzer: hives loaded")
 	for _, hive := range hives {
-		data, err := a.db.GetTemperaturesSinceTimeById(a.ctx, hive.Id, hive.DateTemperature)
+		if hive.HubID == nil {
+			a.logger.Debug().Int("hiveId", hive.Id).Str("hive", hive.NameHive).Msg("skip hive without hub")
+			continue
+		}
+		data, err := a.db.GetTemperaturesSinceTimeById(a.ctx, *hive.HubID, hive.DateTemperature)
 		if err != nil {
 			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Msg("failed to get temperature")
 			continue
 		}
+		a.logger.Info().Int("hiveId", hive.Id).Str("hive", hive.NameHive).Int("samples", len(data)).Msg("analyzing temperature")
 		a.temperatureAnalysis(data, hive)
-		if a.db.UpdateHiveTemperatureCheck(a.ctx, hive.Id, time.Now()) != nil {
-			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Msg("failed to update hive temperature check")
+		if errUpd := a.db.UpdateHiveTemperatureCheck(a.ctx, hive.Id, time.Now()); errUpd != nil {
+			a.logger.Warn().Err(errUpd).Int("hiveId", hive.Id).Msg("failed to update hive temperature check")
 		}
 	}
+	a.logger.Info().Msg("temperature analyzer: run finished")
 }
 
 const temperatureNormal = 34.0
@@ -67,25 +77,52 @@ func (a *Analyzer) isNormallyTemperature(temp float64) bool {
 }
 
 func (a *Analyzer) temperatureAnalysis(data []dbTypes.HivesTemperatureData, hive dbTypes.Hive) {
+	var abnormalCount int
+	var lastAbnormal float64
 	for _, elem := range data {
 		if a.isNormallyTemperature(elem.Temperature) {
 			continue
 		}
-		email, err := a.db.GetUserById(a.ctx, hive.Id)
+		abnormalCount++
+		lastAbnormal = elem.Temperature
+	}
+	if abnormalCount == 0 {
+		a.logger.Info().Int("hiveId", hive.Id).Str("hive", hive.NameHive).Int("samples", len(data)).Msg("temperature normal, no notification")
+		return
+	}
+	a.logger.Info().Int("hiveId", hive.Id).Str("hive", hive.NameHive).Int("abnormal", abnormalCount).Float64("last", lastAbnormal).Msg("abnormal temperature detected")
+	if a.notification == nil {
+		a.logger.Warn().Int("hiveId", hive.Id).Msg("notification service is nil, skipping")
+		return
+	}
+	tokens, err := a.db.GetFirebaseToken(a.ctx, hive.Email)
+	if err != nil {
+		a.logger.Warn().Err(err).Int("hiveId", hive.Id).Str("email", hive.Email).Msg("failed to get firebase tokens")
+		return
+	}
+	a.logger.Info().Int("hiveId", hive.Id).Str("email", hive.Email).Int("tokens", len(tokens)).Msg("sending temperature notification")
+	if len(tokens) == 0 {
+		return
+	}
+	badToken, err := a.notification.SendNotification(a.ctx, notification.Data{
+		Title: "Критический уровень температуры в улье",
+		Body: fmt.Sprintf(`Последнее значение: %.2f (аномальных замеров: %d).
+Норма: %.2f +- %.2f. Необходимо проверить состояние улья`, lastAbnormal, abnormalCount, temperatureNormal, temperatureDeltaUp),
+		Data: map[string]string{
+			"hive": hive.NameHive,
+		},
+		Tokens:    tokens,
+		Important: false,
+	})
+	switch {
+	case errors.Is(err, notification.ErrInvalidTokens):
+		err = a.db.DeleteFirebaseToken(a.ctx, hive.Email, badToken)
 		if err != nil {
-			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Str("email", email).Msg("failed to get user")
-			continue
+			a.logger.Warn().Int("hiveId", hive.Id).
+				Str("email", hive.Email).Err(err).Msg("failed to delete invalid firebase token")
 		}
-		err = a.inMemDb.SetNotification(a.ctx, email, httpType.NotificationData{
-			Text: fmt.Sprintf(`Обнаружено отклонение температуры в улье %s: %.2f°C.
-Нормальное значение температуры находится в пределе от %.2f до %.2f.
-Необходимо принять меры`, hive.NameHive, elem.Temperature,
-				temperatureNormal-temperatureDeltaDown, temperatureNormal+temperatureDeltaUp),
-			NameHive: hive.NameHive,
-			Date:     elem.Date.UnixNano(),
-		})
-		if err != nil {
-			a.logger.Warn().Err(err).Int("hiveId", hive.Id).Str("email", email).Msg("failed to set notification")
-		}
+	case err != nil:
+		a.logger.Warn().Int("hiveId", hive.Id).
+			Str("email", hive.Email).Err(err).Msg("failed to send notification")
 	}
 }

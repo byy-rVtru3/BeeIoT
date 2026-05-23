@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/rs/zerolog"
 )
 
@@ -28,7 +29,7 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 		logger.Error().Err(err).Msg("could not create new handler")
 		return
 	}
-	m, err := middlewares.NewMiddleWares(inMemDb, logger)
+	m, err := middlewares.NewMiddleWares(db, inMemDb, logger)
 	if err != nil {
 		logger.Error().Err(err).Msg("could not create new middleware")
 		return
@@ -37,6 +38,13 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(5 * time.Second))
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type"},
+		AllowCredentials: false,
+		MaxAge:           300,
+	}))
 
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/auth", func(r chi.Router) {
@@ -46,12 +54,11 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.Post("/confirm/registration", h.ConfirmRegistration)
 			r.Post("/confirm/password", h.ConfirmChangePassword)
 			r.Post("/refresh/token", h.RefreshToken)
+			r.With(m.CheckAuth).Get("/me", h.GetMe)
 			r.With(m.CheckAuth).Delete("/delete/user", h.DeleteUser)
 			r.With(m.CheckAuth).Delete("/logout", h.Logout)
 			r.With(m.CheckAuth).Post("/change/name", h.ChangeName)
-		})
-		r.Route("/calcQueen", func(r chi.Router) {
-			r.With(m.CheckAuth).Post("/calc", h.QueenCalculator)
+			r.With(m.CheckAuth).Post("/fcm/update", h.UpdateFcmToken)
 		})
 		r.Route("/hive", func(r chi.Router) {
 			r.Use(m.CheckAuth)
@@ -60,9 +67,29 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.Get("/", h.GetHive)
 			r.Put("/update", h.UpdateHive)
 			r.Delete("/delete", h.DeleteHive)
+			r.Post("/link/hub", h.LinkHubToHive)
+			r.Post("/link/queen", h.LinkQueenToHive)
+		})
+		r.Route("/hub", func(r chi.Router) {
+			r.Use(m.CheckAuth)
+			r.Post("/create", h.CreateHub)
+			r.Get("/list", h.GetHubs)
+			r.Get("/", h.GetHub)
+			r.Put("/update", h.UpdateHub)
+			r.Delete("/delete", h.DeleteHub)
+		})
+		r.Route("/queen", func(r chi.Router) {
+			r.Use(m.CheckAuth)
+			r.Post("/create", h.CreateQueen)
+			r.Get("/list", h.GetQueens)
+			r.Get("/", h.GetQueen)
+			r.Put("/update", h.UpdateQueen)
+			r.Delete("/delete", h.DeleteQueen)
 		})
 		r.Route("/mqtt", func(r chi.Router) {
+			r.Use(m.CheckAuth)
 			r.Post("/config", h.MQTTSendConfig)
+			r.Post("/health", h.MQTTSendHealthCheck)
 			r.Get("/data", h.GetNoiseAndTemp)
 		})
 		r.Route("/telemetry", func(r chi.Router) {
@@ -70,8 +97,33 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 			r.Get("/noise/get", h.GetNoiseSinceTime)
 			r.Get("/weight/get", h.GetWeightSinceTime)
 			r.Get("/temperature/get", h.GetTemperatureSinceTime)
+			r.Get("/sensor/last", h.GetLastSensorReading)
 			r.Post("/weight/set", h.SetHiveWeight)
 			r.Delete("/weight/delete", h.DeleteHiveWeight)
+		})
+		r.Route("/task", func(r chi.Router) {
+			r.Use(m.CheckAuth)
+			r.Post("/create", h.CreateTask)
+			r.Get("/list", h.GetTasks)
+			r.Put("/update", h.UpdateTask)
+			r.Delete("/delete", h.DeleteTask)
+		})
+		r.Get("/app-description", h.GetAppDescription)
+		r.Get("/instruction/items", h.GetInstructionItems)
+
+		r.Route("/admin", func(r chi.Router) {
+			r.Use(m.CheckAuth, m.CheckAdmin)
+
+			r.Get("/app-description", h.GetAppDescription)
+			r.Put("/app-description", h.UpdateAppDescription)
+
+			r.Route("/instruction/items", func(r chi.Router) {
+				r.Get("/", h.GetInstructionItems)
+				r.Post("/", h.CreateInstructionItem)
+				r.Put("/reorder", h.ReorderInstructionItems)
+				r.Put("/{id}", h.UpdateInstructionItem)
+				r.Delete("/{id}", h.DeleteInstructionItem)
+			})
 		})
 	})
 
@@ -80,7 +132,7 @@ func StartServer(db interfaces.DB, sender interfaces.ConfirmSender, inMemDb inte
 		Handler: r,
 	}
 
-	quit := make(chan os.Signal)
+	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		logger.Info().Str("port", serverPort).Msg("starting server")

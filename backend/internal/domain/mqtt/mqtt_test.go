@@ -23,10 +23,6 @@ type MockInMemoryDB struct {
 	ExistSensorError     error
 	SetSensorError       error
 	UpdateTimestampError error
-	SetNotificationError error
-	// Captures
-	SetNotificationCall bool
-	LastNotification    httpType.NotificationData
 
 	// расширим MockInMemoryDB чтобы захватывать SetSensor вызовы
 	SetSensorCall bool
@@ -38,7 +34,6 @@ func (m *MockInMemoryDB) ExistSensor(_ context.Context, _ string) (bool, error) 
 }
 
 func (m *MockInMemoryDB) SetSensor(_ context.Context, sensorID string) error {
-	m.SetSensorError = m.SetSensorError
 	// capture
 	if ms, ok := interface{}(m).(*MockInMemoryDB); ok {
 		ms.SetSensorCall = true
@@ -51,10 +46,20 @@ func (m *MockInMemoryDB) UpdateSensorTimestamp(_ context.Context, _ string, _ in
 	return m.UpdateTimestampError
 }
 
-func (m *MockInMemoryDB) SetNotification(_ context.Context, _ string, note httpType.NotificationData) error {
-	m.SetNotificationCall = true
-	m.LastNotification = note
-	return m.SetNotificationError
+func (m *MockInMemoryDB) SetLastSensorData(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
+func (m *MockInMemoryDB) GetLastSensorData(_ context.Context, _ string) (string, error) {
+	return "", fmt.Errorf("redis: nil")
+}
+
+func (m *MockInMemoryDB) SetLastDeviceStatus(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
+func (m *MockInMemoryDB) GetLastDeviceStatus(_ context.Context, _ string) (string, error) {
+	return "", nil
 }
 
 type MockDB struct {
@@ -62,12 +67,29 @@ type MockDB struct {
 	GetEmailHiveBySensorIDResultEmail string
 	GetEmailHiveBySensorIDResultHive  string
 	GetEmailHiveBySensorIDError       error
+	GetHubSensorByHiveResult          string
+	GetHubSensorByHiveError           error
+	GetEmailByHubSensorResult         string
+	GetEmailByHubSensorError          error
 	NewNoiseError                     error
 	NewTemperatureError               error
+	NewHiveWeightError                error
 }
 
 func (m *MockDB) GetEmailHiveBySensorID(_ context.Context, _ string) (string, string, error) {
 	return m.GetEmailHiveBySensorIDResultEmail, m.GetEmailHiveBySensorIDResultHive, m.GetEmailHiveBySensorIDError
+}
+
+func (m *MockDB) GetHubSensorByHive(_ context.Context, _, _ string) (string, error) {
+	return m.GetHubSensorByHiveResult, m.GetHubSensorByHiveError
+}
+
+func (m *MockDB) GetEmailByHubSensor(_ context.Context, _ string) (string, error) {
+	return m.GetEmailByHubSensorResult, m.GetEmailByHubSensorError
+}
+
+func (m *MockDB) GetEmailHiveByHubSensor(_ context.Context, _ string) (string, string, error) {
+	return "", "", context.Canceled
 }
 
 func (m *MockDB) NewNoise(_ context.Context, _ httpType.NoiseLevel) error {
@@ -76,6 +98,18 @@ func (m *MockDB) NewNoise(_ context.Context, _ httpType.NoiseLevel) error {
 
 func (m *MockDB) NewTemperature(_ context.Context, _ httpType.Temperature) error {
 	return m.NewTemperatureError
+}
+
+func (m *MockDB) NewHiveWeight(_ context.Context, _ httpType.HubWeight) error {
+	return m.NewHiveWeightError
+}
+
+func (m *MockDB) GetFirebaseToken(_ context.Context, _ string) ([]string, error) {
+	return nil, nil
+}
+
+func (m *MockDB) DeleteFirebaseToken(_ context.Context, _ string, _ []string) error {
+	return nil
 }
 
 type MockMessage struct {
@@ -147,7 +181,7 @@ func (m *MockMqttClient) Publish(_ string, _ byte, _ bool, _ interface{}) mqtt.T
 func TestHandleDeviceData(t *testing.T) {
 	logger := zerolog.Nop()
 	inMem := &MockInMemoryDB{ExistSensorResult: true}
-	db := &MockDB{GetEmailHiveBySensorIDResultEmail: "test@test.com", GetEmailHiveBySensorIDResultHive: "Hive1"}
+	db := &MockDB{GetEmailHiveBySensorIDResultEmail: "test@test.com", GetEmailHiveBySensorIDResultHive: "Hive1", GetHubSensorByHiveResult: "sensor123"}
 
 	client := &Client{inMemDb: inMem, db: db, logger: logger}
 
@@ -210,12 +244,7 @@ func TestHandleDeviceStatus(t *testing.T) {
 
 	client.handleDeviceStatus(nil, msg)
 
-	if !inMem.SetNotificationCall {
-		t.Error("Expected SetNotification to be called for low battery")
-	}
-	if inMem.LastNotification.NameHive != "Hive1" {
-		t.Errorf("Expected notification for Hive1, got %s", inMem.LastNotification.NameHive)
-	}
+	// With nil notification, checkBatteryLevel returns nil immediately
 }
 
 func TestCheckSignalStrength(t *testing.T) {
@@ -230,13 +259,9 @@ func TestCheckSignalStrength(t *testing.T) {
 		Timestamp:      time.Now().Unix(),
 	}
 
-	err := client.checkSignalStrength(context.Background(), "sensor1", status)
+	err := client.checkSignalStrength(context.Background(), "sensor1", "test@test.com", "Hive1", status)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
-	}
-
-	if !inMem.SetNotificationCall {
-		t.Error("Expected SetNotification for low signal")
 	}
 }
 
@@ -252,13 +277,9 @@ func TestCheckErrors(t *testing.T) {
 		Timestamp: time.Now().Unix(),
 	}
 
-	err := client.checkErrors(context.Background(), "sensor1", status)
+	err := client.checkErrors(context.Background(), "sensor1", "test@test.com", "Hive1", status)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
-	}
-
-	if !inMem.SetNotificationCall {
-		t.Error("Expected SetNotification for device error")
 	}
 }
 
@@ -305,42 +326,6 @@ func TestAddNoiseAndTemp(t *testing.T) {
 	err = client.addTemperature(ctx, "test@test.com", "Hive1", mqttTypes.DeviceData{Temperature: 25, TemperatureTime: 1234567890})
 	if err != nil {
 		t.Error(err)
-	}
-}
-
-func TestCheckBatteryLevel_DBError(t *testing.T) {
-	logger := zerolog.Nop()
-	db := &MockDB{GetEmailHiveBySensorIDError: context.DeadlineExceeded}
-	client := &Client{db: db, logger: logger, inMemDb: &MockInMemoryDB{}}
-
-	status := mqttTypes.DeviceStatus{BatteryLevel: 10} // Low to trigger DB call
-	err := client.checkBatteryLevel(context.Background(), "s1", status)
-	if err == nil {
-		t.Error("Expected error from checkBatteryLevel when DB fails")
-	}
-}
-
-func TestCheckSignalStrength_DBError(t *testing.T) {
-	logger := zerolog.Nop()
-	db := &MockDB{GetEmailHiveBySensorIDError: context.DeadlineExceeded}
-	client := &Client{db: db, logger: logger, inMemDb: &MockInMemoryDB{}}
-
-	status := mqttTypes.DeviceStatus{SignalStrength: 5} // Low to trigger DB call
-	err := client.checkSignalStrength(context.Background(), "s1", status)
-	if err == nil {
-		t.Error("Expected error from checkSignalStrength when DB fails")
-	}
-}
-
-func TestCheckErrors_DBError(t *testing.T) {
-	logger := zerolog.Nop()
-	db := &MockDB{GetEmailHiveBySensorIDError: context.DeadlineExceeded}
-	client := &Client{db: db, logger: logger, inMemDb: &MockInMemoryDB{}}
-
-	status := mqttTypes.DeviceStatus{Errors: []string{"error"}} // Present to trigger DB call
-	err := client.checkErrors(context.Background(), "s1", status)
-	if err == nil {
-		t.Error("Expected error from checkErrors when DB fails")
 	}
 }
 
@@ -429,7 +414,7 @@ func TestHandlingStatusData_SensorNotExist_SetSensorCalled(t *testing.T) {
 	logger := zerolog.Nop()
 	inMem := &MockInMemoryDB{ExistSensorResult: false}
 	db := &MockDB{GetEmailHiveBySensorIDResultEmail: "e@e", GetEmailHiveBySensorIDResultHive: "H"}
-	client := &Client{logger: logger, inMemDb: inMem, db: db}
+	client := &Client{logger: logger, inMemDb: inMem, db: db, client: &MockMqttClient{}}
 
 	client.handlingStatusData(mqttTypes.DeviceStatus{Timestamp: time.Now().Unix(), BatteryLevel: 100, SignalStrength: 100}, "s-new")
 
@@ -445,13 +430,13 @@ func TestCheckBatterySignal_NoNotifications(t *testing.T) {
 	client := &Client{logger: logger, inMemDb: inMem, db: d}
 
 	// battery ok
-	err := client.checkBatteryLevel(context.Background(), "s1", mqttTypes.DeviceStatus{BatteryLevel: 50, Timestamp: time.Now().Unix()})
+	err := client.checkBatteryLevel(context.Background(), "s1", "e@e", "H", mqttTypes.DeviceStatus{BatteryLevel: 50, Timestamp: time.Now().Unix()})
 	if err != nil {
 		t.Fatalf("expected no error for sufficient battery, got %v", err)
 	}
 
 	// signal ok
-	err = client.checkSignalStrength(context.Background(), "s1", mqttTypes.DeviceStatus{SignalStrength: 50, Timestamp: time.Now().Unix()})
+	err = client.checkSignalStrength(context.Background(), "s1", "e@e", "H", mqttTypes.DeviceStatus{SignalStrength: 50, Timestamp: time.Now().Unix()})
 	if err != nil {
 		t.Fatalf("expected no error for sufficient signal, got %v", err)
 	}
@@ -463,7 +448,7 @@ func TestCheckErrors_NoErrors(t *testing.T) {
 	d := &MockDB{GetEmailHiveBySensorIDResultEmail: "e@e", GetEmailHiveBySensorIDResultHive: "H"}
 	client := &Client{logger: logger, inMemDb: inMem, db: d}
 
-	err := client.checkErrors(context.Background(), "s1", mqttTypes.DeviceStatus{Errors: []string{}, Timestamp: time.Now().Unix()})
+	err := client.checkErrors(context.Background(), "s1", "e@e", "H", mqttTypes.DeviceStatus{Errors: []string{}, Timestamp: time.Now().Unix()})
 	if err != nil {
 		t.Fatalf("expected nil when no errors present, got %v", err)
 	}

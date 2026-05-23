@@ -1,9 +1,12 @@
 package handlers
 
 import (
-	"BeeIOT/internal/domain/models/dbTypes"
 	"BeeIOT/internal/domain/models/httpType"
+	"BeeIOT/internal/domain/models/mqttTypes"
+	"context"
+	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -13,7 +16,7 @@ func (h *Handler) SetHiveWeight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var weight httpType.HiveWeight // не нравится мне
+	var weight httpType.HubWeight
 	err = h.readBodyJSON(w, r, &weight)
 	if err != nil {
 		return
@@ -27,7 +30,38 @@ func (h *Handler) SetHiveWeight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Обновляем вес в кеше Redis, чтобы GetLastSensorReading возвращал актуальный вес
+	h.updateCachedWeight(r.Context(), weight.Hub, weight.Weight, weight.Time.Unix())
+
 	h.writeBodyJSON(w, "Данные веса успешно установлены", nil)
+}
+
+func (h *Handler) updateCachedWeight(ctx context.Context, hubID string, weight float64, weightTime int64) {
+	raw, err := h.inMemDb.GetLastSensorData(ctx, hubID)
+	if err != nil {
+		// Нет кеша — создаём новый с весом
+		newData := mqttTypes.DeviceData{
+			Temperature:     -1,
+			TemperatureTime: 0,
+			Noise:           -1,
+			NoiseTime:       0,
+			Weight:          weight,
+			WeightTime:      weightTime,
+		}
+		if b, err := json.Marshal(newData); err == nil {
+			_ = h.inMemDb.SetLastSensorData(ctx, hubID, string(b))
+		}
+		return
+	}
+	var sensorData mqttTypes.DeviceData
+	if err := json.Unmarshal([]byte(raw), &sensorData); err != nil {
+		return
+	}
+	sensorData.Weight = weight
+	sensorData.WeightTime = weightTime
+	if b, err := json.Marshal(sensorData); err == nil {
+		_ = h.inMemDb.SetLastSensorData(ctx, hubID, string(b))
+	}
 }
 
 func (h *Handler) DeleteHiveWeight(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +70,7 @@ func (h *Handler) DeleteHiveWeight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var weight httpType.HiveWeight // не нравится мне
+	var weight httpType.HubWeight
 	if err = h.readBodyJSON(w, r, &weight); err != nil {
 		return
 	}
@@ -49,7 +83,7 @@ func (h *Handler) DeleteHiveWeight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.writeBodyJSON(w, "Вес удален успешно", nil)
+	h.writeBodyJSON(w, "Данные веса успешно удалены", nil)
 }
 
 func (h *Handler) GetWeightSinceTime(w http.ResponseWriter, r *http.Request) {
@@ -58,30 +92,30 @@ func (h *Handler) GetWeightSinceTime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hiveName := r.URL.Query().Get("name")
-	if hiveName == "" {
-		h.logger.Warn().Str("email", email).Msg("missing query param 'name'")
-		http.Error(w, "Параметр \"name\" обязателен", http.StatusBadRequest)
+	hubID := r.URL.Query().Get("hub")
+	if hubID == "" {
+		h.logger.Warn().Str("email", email).Msg("missing query param 'hub'")
+		http.Error(w, "Параметр \"hub\" обязателен", http.StatusBadRequest)
 		return
 	}
 
-	since, ok := parsePeriod(r.URL.Query().Get("period"))
+	since, ok := parseSince(r.URL.Query().Get("since"))
 	if !ok {
-		h.logger.Warn().Str("email", email).Str("period", r.URL.Query().Get("period")).Msg("invalid period")
-		http.Error(w, "Неверный параметр period (допустимо: day, week, month)", http.StatusBadRequest)
+		h.logger.Warn().Str("email", email).Str("since", r.URL.Query().Get("since")).Msg("invalid since")
+		http.Error(w, "Неверный параметр since (ожидается Unix timestamp)", http.StatusBadRequest)
 		return
 	}
 
-	weights, err := h.db.GetWeightSinceTime(r.Context(), httpType.Hive{Email: email, NameHive: hiveName}, since)
+	weights, err := h.db.GetWeightSinceTime(r.Context(), email, hubID, since)
 	if err != nil {
-		h.logger.Error().Err(err).Str("email", email).Str("hive", hiveName).Msg("failed to get weight data")
+		h.logger.Error().Err(err).Str("email", email).Str("hub", hubID).Msg("failed to get weight data")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
 
-	response := make([]httpType.WeightResponse, len(weights))
+	response := make([]httpType.TelemetryDataPoint, len(weights))
 	for i, wt := range weights {
-		response[i] = httpType.WeightResponse{Date: wt.Date, Weight: wt.Weight}
+		response[i] = httpType.TelemetryDataPoint{Time: wt.Date.Unix(), Value: wt.Weight}
 	}
 
 	h.writeBodyJSON(w, "Данные веса успешно получены", response)
@@ -93,30 +127,30 @@ func (h *Handler) GetNoiseSinceTime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hiveName := r.URL.Query().Get("name")
-	if hiveName == "" {
-		h.logger.Warn().Str("email", email).Msg("missing query param 'name'")
-		http.Error(w, "Параметр \"name\" обязателен", http.StatusBadRequest)
+	hubID := r.URL.Query().Get("hub")
+	if hubID == "" {
+		h.logger.Warn().Str("email", email).Msg("missing query param 'hub'")
+		http.Error(w, "Параметр \"hub\" обязателен", http.StatusBadRequest)
 		return
 	}
 
-	since, ok := parsePeriod(r.URL.Query().Get("period"))
+	since, ok := parseSince(r.URL.Query().Get("since"))
 	if !ok {
-		h.logger.Warn().Str("email", email).Str("period", r.URL.Query().Get("period")).Msg("invalid period")
-		http.Error(w, "Неверный параметр period (допустимо: day, week, month)", http.StatusBadRequest)
+		h.logger.Warn().Str("email", email).Str("since", r.URL.Query().Get("since")).Msg("invalid since")
+		http.Error(w, "Неверный параметр since (ожидается Unix timestamp)", http.StatusBadRequest)
 		return
 	}
 
-	noiseLevels, err := h.db.GetNoiseSinceTime(r.Context(), email, hiveName, since)
+	noiseLevels, err := h.db.GetNoiseSinceTime(r.Context(), email, hubID, since)
 	if err != nil {
-		h.logger.Error().Err(err).Str("email", email).Str("hive", hiveName).Msg("failed to get noise data")
+		h.logger.Error().Err(err).Str("email", email).Str("hub", hubID).Msg("failed to get noise data")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
 
-	response := make([]httpType.NoiseLevelResponse, len(noiseLevels))
+	response := make([]httpType.TelemetryDataPoint, len(noiseLevels))
 	for i, n := range noiseLevels {
-		response[i] = httpType.NoiseLevelResponse{Date: n.Date, Level: n.Level}
+		response[i] = httpType.TelemetryDataPoint{Time: n.Date.Unix(), Value: n.Level}
 	}
 
 	h.writeBodyJSON(w, "Данные шума успешно получены", response)
@@ -128,44 +162,88 @@ func (h *Handler) GetTemperatureSinceTime(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	hiveName := r.URL.Query().Get("name")
-	if hiveName == "" {
-		h.logger.Warn().Str("email", email).Msg("missing query param 'name'")
-		http.Error(w, "Параметр \"name\" обязателен", http.StatusBadRequest)
+	hubID := r.URL.Query().Get("hub")
+	if hubID == "" {
+		h.logger.Warn().Str("email", email).Msg("missing query param 'hub'")
+		http.Error(w, "Параметр \"hub\" обязателен", http.StatusBadRequest)
 		return
 	}
 
-	since, ok := parsePeriod(r.URL.Query().Get("period"))
+	since, ok := parseSince(r.URL.Query().Get("since"))
 	if !ok {
-		h.logger.Warn().Str("email", email).Str("period", r.URL.Query().Get("period")).Msg("invalid period")
-		http.Error(w, "Неверный параметр period (допустимо: day, week, month)", http.StatusBadRequest)
+		h.logger.Warn().Str("email", email).Str("since", r.URL.Query().Get("since")).Msg("invalid since")
+		http.Error(w, "Неверный параметр since (ожидается Unix timestamp)", http.StatusBadRequest)
 		return
 	}
 
-	temperatures, err := h.db.GetTemperaturesSinceTime(r.Context(), dbTypes.Hive{Email: email, NameHive: hiveName}, since)
+	temperatures, err := h.db.GetTemperaturesSinceTime(r.Context(), email, hubID, since)
 	if err != nil {
-		h.logger.Error().Err(err).Str("email", email).Str("hive", hiveName).Msg("failed to get temperature data")
+		h.logger.Error().Err(err).Str("email", email).Str("hub", hubID).Msg("failed to get temperature data")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
 
-	response := make([]httpType.TemperatureResponse, len(temperatures))
+	response := make([]httpType.TelemetryDataPoint, len(temperatures))
 	for i, t := range temperatures {
-		response[i] = httpType.TemperatureResponse{Date: t.Date, Temperature: t.Temperature}
+		response[i] = httpType.TelemetryDataPoint{Time: t.Date.Unix(), Value: t.Temperature}
 	}
 
 	h.writeBodyJSON(w, "Данные температуры успешно получены", response)
 }
-func parsePeriod(period string) (time.Time, bool) {
-	now := time.Now()
-	switch period {
-	case "", "day":
-		return now.AddDate(0, 0, -1), true
-	case "week":
-		return now.AddDate(0, 0, -7), true
-	case "month":
-		return now.AddDate(0, -1, 0), true
-	default:
+
+func parseSince(sinceStr string) (time.Time, bool) {
+	if sinceStr == "" {
+		return time.Now().AddDate(0, 0, -1), true
+	}
+	ts, err := strconv.ParseInt(sinceStr, 10, 64)
+	if err != nil || ts < 0 {
 		return time.Time{}, false
 	}
+	return time.Unix(ts, 0), true
+}
+
+func (h *Handler) GetLastSensorReading(w http.ResponseWriter, r *http.Request) {
+	email, err := h.getEmailFromContext(w, r)
+	if err != nil {
+		return
+	}
+
+	hubID := r.URL.Query().Get("hub")
+	if hubID == "" {
+		h.logger.Warn().Str("email", email).Msg("missing query param 'hub'")
+		http.Error(w, "Параметр \"hub\" обязателен", http.StatusBadRequest)
+		return
+	}
+
+	hub, err := h.db.GetHubBySensor(r.Context(), email, hubID)
+	if err != nil {
+		h.logger.Error().Err(err).Str("email", email).Str("hub", hubID).Msg("hub not found")
+		http.Error(w, "Хаб не найден", http.StatusNotFound)
+		return
+	}
+
+	data, err := h.inMemDb.GetLastSensorData(r.Context(), hub.Sensor)
+	if err != nil {
+		h.logger.Warn().Err(err).Str("hub", hub.Sensor).Msg("no last sensor data")
+		http.Error(w, "Нет данных от датчика", http.StatusNotFound)
+		return
+	}
+
+	var sensorData mqttTypes.DeviceData
+	if err := json.Unmarshal([]byte(data), &sensorData); err != nil {
+		h.logger.Error().Err(err).Str("hub", hub.Sensor).Msg("failed to unmarshal sensor data")
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
+	}
+
+	lastReading := httpType.LastSensorReading{
+		Temperature:     sensorData.Temperature,
+		TemperatureTime: sensorData.TemperatureTime,
+		Noise:           sensorData.Noise,
+		NoiseTime:       sensorData.NoiseTime,
+		Weight:          sensorData.Weight,
+		WeightTime:      sensorData.WeightTime,
+	}
+
+	h.writeBodyJSON(w, "Последние данные датчика получены", lastReading)
 }

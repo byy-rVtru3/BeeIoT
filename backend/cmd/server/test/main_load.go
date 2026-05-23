@@ -44,11 +44,12 @@ type MockPasswordKeeper struct {
 	realKeeper interfaces.PasswordKeeper
 }
 
-func (m *MockPasswordKeeper) AddCode(ctx context.Context, email, _, password string, timeLive time.Duration) error {
+func (m *MockPasswordKeeper) AddCode(ctx context.Context, email, _, password, name string, timeLive time.Duration) error {
 	// Всегда сохраняем код "123456" для нагрузочных тестов
-	return m.realKeeper.AddCode(ctx, email, "123456", password, timeLive)
+	return m.realKeeper.AddCode(ctx, email, "123456", password, name, timeLive)
 }
-func (m *MockPasswordKeeper) GetPassword(ctx context.Context, email string) (string, string, error) {
+
+func (m *MockPasswordKeeper) GetPassword(ctx context.Context, email string) (string, string, string, error) {
 	return m.realKeeper.GetPassword(ctx, email)
 }
 func main() {
@@ -78,10 +79,10 @@ func main() {
 	logger.Info().Msg("Starting analyzers...")
 	analyzersCtx, cancel := context.WithCancel(context.WithValue(context.Background(), "logger", logger))
 	defer cancel()
-	temperature.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
-	noise.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, redis).Start()
+	temperature.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, nil).Start()
+	noise.NewAnalyzer(analyzersCtx, 24*60*time.Hour, db, nil).Start()
 	logger.Info().Msg("Initializing MQTT...")
-	mqttServer, err := mqtt.NewMQTTClient(db, redis, logger)
+	mqttServer, err := mqtt.NewMQTTClient(db, redis, nil, logger)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to connect to mqtt server")
 		return

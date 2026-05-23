@@ -3,6 +3,7 @@ import { basicFlow } from './scenarios/basic-flow.js';
 import { fullCycle } from './scenarios/full-cycle.js';
 import { readOperation } from './scenarios/read-operation.js';
 import { writeOperation } from './scenarios/write-operation.js';
+import { hubQueenFlow } from './scenarios/hub-queen-flow.js';
 
 export const options = {
     scenarios: {
@@ -34,7 +35,15 @@ export const options = {
             duration: '2m',
             exec: 'runWriteOperation',
             startTime: '2m',
-        }
+        },
+        hub_queen_flow: {
+            executor: 'per-vu-iterations',
+            vus: 5,
+            iterations: 1,
+            maxDuration: '5m',
+            exec: 'runHubQueenFlow',
+            startTime: '15s',
+        },
     },
     thresholds: standardOptions.thresholds,
 };
@@ -43,3 +52,4 @@ export function runBasicFlow() { basicFlow(); }
 export function runFullCycle() { fullCycle(); }
 export function runReadOperation() { readOperation(); }
 export function runWriteOperation() { writeOperation(); }
+export function runHubQueenFlow() { hubQueenFlow(); }

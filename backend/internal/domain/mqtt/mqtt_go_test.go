@@ -119,7 +119,7 @@ func TestNewMQTTClient_NoEnv(t *testing.T) {
 	_ = os.Unsetenv("MQTT_USERNAME")
 	_ = os.Unsetenv("MQTT_PASSWORD")
 
-	_, err := NewMQTTClient(nil, nil, zerolog.Nop())
+	_, err := NewMQTTClient(nil, nil, nil, zerolog.Nop())
 	if err == nil {
 		t.Fatalf("expected error when MQTT_HOST/MQTT_PORT not set")
 	}
@@ -143,7 +143,7 @@ func TestNewMQTTClient_EnvConnectFail(t *testing.T) {
 	_ = os.Unsetenv("MQTT_USERNAME")
 	_ = os.Unsetenv("MQTT_PASSWORD")
 
-	_, err := NewMQTTClient(nil, nil, zerolog.Nop())
+	_, err := NewMQTTClient(nil, nil, nil, zerolog.Nop())
 	if err == nil {
 		t.Fatalf("expected error when MQTT connect fails")
 	}

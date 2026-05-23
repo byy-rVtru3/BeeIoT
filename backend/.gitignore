@@ -1,0 +1,5 @@
+*.env
+firebase-key.json
+tmp
+.idea
+docs/

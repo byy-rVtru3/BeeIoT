@@ -11,6 +11,14 @@ export function generateHiveName(prefix = 'Hive') {
     return `${prefix}-${__VU}-${__ITER}`;
 }
 
+export function generateQueenName(prefix = 'Queen') {
+    return `${prefix}-${__VU}-${__ITER}`;
+}
+
+export function generateHubId(prefix = 'hub') {
+    return `${prefix}-${__VU}-${__ITER}-${Date.now()}`;
+}
+
 export function extractToken(response) {
     try {
         return response.json().data.token;

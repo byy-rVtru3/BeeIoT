@@ -68,7 +68,12 @@ func (h *Handler) writeBodyJSON(w http.ResponseWriter, message string, data any)
 }
 
 func (h *Handler) getEmailFromContext(w http.ResponseWriter, r *http.Request) (string, error) {
-	email := r.Context().Value("email").(string)
+	email, ok := r.Context().Value("email").(string)
+	if !ok {
+		h.logger.Error().Msg("email is not string in context")
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return "", http.ErrNoCookie
+	}
 	if email == "" {
 		h.logger.Error().Msg("no email in context")
 		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)

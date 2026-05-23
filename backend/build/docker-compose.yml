@@ -31,7 +31,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - db_data:/var/lib/postgresql
+      - db_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432" # чтобы goland определил структуру БД, в проде убрать открытый порт для безопасности
@@ -99,22 +99,55 @@ services:
         condition: service_healthy
       mqtt:
         condition: service_healthy
-    ports:
-      - "80:8000"
+    # Порт не публикуется наружу — Go доступен только nginx внутри app-net.
+    # Прямой доступ к :8000 снаружи закрыт.
+    expose:
+      - "8000"
     networks:
       - app-net
     restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nginx_container
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - go-server
+      - web-admin
+    networks:
+      - app-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/api/health 2>&1 | grep -q . || exit 0"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   swagger-ui:
     image: swaggerapi/swagger-ui:latest
     container_name: swagger_ui_container
     ports:
       - "8081:8080"
-    environment:
-      SWAGGER_JSON: /swagger/swagger.yaml
-      BASE_URL: /swagger
     volumes:
-      - ../docs/swagger.yaml:/swagger/swagger.yaml:ro
+      - ../openapi.yml:/openapi.yml
+    environment:
+        - SWAGGER_JSON=/openapi.yml
+    networks:
+      - app-net
+    restart: unless-stopped
+
+  web-admin:
+    build:
+      context: ../../frontend/Web
+      dockerfile: Dockerfile
+    container_name: web_admin_container
+    depends_on:
+      - go-server
+    ports:
+      - "3000:80"
     networks:
       - app-net
     restart: unless-stopped
